@@ -5,6 +5,14 @@
 *.o
 *.ko
 
+# Build files
+*.d
+
+# Log output files
+SVC/flash/SVC.*
+SVC/SVC*
+SVC/lst
+
 # Libraries
 *.lib
 *.a
@@ -19,3 +27,4 @@
 *.exe
 *.out
 *.app
+*.crf

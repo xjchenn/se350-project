@@ -24,7 +24,7 @@ mem_blk_t* alloc_mem;
 int k_init_memory_blocks(void) {
     //int i = 0;
 
-	free_mem = (mem_blk_t *)(end_addr + 8);
+	free_mem = (mem_blk_t *)(end_addr + MEM_OFFSET_SIZE);
 	alloc_mem = NULL;
 
    /* for(i = end_addr; i < end_of_mem; i+= MEM_BLOCK_SIZE) {
@@ -58,17 +58,17 @@ void* k_request_memory_block(void) {
 
 
 //Returns the next memory block available after blk
-mem_blk_t* k_get_next_memory_block() {
+mem_blk_t* k_get_next_memory_block(mem_blk_t *block) {
 	mem_blk_t* ret;
 
-    ret = blk->next;
+    ret = block->next;
 
     if (ret != NULL) {
         return ret;
     } else {
-        ret = blk + MEM_BLOCK_SIZE;
+        ret = block + MEM_BLOCK_SIZE;
 
-        if (blk < (mem_blk_t *)end_of_mem) {
+        if (ret < (mem_blk_t *)end_of_mem) {
             printf("Next memory block is: %x\n", ret);
             return ret;
         }

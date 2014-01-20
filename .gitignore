@@ -12,6 +12,7 @@
 SVC/flash/SVC.*
 SVC/SVC*
 SVC/lst
+*.__i
 
 # Libraries
 *.lib

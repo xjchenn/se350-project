@@ -13,4 +13,8 @@ extern int k_release_memory_block(void *);
 #define release_memory_block(p_mem_blk) _release_memory_block((U32)k_release_memory_block, p_mem_blk)
 extern int _release_memory_block(U32 p_func, void *p_mem_blk) __SVC_0;
 
+extern int k_init_memory_blocks(void);
+#define init_memory_blocks() _init_memory_blocks((U32)k_init_memory_blocks);
+extern int _init_memory_blocks(U32 p_func) __SVC_0;
+
 #endif

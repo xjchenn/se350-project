@@ -29,3 +29,7 @@ SVC/SVC.uvopt
 *.out
 *.app
 *.crf
+
+# User
+*.sublime-project
+*.sublime-workspace

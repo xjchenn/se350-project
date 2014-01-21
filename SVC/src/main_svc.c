@@ -15,12 +15,8 @@
 #include "rtx.h"
 #include "memory.h"
 
-int main()
-{
-
+int main() {
   volatile unsigned int ret_val = 1234;
-  void* memory = 0;
-  void* memory2 = 0;
 
   SystemInit();  /* initialize the system */
   __disable_irq();
@@ -32,18 +28,26 @@ int main()
   __set_CONTROL(__get_CONTROL() | BIT(0));
 
   ret_val = init_memory_blocks();
-
   ret_val = release_processor();
-  memory = request_memory_block();
-  memory2 = request_memory_block();
-  printf("%x, %x\n", memory, memory2);
-  *((int *)memory2) = 0xdeadbeef;
-  printf("value: %x\n", (*(int *)memory2));
-  ret_val = release_memory_block(memory);
-  ret_val = release_memory_block(memory2);
-  /* printf has been retargeted to use the UART0,
-     check putc function in uart0_polling.c.
-  */
-  printf("The ret_val=%d\n",ret_val);
+  
   return 0;
+}
+
+void test_memory() {
+  volatile unsigned int ret_val = 1234;
+  void* memory1 = 0;
+  void* memory2 = 0;
+
+  memory1 = request_memory_block();
+  memory2 = request_memory_block();
+
+  *((int*) memory2) = 0xDEADBEEF;
+  printf("Allocated1: %x\n", memory1);
+  printf("Allocated2: %x\n", memory2);
+  printf("Value1: %x\n", (*(int *)memory1));
+  printf("Value2: %x\n", (*(int *)memory2));
+  printf("Ret: %d\n",ret_val);
+
+  ret_val = release_memory_block(memory1);
+  ret_val = release_memory_block(memory2);
 }

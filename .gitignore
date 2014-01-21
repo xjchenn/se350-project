@@ -30,6 +30,3 @@ SVC/SVC.uvopt
 *.app
 *.crf
 
-# User
-*.sublime-project
-*.sublime-workspace

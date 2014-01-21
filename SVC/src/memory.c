@@ -15,7 +15,7 @@ typedef struct mem_blk {
 
 mem_blk_t* k_get_next_memory_block(mem_blk_t* blk);
 
-unsigned int end_addr = (unsigned int) &Image$$RW_IRAM1$$ZI$$Limit;
+unsigned int END_OF_IMAGE = (unsigned int) &Image$$RW_IRAM1$$ZI$$Limit;
 
 unsigned int heap_start;
 
@@ -25,12 +25,12 @@ mem_blk_t* alloc_mem;
 int k_init_memory_blocks(void) {
     unsigned int i;
 
-    heap_start = end_addr + MEM_OFFSET_SIZE;
+    heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
 	free_mem = (mem_blk_t *)heap_start;
 	alloc_mem = NULL;
 
     //Zero out all of the memory we have to avoid garbage
-    for(i = (unsigned int)free_mem; i < end_of_mem; i++) {
+    for(i = (unsigned int)free_mem; i < END_OF_MEM; i++) {
         *((int *)free_mem) = 0;
     }
 
@@ -51,7 +51,7 @@ void* k_request_memory_block(void) {
     }
     alloc_mem = ret;
 
-    printf("k_request_memory_block: image ends at 0x%x\n", end_addr);
+    printf("k_request_memory_block: image ends at 0x%x\n", END_OF_IMAGE);
 
     printf("Allocated: %x\n", (int)ret);
 
@@ -70,7 +70,7 @@ mem_blk_t* k_get_next_memory_block(mem_blk_t *block) {
     } else {
         ret = block + MEM_BLOCK_SIZE;
 
-        if (ret < (mem_blk_t *)end_of_mem) {
+        if (ret < (mem_blk_t *)END_OF_MEM) {
             printf("Next memory block is: %x\n", ret);
             return ret;
         }
@@ -82,7 +82,7 @@ mem_blk_t* k_get_next_memory_block(mem_blk_t *block) {
 int k_release_memory_block(void* p_mem_blk) {
     mem_blk_t *to_del = (mem_blk_t *)p_mem_blk;
 
-    if (p_mem_blk == NULL || (unsigned int)p_mem_blk < heap_start || (unsigned int)p_mem_blk > end_of_mem) {
+    if (p_mem_blk == NULL || (unsigned int)p_mem_blk < heap_start || (unsigned int)p_mem_blk > END_OF_MEM) {
         return 1;
     }
 

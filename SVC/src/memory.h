@@ -4,7 +4,7 @@
 #ifndef MEMORY_H_
 #define MEMORY_H_
 
-static const unsigned int end_of_mem = 0x10008000;
+static const unsigned int END_OF_MEM = 0x10008000;
 
 extern void *k_request_memory_block(void);
 #define request_memory_block() _request_memory_block((U32)k_request_memory_block)

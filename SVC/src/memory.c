@@ -16,21 +16,20 @@ typedef struct mem_blk {
 mem_blk_t* k_get_next_memory_block(mem_blk_t* blk);
 
 unsigned int end_addr = (unsigned int) &Image$$RW_IRAM1$$ZI$$Limit;
-static const unsigned int end_of_mem = 0x10008000;
 
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
 
 int k_init_memory_blocks(void) {
-    //int i = 0;
+    unsigned int i;
 
 	free_mem = (mem_blk_t *)(end_addr + MEM_OFFSET_SIZE);
 	alloc_mem = NULL;
 
-   /* for(i = end_addr; i < end_of_mem; i+= MEM_BLOCK_SIZE) {
-        ((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
-        //printf("cur: %x, next: %x\n", i, ((mem_blk_t *)i)->next);
-    }*/
+    //Zero out all of the memory we have to avoid garbage
+    for(i = (unsigned int)free_mem; i < end_of_mem; i++) {
+        *((int *)free_mem) = 0;
+    }
 
 	return 0;
 }

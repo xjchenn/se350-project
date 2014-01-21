@@ -19,6 +19,8 @@ int main()
 {
 
   volatile unsigned int ret_val = 1234;
+  void* memory = 0;
+  void* memory2 = 0;
 
   SystemInit();  /* initialize the system */
   __disable_irq();
@@ -29,9 +31,16 @@ int main()
   // transit to unprivileged level, default MSP is used
   __set_CONTROL(__get_CONTROL() | BIT(0));
 
+  ret_val = init_memory_blocks();
+
   ret_val = release_processor();
-  ret_val = (unsigned int) request_memory_block();
-	ret_val = release_memory_block(NULL);
+  memory = request_memory_block();
+  memory2 = request_memory_block();
+  printf("%x, %x\n", memory, memory2);
+  *((int *)memory2) = 0xdeadbeef;
+  printf("value: %x\n", (*(int *)memory2));
+  ret_val = release_memory_block(memory);
+  ret_val = release_memory_block(memory2);
   /* printf has been retargeted to use the UART0,
      check putc function in uart0_polling.c.
   */

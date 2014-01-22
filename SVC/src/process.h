@@ -19,7 +19,7 @@ typedef enum {
     LOWEST
 } PROCESS_PRIORITY;
 
-typedef void (*func)() func_ptr_t;
+typedef void (*func_ptr_t)();
 
 typedef struct {
     uint32_t pid;
@@ -29,8 +29,8 @@ typedef struct {
     func_ptr_t proc_start;
 } pcb_t;
 
-int k_init_processor();
-int k_release_processor();
+int k_init_processor(void);
+int k_release_processor(void);
 
 int k_set_process_priority(int process_id, int priority);
 int k_get_process_priority(int process_id);

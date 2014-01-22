@@ -4,20 +4,20 @@
 #include "utils.h"
 #include "memory.h"
 
-typdef struct {
-    node_t *next;
-    node_t *prev;
+typedef struct node {
+    struct node *next;
+    struct node *prev;
     void *value;
 } node_t;
 
-typdef struct {
+typedef struct {
     node_t *first;
     node_t *last;
     int length;
 } linkedlist_t;
 
-int linkedlist_add_front(linkedlist_t *list, const void *value);
-int linkedlist_add_back(linkedlist_t *list, const void *value);
+int linkedlist_add_front(linkedlist_t *list, void *value);
+int linkedlist_add_back(linkedlist_t *list, void *value);
 
 node_t* linkedlist_pop_front(linkedlist_t *list);
 node_t* linkedlist_pop_back(linkedlist_t *list);

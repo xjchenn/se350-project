@@ -2,7 +2,7 @@
 #include "memory.h"
 #include "utils.h"
 
-int linkedlist_add_front(linkedlist_t *list, const void *value) {
+int linkedlist_add_front(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 
     if (list == NULL) {
@@ -19,7 +19,7 @@ int linkedlist_add_front(linkedlist_t *list, const void *value) {
     return 0;
 }
 
-int linkedlist_add_back(linkedlist_t *list, const void *value) {
+int linkedlist_add_back(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 
     if (list == NULL) {
@@ -42,14 +42,14 @@ node_t* linkedlist_pop_front(linkedlist_t *list) {
     node_t* secondNode;
 
     if (list == NULL) {
-        return 1;
+        return NULL;
     }
 
     firstNode  = list->first;
     secondNode = firstNode->next;
 
     list->first = secondNode;
-    secondNode->prev = NULL:
+    secondNode->prev = NULL;
 
     firstNode->next = NULL;
     firstNode->prev = NULL;
@@ -61,7 +61,7 @@ node_t* linkedlist_pop_back(linkedlist_t *list) {
     node_t* secondLastNode;
 
     if (list == NULL) {
-        return 1;
+        return NULL;
     }
 
     lastNode = list->last;

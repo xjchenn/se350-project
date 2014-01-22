@@ -18,7 +18,7 @@
 ### ADS-LD Output File: '.\flash\SVC.axf'
 ### ADS-LD Command File: '.\flash\SVC.lnp'
 ### Checking for dirty Components...
-### Creating CmdFile '.\flash\SVC.lnp', Handle=0x0000040C
+### Creating CmdFile '.\flash\SVC.lnp', Handle=0x000003F0
 ### Writing '.lnp' file
 ### ADS-LD Command file '.\flash\SVC.lnp' is ready.
 ### ADS-LD: About to start ADS-LD Thread.

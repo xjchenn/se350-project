@@ -16,7 +16,7 @@
 
 int k_release_processor(void)
 {
-  uart0_put_string("k_release_processor: entering\n\r");
+  uart0_put_string("k_release_processor: entering\n");
 	return 0;
 }
 

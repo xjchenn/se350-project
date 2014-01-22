@@ -30,8 +30,8 @@ int k_init_memory_blocks(void) {
 	alloc_mem = NULL;
 
     //Zero out all of the memory we have to avoid garbage
-    for(i = (unsigned int)free_mem; i < END_OF_MEM; i++) {
-        *((int *)free_mem) = 0;
+    for(i = heap_start; i < END_OF_MEM - 8; i++) {
+        *((unsigned int *)i) = 0;
     }
 
 	return 0;

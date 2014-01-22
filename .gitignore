@@ -9,7 +9,6 @@
 *.d
 
 # Log output files
-SVC/flash/SVC.*
 SVC/SVC*
 SVC/lst
 *.__i

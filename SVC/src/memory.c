@@ -9,11 +9,11 @@
 extern unsigned int Image$$RW_IRAM1$$ZI$$Limit;
 
 typedef struct mem_blk {
-    struct mem_blk *next;
-    struct mem_blk *prev;
+    struct mem_blk* next;
+    struct mem_blk* prev;
+		void* data;
+		uint32_t padding;
 } mem_blk_t;
-
-mem_blk_t* k_get_next_memory_block(mem_blk_t* blk);
 
 unsigned int END_OF_IMAGE = (unsigned int) &Image$$RW_IRAM1$$ZI$$Limit;
 
@@ -23,66 +23,63 @@ mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
 
 int k_init_memory_blocks(void) {
-    unsigned int i;
+    uint32_t i;
 
     heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
-	free_mem = (mem_blk_t *)heap_start;
-	alloc_mem = NULL;
+		free_mem = (mem_blk_t *)heap_start;
+		alloc_mem = NULL;
 
-    //Zero out all of the memory we have to avoid garbage
-    for(i = heap_start; i < END_OF_MEM - 8; i++) {
-        *((unsigned int *)i) = 0;
+  //Zero out all of the memory we have to avoid garbage
+    for(i = heap_start; i < END_OF_MEM - 8; i += 4) {
+        *((unsigned int *)i) = INVALID_MEMORY;
     }
+
+    free_mem->prev = NULL;
+	for(i = heap_start; i < heap_start + MEM_BLOCK_SIZE * 49; i+= MEM_BLOCK_SIZE) {
+		((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
+		((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
+		((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
+		((mem_blk_t *)i)->padding = 0xABAD1DEA;
+	}
 
 	return 0;
 }
 
 void* k_request_memory_block(void) {
-	mem_blk_t* ret;
+	mem_blk_t* ret_blk = free_mem;
+    uint32_t i = 0;
 
-    ret = free_mem;
-    free_mem = k_get_next_memory_block(free_mem);
-    free_mem->prev = NULL;
+    if (ret_blk == NULL) {
+        return NULL; // WE ARE RETURNING NULL HERE
+    }
 
-    ret->next = alloc_mem;
+    free_mem = free_mem->next;
+
+    if (free_mem != NULL) {
+        free_mem->prev = NULL;
+    }
+
+    ret_blk->next = alloc_mem;
+    // ret_blk->prev = NULL;
 
     if (alloc_mem != NULL) {
-        alloc_mem->prev = ret;
+        alloc_mem->prev = ret_blk;
     }
-    alloc_mem = ret;
 
-    printf("k_request_memory_block: image ends at 0x%x\n", END_OF_IMAGE);
+    alloc_mem = ret_blk;
 
-    printf("Allocated: %x\n", (int)ret);
-
-    return (void *)ret;
-}
-
-
-//Returns the next memory block available after blk
-mem_blk_t* k_get_next_memory_block(mem_blk_t *block) {
-	mem_blk_t* ret;
-
-    ret = block->next;
-
-    if (ret != NULL) {
-        return ret;
-    } else {
-        ret = block + MEM_BLOCK_SIZE;
-
-        if (ret < (mem_blk_t *)END_OF_MEM) {
-            printf("Next memory block is: %x\n", ret);
-            return ret;
-        }
-
-        return (mem_blk_t *)NULL;
+    for (i = (uint32_t)ret_blk->data; i < ((uint32_t)ret_blk + MEM_BLOCK_SIZE - 1); i += 4) {
+        *((unsigned int *)i) = 0;
     }
+
+    return (void *)ret_blk->data;
 }
 
 int k_release_memory_block(void* p_mem_blk) {
-    mem_blk_t *to_del = (mem_blk_t *)p_mem_blk;
+    mem_blk_t *to_del = (mem_blk_t *)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
-    if (p_mem_blk == NULL || (unsigned int)p_mem_blk < heap_start || (unsigned int)p_mem_blk > END_OF_MEM) {
+    if (p_mem_blk == NULL || (uint32_t)p_mem_blk < heap_start || (uint32_t)p_mem_blk > END_OF_MEM) {
+        printf("memory invalid\r\n");
         return 1;
     }
 
@@ -100,7 +97,7 @@ int k_release_memory_block(void* p_mem_blk) {
 
     //printf("Deleted: %x\n", (int)free_mem);
 
-    printf("k_release_memory_block: releasing block @ 0x%x\n", p_mem_blk);
+    printf("k_release_memory_block: releasing block @ 0x%x\r\n", p_mem_blk);
 
     return 0;
 }

@@ -15,6 +15,25 @@
 #include "rtx.h"
 #include "memory.h"
 
+void test_memory() {
+    volatile unsigned int ret_val = 1234;
+    void* memory1 = 0;
+    void* memory2 = 0;
+
+    memory1 = request_memory_block();
+    memory2 = request_memory_block();
+
+    printf("Allocated1: %x\r\n", memory1);
+    printf("Allocated2: %x\r\n", memory2);
+    printf("Value1: %x\r\n", (*(int *)memory1));
+    printf("Value2: %x\r\n", (*(int *)memory2));
+
+    ret_val = release_memory_block(memory1);
+    printf("Ret: %d\r\n",ret_val);
+    ret_val = release_memory_block(memory2);
+    printf("Ret: %d\r\n",ret_val);
+}
+
 int main() {
   volatile unsigned int ret_val = 1234;
 
@@ -29,25 +48,7 @@ int main() {
 
   ret_val = init_memory_blocks();
   ret_val = release_processor();
-  
+  test_memory();
+
   return 0;
-}
-
-void test_memory() {
-  volatile unsigned int ret_val = 1234;
-  void* memory1 = 0;
-  void* memory2 = 0;
-
-  memory1 = request_memory_block();
-  memory2 = request_memory_block();
-
-  *((int*) memory2) = 0xDEADBEEF;
-  printf("Allocated1: %x\n", memory1);
-  printf("Allocated2: %x\n", memory2);
-  printf("Value1: %x\n", (*(int *)memory1));
-  printf("Value2: %x\n", (*(int *)memory2));
-  printf("Ret: %d\n",ret_val);
-
-  ret_val = release_memory_block(memory1);
-  ret_val = release_memory_block(memory2);
 }

@@ -11,5 +11,7 @@ typedef int int32_t;
 #define INVALID_MEMORY			0xDEADBEEF
 #define USER_DATA_BLOCK_SIZE	MEM_BLOCK_SIZE - MEM_BLOCK_HEADER_SIZE
 
+#define SWAP_UINT16(x) (((x) >> 8 ) | ((x) << 8))
+#define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
 #endif

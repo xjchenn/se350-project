@@ -446,6 +446,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\memory.c</FilePath>
             </File>
+            <File>
+              <FileName>process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\process.c</FilePath>
+            </File>
+            <File>
+              <FileName>k_rtx_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\k_rtx_init.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -889,6 +899,16 @@
               <FileName>memory.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\memory.c</FilePath>
+            </File>
+            <File>
+              <FileName>process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\process.c</FilePath>
+            </File>
+            <File>
+              <FileName>k_rtx_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\k_rtx_init.c</FilePath>
             </File>
           </Files>
         </Group>

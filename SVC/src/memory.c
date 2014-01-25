@@ -31,7 +31,7 @@ int k_init_memory_blocks(void) {
 
   //Zero out all of the memory we have to avoid garbage
     for(i = heap_start; i < END_OF_MEM - 8; i += 4) {
-        *((unsigned int *)i) = INVALID_MEMORY;
+        *((unsigned int *)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
     free_mem->prev = NULL;
@@ -39,7 +39,7 @@ int k_init_memory_blocks(void) {
 		((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
 		((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
 		((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
-		((mem_blk_t *)i)->padding = 0xABAD1DEA;
+		((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
 	}
 
 	return 0;

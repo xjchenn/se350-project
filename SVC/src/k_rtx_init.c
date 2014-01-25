@@ -8,6 +8,7 @@ void k_rtx_init(void) {
     __disable_irq();
     uart0_init();
     k_init_memory_blocks();
+    k_init_processor();
     init_printf(NULL, putc);
     __enable_irq();
   

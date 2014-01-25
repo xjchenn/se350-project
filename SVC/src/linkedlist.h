@@ -19,7 +19,7 @@ typedef struct {
 int linkedlist_add_front(linkedlist_t *list, void *value);
 int linkedlist_add_back(linkedlist_t *list, void *value);
 
-node_t* linkedlist_pop_front(linkedlist_t *list);
-node_t* linkedlist_pop_back(linkedlist_t *list);
+void* linkedlist_pop_front(linkedlist_t *list);
+void* linkedlist_pop_back(linkedlist_t *list);
 
 #endif

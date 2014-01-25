@@ -1,23 +1,18 @@
 #include "k_memory.h"
 #include "printf.h"
 #include "utils.h"
+#include "linkedlist.h"
+#include "process.h"
 
 /*
   This symbol is defined in the scatter file,
   refer to RVCT Linker User Guide
 */
-extern unsigned int Image$$RW_IRAM1$$ZI$$Limit;
+extern uint32_t Image$$RW_IRAM1$$ZI$$Limit;
 
-typedef struct mem_blk {
-    struct mem_blk* next;
-    struct mem_blk* prev;
-		void* data;
-		uint32_t padding;
-} mem_blk_t;
+uint32_t END_OF_IMAGE = (uint32_t) &Image$$RW_IRAM1$$ZI$$Limit;
 
-unsigned int END_OF_IMAGE = (unsigned int) &Image$$RW_IRAM1$$ZI$$Limit;
-
-unsigned int heap_start;
+uint32_t heap_start;
 
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
@@ -26,27 +21,52 @@ int k_init_memory_blocks(void) {
     uint32_t i;
 
     heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
-		free_mem = (mem_blk_t *)heap_start;
-		alloc_mem = NULL;
 
-  //Zero out all of the memory we have to avoid garbage
+		//Zero out all of the memory we have to avoid garbage
     for(i = heap_start; i < END_OF_MEM - 8; i += 4) {
-        *((unsigned int *)i) = SWAP_UINT32(INVALID_MEMORY);
+        *((uint32_t *)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
-    free_mem->prev = NULL;
-	for(i = heap_start; i < heap_start + MEM_BLOCK_SIZE * 49; i+= MEM_BLOCK_SIZE) {
-		((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
-		((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
-		((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
-		((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
-	}
+    ready_pqs = (linkedlist_t **)heap_start;
 
-	return 0;
+    //ready queues
+    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
+
+    //printf("ready: %x\r\n", (void*)ready_pqs);
+
+    for (i = 0; i < NUM_PRIORITIES; i++) {
+        ready_pqs[i] = (linkedlist_t *)heap_start;
+        heap_start += sizeof(linkedlist_t);
+    }
+
+    mem_blocked_pqs = (linkedlist_t **)heap_start;
+    //memory blocked queues
+    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
+
+    for (i = 0; i < NUM_PRIORITIES; i++) {
+        mem_blocked_pqs[i] = (linkedlist_t *)heap_start;
+        heap_start += sizeof(linkedlist_t);
+    }
+
+    heap_start += 0x100 - (heap_start % 0x100); // align for mem_blk
+
+    free_mem = (mem_blk_t *)heap_start;
+    alloc_mem = NULL;
+
+    free_mem->prev = NULL;
+
+    for(i = heap_start; i < heap_start + MEM_BLOCK_SIZE * 49; i+= MEM_BLOCK_SIZE) {
+        ((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
+        ((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
+        ((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
+        ((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
+    }
+
+    return 0;
 }
 
 void* k_request_memory_block(void) {
-	mem_blk_t* ret_blk = free_mem;
+    mem_blk_t* ret_blk = free_mem;
     uint32_t i = 0;
 
     if (ret_blk == NULL) {
@@ -69,7 +89,7 @@ void* k_request_memory_block(void) {
     alloc_mem = ret_blk;
 
     for (i = (uint32_t)ret_blk->data; i < ((uint32_t)ret_blk + MEM_BLOCK_SIZE - 1); i += 4) {
-        *((unsigned int *)i) = 0;
+        *((uint32_t *)i) = 0;
     }
 
     return (void *)ret_blk->data;

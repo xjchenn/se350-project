@@ -2,6 +2,7 @@
 #define _PROCESS_H_
 
 #include "utils.h"
+#include "linkedlist.h"
 
 typedef enum {
     NEW = 0,
@@ -16,10 +17,14 @@ typedef enum {
     HIGH,
     MEDIUM,
     LOW,
-    LOWEST
+    LOWEST,
+    NUM_PRIORITIES
 } PROCESS_PRIORITY;
 
 typedef void (*func_ptr_t)();
+
+extern linkedlist_t** ready_pqs;
+extern linkedlist_t** mem_blocked_pqs;
 
 typedef struct {
     uint32_t pid;

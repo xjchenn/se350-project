@@ -37,40 +37,46 @@ int linkedlist_add_back(linkedlist_t *list, void *value) {
     return 0;
 }
 
-node_t* linkedlist_pop_front(linkedlist_t *list) {
+void* linkedlist_pop_front(linkedlist_t *list) {
     node_t* firstNode;
     node_t* secondNode;
+    void* nodeValue;
 
-    if (list == NULL) {
+    if (list == NULL || list->first == NULL) {
         return NULL;
     }
 
     firstNode  = list->first;
     secondNode = firstNode->next;
+    nodeValue  = firstNode->value;
 
+    if (secondNode != NULL) {
+        secondNode->prev = NULL;
+    }
     list->first = secondNode;
-    secondNode->prev = NULL;
 
-    firstNode->next = NULL;
-    firstNode->prev = NULL;
-    return firstNode;
+    k_release_memory_block(firstNode);
+    return nodeValue;
 }
 
-node_t* linkedlist_pop_back(linkedlist_t *list) {
+void* linkedlist_pop_back(linkedlist_t *list) {
     node_t* lastNode;
     node_t* secondLastNode;
+    void* nodeValue;
 
-    if (list == NULL) {
+    if (list == NULL || list->last == NULL) {
         return NULL;
     }
 
     lastNode = list->last;
     secondLastNode = lastNode->prev;
+    nodeValue      = lastNode->value;
 
+    if (secondLastNode != NULL) {
+        secondLastNode->next = NULL;
+    }
     list->last = secondLastNode;
-    secondLastNode->next = NULL;
     
-    lastNode->next = NULL;
-    lastNode->prev = NULL;
-    return lastNode;
+    k_release_memory_block(lastNode);
+    return nodeValue;
 }

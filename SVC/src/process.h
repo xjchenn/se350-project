@@ -35,7 +35,6 @@ extern pcb_t** pcbs;
 
 int k_init_processor(void);
 int k_release_processor(void);
-
 int k_set_process_priority(int process_id, int priority);
 int k_get_process_priority(int process_id);
 

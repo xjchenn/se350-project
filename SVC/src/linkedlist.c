@@ -2,7 +2,7 @@
 #include "memory.h"
 #include "utils.h"
 
-int linkedlist_add_front(linkedlist_t *list, void *value) {
+int linkedlist_push_front(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 
     if (list == NULL) {
@@ -10,16 +10,19 @@ int linkedlist_add_front(linkedlist_t *list, void *value) {
     }
     
     newNode = (node_t*) k_request_memory_block(); // what a waste of memory
-    newNode->value = value;
     newNode->next  = list->first;
     newNode->prev  = NULL; 
+    newNode->value = value;
 
     list->first = newNode;
+    if (list->last == NULL) {
+        list->last = newNode;
+    }
 
     return 0;
 }
 
-int linkedlist_add_back(linkedlist_t *list, void *value) {
+int linkedlist_push_back(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 
     if (list == NULL) {
@@ -27,12 +30,14 @@ int linkedlist_add_back(linkedlist_t *list, void *value) {
     }
     
     newNode = (node_t*) k_request_memory_block();
-    newNode->value = value;
     newNode->next  = NULL;
     newNode->prev  = list->last;
+    newNode->value = value;
 
-    list->last->next = newNode;
     list->last = newNode;
+    if (list->first == NULL) {
+        list->first = newNode;
+    }
 
     return 0;
 }
@@ -68,7 +73,7 @@ void* linkedlist_pop_back(linkedlist_t *list) {
         return NULL;
     }
 
-    lastNode = list->last;
+    lastNode       = list->last;
     secondLastNode = lastNode->prev;
     nodeValue      = lastNode->value;
 

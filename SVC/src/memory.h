@@ -4,6 +4,8 @@
 #ifndef MEMORY_H_
 #define MEMORY_H_
 
+extern uint32_t blocks_allocated;
+
 extern void *k_request_memory_block(void);
 #define request_memory_block() _request_memory_block((uint32_t)k_request_memory_block)
 extern void *_request_memory_block(uint32_t p_func) __SVC_0;

@@ -16,8 +16,8 @@ typedef struct {
     int length;
 } linkedlist_t;
 
-int linkedlist_add_front(linkedlist_t *list, void *value);
-int linkedlist_add_back(linkedlist_t *list, void *value);
+int linkedlist_push_front(linkedlist_t *list, void *value);
+int linkedlist_push_back(linkedlist_t *list, void *value);
 
 void* linkedlist_pop_front(linkedlist_t *list);
 void* linkedlist_pop_back(linkedlist_t *list);

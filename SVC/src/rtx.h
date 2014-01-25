@@ -9,10 +9,6 @@
 
 #define __SVC_0  __svc_indirect(0)
 
-extern int k_release_processor(void);
-#define release_processor() _release_processor((uint32_t)k_release_processor)
-extern int __SVC_0 _release_processor(uint32_t p_func);
-
 typedef struct {
     uint32_t pid;
     uint32_t stack_size;
@@ -20,4 +16,8 @@ typedef struct {
     func_ptr_t proc_start;
 } proc_image_t;
 
-#endif // !RTX_H_
+extern int k_release_processor(void);
+#define release_processor() _release_processor((uint32_t)k_release_processor)
+extern int __SVC_0 _release_processor(uint32_t p_func);
+
+#endif

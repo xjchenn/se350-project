@@ -14,8 +14,3 @@
   and process related API in another file.
 */
 
-int k_release_processor(void)
-{
-    uart0_put_string("k_release_processor: entering\r\n");
-	return 0;
-}

@@ -432,6 +432,11 @@
           <GroupName>Kernel code</GroupName>
           <Files>
             <File>
+              <FileName>linkedlist.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\linkedlist.c</FilePath>
+            </File>
+            <File>
               <FileName>rtx.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\rtx.c</FilePath>
@@ -885,6 +890,11 @@
         <Group>
           <GroupName>Kernel code</GroupName>
           <Files>
+            <File>
+              <FileName>linkedlist.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\linkedlist.c</FilePath>
+            </File>
             <File>
               <FileName>rtx.c</FileName>
               <FileType>1</FileType>

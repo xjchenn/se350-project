@@ -6,9 +6,9 @@
 
 linkedlist_t** ready_pqs;
 linkedlist_t** mem_blocked_pqs;
+pcb_t** pcbs;
 
 int k_init_processor(void) {
-    int i;
     return 0;
 }
 

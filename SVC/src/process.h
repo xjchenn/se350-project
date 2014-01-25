@@ -21,8 +21,6 @@ typedef enum {
     NUM_PRIORITIES
 } PROCESS_PRIORITY;
 
-typedef void (*func_ptr_t)();
-
 extern linkedlist_t** ready_pqs;
 extern linkedlist_t** mem_blocked_pqs;
 
@@ -31,8 +29,9 @@ typedef struct {
     PROCESS_STATE state;
     PROCESS_PRIORITY priority;
     uint32_t *stack_ptr;
-    func_ptr_t proc_start;
 } pcb_t;
+
+extern pcb_t** pcbs;
 
 int k_init_processor(void);
 int k_release_processor(void);

@@ -17,36 +17,43 @@ uint32_t heap_start;
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
 
+void allocate_memory_to_queue(linkedlist_t** ll) {
+    uint32_t i = 0;
+    ll = (linkedlist_t **)heap_start;
+
+    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
+
+    for (i = 0; i < NUM_PRIORITIES; i++) {
+        ll[i] = (linkedlist_t *)heap_start;
+        heap_start += sizeof(linkedlist_t);
+    }
+}
+
+void allocate_memory_to_pcbs() {
+    uint32_t i = 0;
+    pcbs = (pcb_t **)heap_start;
+
+    heap_start += NUM_PROCESSES * sizeof(pcb_t *);
+
+    for (i = 0; i < NUM_PROCESSES; i++) {
+        pcbs[i] = (pcb_t *)heap_start;
+        heap_start += sizeof(pcb_t);
+    }
+
+}
+
 int k_init_memory_blocks(void) {
     uint32_t i;
 
     heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
 
-		//Zero out all of the memory we have to avoid garbage
+    //Zero out all of the memory we have to avoid garbage
     for(i = heap_start; i < END_OF_MEM - 8; i += 4) {
         *((uint32_t *)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
-    ready_pqs = (linkedlist_t **)heap_start;
-
-    //ready queues
-    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
-
-    //printf("ready: %x\r\n", (void*)ready_pqs);
-
-    for (i = 0; i < NUM_PRIORITIES; i++) {
-        ready_pqs[i] = (linkedlist_t *)heap_start;
-        heap_start += sizeof(linkedlist_t);
-    }
-
-    mem_blocked_pqs = (linkedlist_t **)heap_start;
-    //memory blocked queues
-    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
-
-    for (i = 0; i < NUM_PRIORITIES; i++) {
-        mem_blocked_pqs[i] = (linkedlist_t *)heap_start;
-        heap_start += sizeof(linkedlist_t);
-    }
+    allocate_memory_to_queue(ready_pqs);
+    allocate_memory_to_queue(mem_blocked_pqs);
 
     heap_start += 0x100 - (heap_start % 0x100); // align for mem_blk
 

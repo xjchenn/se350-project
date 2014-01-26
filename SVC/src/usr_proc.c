@@ -14,10 +14,8 @@ void set_procs(){
         proc_table[i].priority   = LOWEST;
         proc_table[i].stack_size = STACK_SIZE;
     }
-
-    proc_table[1].priority   = HIGHEST;
-    proc_table[4].priority   = HIGHEST;
-
+    //proc_table[1].priority   = HIGHEST;
+    //proc_table[4].priority   = HIGHEST;
     proc_table[0].proc_start = &null_proc;
     proc_table[1].proc_start = &usr_proc_1;
     proc_table[2].proc_start = &usr_proc_2;
@@ -38,8 +36,6 @@ void usr_proc_1(){
             uart0_put_string("PROCESS 1 WORKS!\r\n");
             release_processor();
         }
-        // uart0_put_char('A' + i % 26);
-        i++;
     }
 }
 
@@ -91,8 +87,6 @@ void usr_proc_2(){
 
             ret = release_processor();
         }
-        i++;
-
     }
 }
 
@@ -128,38 +122,54 @@ void usr_proc_4(){
             such_memory_wow = (void *)((int *) request_memory_block() + 0x100);
             ret = release_memory_block(such_memory_wow);
             if (ret == 2) {
-                uart0_put_string("Test 4 PASSED");
+                uart0_put_string("Test 4 PASS\r\n");
             } else {
-                uart0_put_string("Test 4 FAILED");
+                uart0_put_string("Test 4 FAIL\r\n");
             }
+						such_memory_wow = (int *) such_memory_wow - 0x100;
+						release_memory_block(such_memory_wow);
             ret = release_processor();
         }
-        i++;
     }
 }
 
 void usr_proc_5(){
     int i = 0;
     int ret;
-    int proc = 4; // TODO enum
+    int didPass = 1;
+    int proc = 6; // TODO enum
 
     while (1) {
         if (i == 0) {
-            /*ret = get_process_priority(proc_table[proc].pid);
-            if (ret != LOWEST) {
-                uart0_put_string("Test 3 FAIL\r\n");
+            ret = get_process_priority(proc_table[proc].pid);
+            if (ret != proc_table[proc].priority) {
+                uart0_put_string("Test 5 FAIL\r\n");
+                didPass = 0;
             }
             ret = set_process_priority(proc_table[proc].pid, 10);
-            if (ret != 0) {
-                uart0_put_string("Test 3 PASS\r\n");
-            } else {
-                uart0_put_string("Test 3 FAIL\r\n");
+            
+            if (ret == 0) {
+                uart0_put_string("Test 5 FAIL\r\n");
+                didPass = 0;
             }
-            ret = release_processor();
+            
+            ret = set_process_priority(proc_table[proc].pid, 0);
+            
             if (ret != 0){
-                uart0_put_string("Test 3 FAIL\r\n");
-            }*/
-            uart0_put_string("Test 5 PASS\r\n");
+                uart0_put_string("Test 5 FAIL\r\n");
+                didPass = 0;
+            }
+            
+            ret = get_process_priority(proc_table[proc].pid);
+            
+            if (ret != 0) {
+                uart0_put_string("Test 5 FAIL\r\n");
+                didPass = 0;
+            }
+            if(didPass > 0) {
+                uart0_put_string("Test 5 PASS\r\n");
+            }
+            
             ret = release_processor();
         }
     }
@@ -169,6 +179,10 @@ void usr_proc_6(){
     int ret;
     while (1) {
         if (i == 0) {
+            for (i = 0; i < 7; i++) {
+                printf("%d\r\n", get_process_priority(i));
+            }
+            i = 0;
             uart0_put_string("Test 6 PASS\r\n");
             ret = release_processor();
         }

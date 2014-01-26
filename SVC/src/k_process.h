@@ -28,7 +28,7 @@ extern void __rte(void);
 
 uint32_t k_init_processor(void);
 uint32_t k_release_processor(void);
-uint32_t k_set_process_priority(uint32_t process_id, uint32_t priority);
-uint32_t k_get_process_priority(uint32_t process_id);
+int32_t k_set_process_priority(int32_t process_id, int32_t priority);
+int32_t k_get_process_priority(int32_t process_id);
 
 #endif

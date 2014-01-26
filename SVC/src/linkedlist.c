@@ -14,6 +14,46 @@ int linkedlist_init(linkedlist_t* list) {
     return 0;
 }
 
+void* linkedlist_remove(linkedlist_t* list, void* value) {
+    node_t* itr;
+    void* ret;
+    
+    if (list == NULL) {
+        return NULL;
+    }
+    
+    if(list->first != NULL && list->first->value == value) {
+        return linkedlist_pop_front(list);
+    }
+    
+    if(list->last != NULL && list->last->value == value) {
+        return linkedlist_pop_back(list);
+    }
+    
+    itr = list->first;
+    
+    while(itr != NULL && itr->next != NULL) {
+        if(itr->value == value) {
+            ret = itr->value;
+            if(itr->next != NULL) {
+                itr->next->prev = itr->prev;
+            }
+            
+            if (itr->prev != NULL) {
+                itr->prev->next = itr->next;
+            }
+            
+            k_release_memory_block((void *)itr);
+            list->length--;
+            return ret;
+        }
+        
+        itr = itr->next;
+    }
+    
+    return NULL;
+}
+
 int linkedlist_push_front(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 

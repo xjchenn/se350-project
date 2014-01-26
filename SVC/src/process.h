@@ -24,12 +24,12 @@ extern uint32_t k_release_processor(void);
 #define release_processor() _release_processor((uint32_t)k_release_processor)
 extern uint32_t __SVC_0 _release_processor(uint32_t p_func);
 
-extern uint32_t k_set_process_priority(uint32_t, uint32_t);
-#define set_process_priority() _release_processor((uint32_t)k_set_process_priority, process_id, priority)
-extern uint32_t __SVC_0 _set_process_priority(uint32_t p_func, uint32_t process_id, uint32_t priority);
+extern int32_t k_set_process_priority(int32_t, int32_t);
+#define get_process_priority(process_id) _get_process_priority((int32_t)k_get_process_priority, process_id)
+extern int32_t __SVC_0 _set_process_priority(int32_t p_func, int32_t process_id, int32_t priority);
 
-extern uint32_t k_get_process_priority(uint32_t);
-#define get_process_priority() _release_processor((uint32_t)k_get_process_priority, process_id)
-extern uint32_t __SVC_0 _get_process_priority(uint32_t p_func, uint32_t process_id);
+extern int32_t k_get_process_priority(int32_t);
+#define set_process_priority(process_id, priority) _set_process_priority((int32_t)k_set_process_priority, process_id, priority)
+extern int32_t __SVC_0 _get_process_priority(int32_t p_func, int32_t process_id);
 
 #endif

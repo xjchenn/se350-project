@@ -42,6 +42,14 @@ void* k_linkedlist_pop_front(linkedlist_t* list) {
     return ret;
 }
 
+void* k_linkedlist_remove(linkedlist_t* list, void* value) {
+    void* ret = 0;
+    swap_pcb_to_kernel_pcb();
+    ret = linkedlist_remove(list, value);
+    restore_current_pcb();
+    return ret;
+}
+
 pcb_t* get_next_process(void) {
     uint32_t i;
 
@@ -132,10 +140,49 @@ uint32_t k_release_processor(void) {
     return switch_process(old_pcb);
 }
 
-uint32_t k_set_process_priority(uint32_t process_id, uint32_t priority) {
+int32_t k_set_process_priority(int32_t process_id, int32_t priority) {
+    pcb_t* to_change;
+    pcb_t* to_find = NULL;
+    uint32_t old_priority;
+    
+    if (process_id < 0 || process_id >= NUM_PROCESSES || priority < 0 || priority >= NUM_PRIORITIES) {
+        return -1;
+    }
+    
+    to_change = pcbs[process_id];
+    old_priority = to_change->priority;
+    
+    if(old_priority == priority) {
+        return 0;
+    }
+    
+    to_change->priority = priority;
+    
+    if(to_change == current_pcb) {
+        return 0;
+    }
+    
+    to_find = (pcb_t *)k_linkedlist_remove(ready_pqs[old_priority], to_change);
+    
+    if(to_find == NULL) {
+        to_find = (pcb_t *)k_linkedlist_remove(mem_blocked_pqs[old_priority], to_change);
+        
+        if (to_find == NULL) {
+            return 1;
+        }
+        
+        k_linkedlist_push_back(mem_blocked_pqs[priority], to_change);
+    } else {
+        k_linkedlist_push_back(ready_pqs[priority], to_change);
+    }
+        
     return 0;
 }
 
-uint32_t k_get_process_priority(uint32_t process_id) {
-    return 0;
+int32_t k_get_process_priority(int32_t process_id) {
+    if (process_id < 0 || process_id >= NUM_PROCESSES) {
+        return -1;
+    }
+    
+    return pcbs[process_id]->priority;
 }

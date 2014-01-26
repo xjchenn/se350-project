@@ -13,8 +13,6 @@
 #include "printf.h"
 #include "uart_polling.h"
 #include "rtx.h"
-#include "memory.h"
-#include "rtx_init.h"
 
 void test_memory() {
     volatile unsigned int ret_val = 1234;
@@ -39,14 +37,13 @@ int main() {
   volatile unsigned int ret_val = 1234;
 
   SystemInit();  /* initialize the system */
-  
   rtx_init();
 
   // transit to unprivileged level, default MSP is used
   __set_CONTROL(__get_CONTROL() | BIT(0));
 
-  ret_val = release_processor();
-  test_memory();
+  //ret_val = release_processor();
+  // test_memory();
 
   return 0;
 }

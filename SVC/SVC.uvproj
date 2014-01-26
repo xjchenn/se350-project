@@ -402,6 +402,11 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
+              <FileName>usr_proc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usr_proc.c</FilePath>
+            </File>
+            <File>
               <FileName>main_svc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\main_svc.c</FilePath>
@@ -435,11 +440,6 @@
               <FileName>linkedlist.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\linkedlist.c</FilePath>
-            </File>
-            <File>
-              <FileName>rtx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\rtx.c</FilePath>
             </File>
             <File>
               <FileName>HAL.c</FileName>
@@ -861,6 +861,11 @@
           <GroupName>Source Code</GroupName>
           <Files>
             <File>
+              <FileName>usr_proc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\usr_proc.c</FilePath>
+            </File>
+            <File>
               <FileName>main_svc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\main_svc.c</FilePath>
@@ -894,11 +899,6 @@
               <FileName>linkedlist.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\linkedlist.c</FilePath>
-            </File>
-            <File>
-              <FileName>rtx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\rtx.c</FilePath>
             </File>
             <File>
               <FileName>HAL.c</FileName>

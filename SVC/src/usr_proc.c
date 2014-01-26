@@ -1,27 +1,26 @@
-#include "usr_proc.h"
 #include "printf.h"
-#include "rtx.h"
 #include "uart_polling.h"
-#include "utils.h"
-#include "process.h"
+#include "usr_proc.h"
+#include "rtx.h"
 
-// TODO rename
-PROC_INIT test_procs[NUM_PROCS];
+proc_image_t proc_table[7];
 
 // Init function
 void set_procs(){
-    int i;
-    for (i = 0; i < NUM_PROCS; i++){
-        test_procs[i].pid           = (uint32_t)(i+1);
-        test_procs[i].priority      = LOWEST;
-        test_procs[i].stack_size    = 0x100; // TODO change?
+    uint32_t i;
+    for (i = 0; i < 7; i++){
+        proc_table[i].pid           = i;
+        proc_table[i].priority      = LOWEST;
+        proc_table[i].stack_size    = STACK_SIZE;
     }
-    test_procs[0].start_pc = &usr_proc1;
-    test_procs[1].start_pc = &usr_proc2;
-    test_procs[2].start_pc = &usr_proc3;
-    test_procs[3].start_pc = &usr_proc4;
-    test_procs[4].start_pc = &usr_proc5;
-    test_procs[5].start_pc = &usr_proc6;
+
+    proc_table[0].proc_start = &null_proc;
+    proc_table[1].proc_start = &usr_proc_1;
+    proc_table[2].proc_start = &usr_proc_2;
+    proc_table[3].proc_start = &usr_proc_3;
+    proc_table[4].proc_start = &usr_proc_4;
+    proc_table[5].proc_start = &usr_proc_5;
+    proc_table[6].proc_start = &usr_proc_6;
 }
 
 /*  Process 1:
@@ -29,20 +28,14 @@ void set_procs(){
 *      Yields CPU
 */
 void usr_proc_1(){
-    int i = 0;
-    int ret;
+    static int i = 0;
     while (1) {
-        if (i != 0 && i%5 == 0) {
-            uart0_put_string("\n\r");
-            ret = release_processor();
-            if (ret != 0) {
-                uart0_put_string("Test 1 FAIL\r\n");
-            } else {
-                uart0_put_string("Test 1 PASS\r\n");
-            }
-        }
+        //if (i != 0 && i%5 == 0) {
+            uart0_put_string("PROCESS 1 WORKS!\r\n");
+        //}
         uart0_put_char('A' + i % 26);
         i++;
+				release_processor();
     }
 }
 
@@ -83,6 +76,7 @@ void usr_proc_2(){
 }
 
 void usr_proc_3(){
+    /*
     int i = 0;
     int ret;
     void* memory = 0;
@@ -103,6 +97,7 @@ void usr_proc_3(){
         }
         i++;
     }
+    */
 }
 
 /*
@@ -110,20 +105,21 @@ void usr_proc_3(){
         Set the process priority from LOWEST to HIGHEST, check if returns correct
 */
 void usr_proc_4(){
+    /*
     int i = 0;
     int ret;
     int proc = 3; // TODO enum
     while (1) {
         if (i == 0) {
-            ret = get_process_priority(test_procs[proc].pid);
+            ret = get_process_priority(proc_table[proc].pid);
             if (ret != LOWEST) {
                 uart0_put_string("Test 3 FAIL\r\n");
             }
-            ret = set_process_priority(test_procs[proc].pid, HIGHEST);
+            ret = set_process_priority(proc_table[proc].pid, HIGHEST);
             if (ret != 0) {
                 uart0_put_string("Test 3 FAIL\r\n");
             }
-            ret = get_process_priority(test_procs[proc].pid);
+            ret = get_process_priority(proc_table[proc].pid);
             if (ret != HIGHEST) {
                 uart0_put_string("Test 3 FAIL\r\n");
             }
@@ -135,20 +131,22 @@ void usr_proc_4(){
         }
         i++;
     }
+    */
 }
 
 void usr_proc_5(){
+    /*
     int i = 0;
     int ret;
     int proc = 4; // TODO enum
 
     while (1) {
         if (i == 0) {
-            ret = get_process_priority(test_procs[proc].pid);
+            ret = get_process_priority(proc_table[proc].pid);
             if (ret != LOWEST) {
                 uart0_put_string("Test 3 FAIL\r\n");
             }
-            ret = set_process_priority(test_procs[proc].pid, 10);
+            ret = set_process_priority(proc_table[proc].pid, 10);
             if (ret != 0) {
                 uart0_put_string("Test 3 PASS\r\n");
             } else {
@@ -162,14 +160,17 @@ void usr_proc_5(){
         }
         i++;
     }
+    */
 
 }
 void usr_proc_6(){
     // TODO
 }
+
 /* Have 1 NULL process */
 void null_proc(){
     while (1) {
+				printf("NULL PROCESS IS RUNNING\r\n");
         release_processor();
     }
 }

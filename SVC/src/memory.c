@@ -2,7 +2,7 @@
 #include "printf.h"
 #include "utils.h"
 #include "linkedlist.h"
-#include "process.h"
+#include "k_process.h"
 
 /*
   This symbol is defined in the scatter file,
@@ -42,7 +42,16 @@ void allocate_memory_to_pcbs(void) {
         pcbs[i] = (pcb_t *)heap_start;
         heap_start += sizeof(pcb_t);
     }
+}
 
+void allocate_memory_to_memory_table(void) {
+    uint32_t i = 0;
+
+    for (i = 0; i < MAX_MEM_BLOCKS; ++i)
+    {
+        // TODO
+        //heap_start += sizeof();
+    }
 }
 
 int k_init_memory_blocks(void) {
@@ -109,7 +118,7 @@ void* k_request_memory_block(void) {
     uint32_t i = 0;
 
     if (ret_blk == NULL) {
-        return NULL; // WE ARE RETURNING NULL HERE
+        return NULL;
     }
 
     free_mem = free_mem->next;
@@ -119,7 +128,6 @@ void* k_request_memory_block(void) {
     }
 
     ret_blk->next = alloc_mem;
-    // ret_blk->prev = NULL;
 
     if (alloc_mem != NULL) {
         alloc_mem->prev = ret_blk;

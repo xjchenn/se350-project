@@ -2,8 +2,7 @@
 #define _K_RTX_INIT_
 
 #include "utils.h"
-
-#define __SVC_0  __svc_indirect(0)
+#include "rtx.h"
 
 extern void k_rtx_init(void);
 #define rtx_init() _rtx_init((uint32_t)k_rtx_init)

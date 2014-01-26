@@ -1,12 +1,13 @@
+#include "k_process.h"
 #include "process.h"
 #include "k_memory.h"
 #include "printf.h"
 #include "utils.h"
 #include "linkedlist.h"
 #include "uart_polling.h"
+#include "usr_proc.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
-// #include "usr_proc.h"
 
 linkedlist_t** ready_pqs;
 linkedlist_t** mem_blocked_pqs;
@@ -14,16 +15,7 @@ linkedlist_t** mem_blocked_pqs;
 pcb_t** pcbs;
 pcb_t* current_pcb = NULL;
 
-void null_proc(){
-    while (1) {
-
-        //if (i % 10000 == 0) {
-            printf("PROCESSING NULL\r\n");
-        //}
-        //i++;
-        k_release_processor();
-    }
-}
+extern proc_image_t proc_table[7];
 
 pcb_t* get_next_process(void) {
     uint32_t i;
@@ -53,9 +45,7 @@ int switch_process(pcb_t *old_pcb) {
         current_pcb->state = RUNNING;
         __set_MSP((uint32_t)current_pcb->stack_ptr);
         __rte();
-    }
-
-    if (current_pcb != old_pcb) {
+    } else if (current_pcb != old_pcb) {
         if (current_state == READY) {
             old_pcb->state = READY;
             old_pcb->stack_ptr = (uint32_t *)__get_MSP();
@@ -69,29 +59,36 @@ int switch_process(pcb_t *old_pcb) {
         }
     }
 
-    //null_proc();
-
+    //proc_table[current_pcb->pid].proc_start();
     return 0;
 }
 
 int k_init_processor(void) {
-    int32_t i = 0;
-    uint32_t stack_size = 0x100;
+    uint32_t i;
+    uint32_t j;
     uint32_t* stack_ptr;
-    pcbs[0]->pid = 0;
-    pcbs[0]->priority = LOWEST;
-    stack_ptr = k_alloc_stack(stack_size);
-    *(--stack_ptr) = XPSR;
-    *(--stack_ptr) = (uint32_t)(&null_proc);
 
-    for (i = 0; i < 6; i++) {
-        *(--stack_ptr) = NULL;
+    set_procs();
+
+    for (i = 0; i < 2 /*NUM_PROCESSES*/; ++i)
+    {
+        stack_ptr = k_alloc_stack(STACK_SIZE);
+        *(--stack_ptr) = XPSR;
+        *(--stack_ptr) = (uint32_t)(proc_table[i].proc_start);
+
+        for (j = 0; j < 6; j++) {
+            *(--stack_ptr) = NULL;
+        }
+
+        pcbs[i]->pid = proc_table[i].pid;
+        pcbs[i]->priority = proc_table[i].priority;
+        pcbs[i]->stack_ptr = stack_ptr;
+        pcbs[i]->state = NEW;
+
+        linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcbs[i]);    
     }
 
-    pcbs[0]->stack_ptr = stack_ptr;
-    pcbs[0]->state = NEW;
-    current_pcb = pcbs[0];
-		null_proc();
+    // k_release_processor();
     return 0;
 }
 

@@ -1,5 +1,5 @@
 #include "linkedlist.h"
-#include "memory.h"
+#include "k_memory.h"
 #include "utils.h"
 
 int linkedlist_init(linkedlist_t* list) {
@@ -26,6 +26,10 @@ int linkedlist_push_front(linkedlist_t *list, void *value) {
     newNode->prev  = NULL; 
     newNode->value = value;
 
+    if (list->first != NULL) {
+        list->first->prev = newNode;
+    }
+
     list->first = newNode;
     if (list->last == NULL) {
         list->last = newNode;
@@ -47,7 +51,10 @@ int linkedlist_push_back(linkedlist_t *list, void *value) {
     newNode->next  = NULL;
     newNode->prev  = list->last;
     newNode->value = value;
-
+    if (list->last != NULL) {
+        list->last->next = newNode;
+    }
+    
     list->last = newNode;
     if (list->first == NULL) {
         list->first = newNode;

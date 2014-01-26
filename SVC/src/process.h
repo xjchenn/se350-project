@@ -2,44 +2,34 @@
 #define _PROCESS_H_
 
 #include "utils.h"
-#include "linkedlist.h"
 
-typedef enum {
-    NEW = 0,
-    READY,
-    RUNNING,
-    WAITING,
-    EXIT
-} PROCESS_STATE;
+#define __SVC_0  __svc_indirect(0)
 
 typedef enum {
     HIGHEST = 0,
     HIGH,
     MEDIUM,
     LOW,
-    LOWEST,
-    NUM_PRIORITIES
+    LOWEST
 } PROCESS_PRIORITY;
 
-extern linkedlist_t** ready_pqs;
-extern linkedlist_t** mem_blocked_pqs;
-
-typedef struct {
+typedef struct proc_image {
     uint32_t pid;
-    PROCESS_STATE state;
+    uint32_t stack_size;
     PROCESS_PRIORITY priority;
-    uint32_t *stack_ptr;
-} pcb_t;
+    func_ptr_t proc_start;
+} proc_image_t;
 
-extern pcb_t** pcbs;
-extern void __rte(void);
+extern int k_release_processor(void);
+#define release_processor() _release_processor((uint32_t)k_release_processor)
+extern int __SVC_0 _release_processor(uint32_t p_func);
 
-#define XPSR 0x01000000
+extern int k_set_process_priority(int, int);
+#define set_process_priority() _release_processor((uint32_t)k_set_process_priority, process_id, priority)
+extern int __SVC_0 _set_process_priority(uint32_t p_func, int process_id, int priority);
 
-int k_init_processor(void);
-int k_release_processor(void);
-int k_set_process_priority(int process_id, int priority);
-int k_get_process_priority(int process_id);
-
+extern int k_get_process_priority(int);
+#define get_process_priority() _release_processor((uint32_t)k_get_process_priority, process_id)
+extern int __SVC_0 _get_process_priority(uint32_t p_func, int process_id);
 
 #endif

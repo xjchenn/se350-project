@@ -1,8 +1,9 @@
-#include "utils.h"
-#include "rtx.h"
-
 #ifndef MEMORY_H_
 #define MEMORY_H_
+
+#include "utils.h"
+
+#define __SVC_0  __svc_indirect(0)
 
 extern uint32_t blocks_allocated;
 

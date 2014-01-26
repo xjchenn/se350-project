@@ -25,11 +25,11 @@ extern int k_release_processor(void);
 extern int __SVC_0 _release_processor(uint32_t p_func);
 
 extern int k_set_process_priority(int, int);
-#define set_process_priority() _release_processor((uint32_t)k_set_process_priority, process_id, priority)
+#define set_process_priority(process_id, priority) _set_process_priority((uint32_t)k_set_process_priority, process_id, priority)
 extern int __SVC_0 _set_process_priority(uint32_t p_func, int process_id, int priority);
 
 extern int k_get_process_priority(int);
-#define get_process_priority() _release_processor((uint32_t)k_get_process_priority, process_id)
+#define get_process_priority(process_id) _get_process_priority((uint32_t)k_get_process_priority, process_id)
 extern int __SVC_0 _get_process_priority(uint32_t p_func, int process_id);
 
 #endif

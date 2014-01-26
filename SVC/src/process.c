@@ -33,7 +33,7 @@ pcb_t* get_next_process(void) {
     return (pcb_t*)NULL;
 }
 
-int switch_process(pcb_t *old_pcb) {
+uint32_t switch_process(pcb_t *old_pcb) {
     PROCESS_STATE current_state = current_pcb->state;
 
     if (current_state == NEW) {
@@ -63,14 +63,14 @@ int switch_process(pcb_t *old_pcb) {
     return 0;
 }
 
-int k_init_processor(void) {
+uint32_t k_init_processor(void) {
     uint32_t i;
     uint32_t j;
     uint32_t* stack_ptr;
 
     set_procs();
 
-    for (i = 0; i < 2 /*NUM_PROCESSES*/; ++i)
+    for (i = 0; i < NUM_PROCESSES; ++i)
     {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
@@ -92,7 +92,7 @@ int k_init_processor(void) {
     return 0;
 }
 
-int k_release_processor(void) {
+uint32_t k_release_processor(void) {
     pcb_t* old_pcb = current_pcb;
 
     current_pcb = get_next_process();
@@ -109,10 +109,10 @@ int k_release_processor(void) {
     return switch_process(old_pcb);
 }
 
-int k_set_process_priority(int process_id, int priority) {
+uint32_t k_set_process_priority(uint32_t process_id, uint32_t priority) {
     return 0;
 }
 
-int k_get_process_priority(int process_id) {
+uint32_t k_get_process_priority(uint32_t process_id) {
     return 0;
 }

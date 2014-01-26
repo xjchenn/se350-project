@@ -10,58 +10,50 @@
 */
 extern uint32_t Image$$RW_IRAM1$$ZI$$Limit;
 
-uint32_t END_OF_IMAGE = (uint32_t) &Image$$RW_IRAM1$$ZI$$Limit;
-uint32_t heap_start;
+uint32_t end_of_image = (uint32_t) &Image$$RW_IRAM1$$ZI$$Limit;
+uint32_t start_of_heap;
 uint32_t end_of_heap;
 uint32_t* stack;
 
 uint32_t blocks_allocated;
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
+mem_table_entry_t mem_table[MAX_MEM_BLOCKS];
 
 void allocate_memory_to_queue(linkedlist_t*** ll) {
     uint32_t i = 0;
-    *ll = (linkedlist_t **)heap_start;
+    *ll = (linkedlist_t **)start_of_heap;
 
-    heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
+    start_of_heap += NUM_PRIORITIES * sizeof(linkedlist_t *);
 
     for (i = 0; i < NUM_PRIORITIES; i++) {
-        (*ll)[i] = (linkedlist_t *)heap_start;
+        (*ll)[i] = (linkedlist_t *)start_of_heap;
 		linkedlist_init((*ll)[i]);
-        heap_start += sizeof(linkedlist_t);
+        start_of_heap += sizeof(linkedlist_t);
     }
 }
 
 void allocate_memory_to_pcbs(void) {
     uint32_t i = 0;
-    pcbs = (pcb_t **)heap_start;
 
-    heap_start += NUM_PROCESSES * sizeof(pcb_t *);
+    pcbs = (pcb_t **)start_of_heap;
+    start_of_heap += NUM_PROCESSES * sizeof(pcb_t *);
 
     for (i = 0; i < NUM_PROCESSES; i++) {
-        pcbs[i] = (pcb_t *)heap_start;
-        heap_start += sizeof(pcb_t);
+        pcbs[i] = (pcb_t *)start_of_heap;
+        start_of_heap += sizeof(pcb_t);
     }
 }
 
-void allocate_memory_to_memory_table(void) {
-    uint32_t i = 0;
-
-    for (i = 0; i < MAX_MEM_BLOCKS; ++i)
-    {
-        // TODO
-        //heap_start += sizeof();
-    }
-}
-
-int k_init_memory_blocks(void) {
+uint32_t k_init_memory_blocks(void) {
     uint32_t i;
+    uint32_t j;
 	uint32_t heap_end;
     blocks_allocated = 0;
-    heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
+    start_of_heap = end_of_image + MEM_OFFSET_SIZE;
 
     //Zero out all of the memory we have to avoid garbage
-    for(i = heap_start; i < END_OF_MEM - 8; i += 4) {
+    for(i = start_of_heap; i < END_OF_MEM - 8; i += 4) {
         *((uint32_t *)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
@@ -74,24 +66,33 @@ int k_init_memory_blocks(void) {
         --stack;
     }
 
-    heap_start += 0x100 - (heap_start % 0x100); // align for mem_blk
+    // align for mem_blk
+    start_of_heap += 0x100 - (start_of_heap % 0x100); 
 
-    free_mem = (mem_blk_t *)heap_start;
-    free_mem->prev = NULL;
+    // prepare heap blocks
+    free_mem = (mem_blk_t *)start_of_heap;
     alloc_mem = NULL;
 
-    heap_end = heap_start + MEM_BLOCK_SIZE * MAX_MEM_BLOCKS;
-    for(i = heap_start; i < heap_end; i+= MEM_BLOCK_SIZE) {
+    free_mem->prev = NULL; // first block
+
+    heap_end = start_of_heap + MAX_MEM_BLOCKS * MEM_BLOCK_SIZE;
+    i = start_of_heap;
+    j = 0;
+    for(; i < heap_end; i+= MEM_BLOCK_SIZE, j++) {
         if (i < heap_end - MEM_BLOCK_SIZE) {
+            // not last block
             ((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
             ((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
         } else {
+            // last block
             ((mem_blk_t *)i)->next = NULL;
         }
         ((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
         ((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
-    }
 
+        mem_table[j].owner_pid = -1;
+        mem_table[j].blk = ((mem_blk_t*)i);
+    }
     end_of_heap = i + MEM_BLOCK_SIZE;
 
     return 0;
@@ -114,21 +115,19 @@ uint32_t* k_alloc_stack(uint32_t size) {
 }
 
 void* k_request_memory_block(void) {
-    mem_blk_t* ret_blk = free_mem;
     uint32_t i = 0;
+    mem_blk_t* ret_blk = free_mem;
 
-    if (ret_blk == NULL) {
+    if (ret_blk == NULL /* same as free_mem == NULL */) {
         return NULL;
     }
 
     free_mem = free_mem->next;
-
     if (free_mem != NULL) {
         free_mem->prev = NULL;
     }
 
     ret_blk->next = alloc_mem;
-
     if (alloc_mem != NULL) {
         alloc_mem->prev = ret_blk;
     }
@@ -139,15 +138,22 @@ void* k_request_memory_block(void) {
         *((uint32_t *)i) = 0;
     }
 
-    blocks_allocated++;
-    return (void *)ret_blk->data;
+    //for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+    //    if (mem_table[i]->blk == ret_blk) {
+    //        mem_table[i]->owner_pid = current_pcb->pid;
+            blocks_allocated++;
+            return (void *)ret_blk->data;
+    //    }
+    //}
+    //return NULL;
 }
 
-int k_release_memory_block(void* p_mem_blk) {
-    mem_blk_t *to_del = (mem_blk_t *)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
+uint32_t k_release_memory_block(void* p_mem_blk) {
+    uint32_t i;
+    mem_blk_t* to_del = (mem_blk_t *)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
-    if (p_mem_blk == NULL || (uint32_t)p_mem_blk < heap_start || (uint32_t)p_mem_blk > END_OF_MEM) {
-        printf("memory invalid\r\n");
+    if (p_mem_blk == NULL || (uint32_t)p_mem_blk < start_of_heap || (uint32_t)p_mem_blk > END_OF_MEM) {
+        printf("Invalid Memory\r\n");
         return 1;
     }
 
@@ -163,7 +169,13 @@ int k_release_memory_block(void* p_mem_blk) {
     to_del->prev = NULL;
     free_mem = to_del;
 
-    printf("k_release_memory_block: releasing block @ 0x%x\r\n", p_mem_blk);
-    blocks_allocated--;
-    return 0;
+    //for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+    //    if (mem_table[i]->blk == to_del) {
+    //        mem_table[i]->owner_pid = -1;
+    //        mem_table[i]->allocated = 0;
+            blocks_allocated--;
+            return 0;
+    //    }
+    //}
+    //return 2;
 }

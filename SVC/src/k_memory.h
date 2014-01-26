@@ -10,9 +10,14 @@ typedef struct mem_blk {
     uint32_t padding;
 } mem_blk_t;
 
+typedef struct mem_table_entry {
+    int32_t owner_pid;
+    mem_blk_t* blk;
+} mem_table_entry_t;
+
 void* k_request_memory_block(void);
-int k_release_memory_block(void *);
-int k_init_memory_blocks(void);
+uint32_t k_release_memory_block(void *);
+uint32_t k_init_memory_blocks(void);
 uint32_t* k_alloc_stack(uint32_t size);
 
 #endif

@@ -9,9 +9,9 @@ proc_image_t proc_table[7];
 void set_procs(){
     uint32_t i;
     for (i = 0; i < 7; i++){
-        proc_table[i].pid           = i;
-        proc_table[i].priority      = LOWEST;
-        proc_table[i].stack_size    = STACK_SIZE;
+        proc_table[i].pid        = i;
+        proc_table[i].priority   = LOWEST;
+        proc_table[i].stack_size = STACK_SIZE;
     }
 
     proc_table[0].proc_start = &null_proc;

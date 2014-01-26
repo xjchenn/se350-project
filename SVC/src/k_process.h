@@ -22,11 +22,13 @@ typedef struct {
 extern linkedlist_t** ready_pqs;
 extern linkedlist_t** mem_blocked_pqs;
 extern pcb_t** pcbs;
+extern pcb_t* current_pcb;
+
 extern void __rte(void);
 
-int k_init_processor(void);
-int k_release_processor(void);
-int k_set_process_priority(int process_id, int priority);
-int k_get_process_priority(int process_id);
+uint32_t k_init_processor(void);
+uint32_t k_release_processor(void);
+uint32_t k_set_process_priority(uint32_t process_id, uint32_t priority);
+uint32_t k_get_process_priority(uint32_t process_id);
 
 #endif

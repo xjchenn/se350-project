@@ -42,7 +42,7 @@ int main() {
   // transit to unprivileged level, default MSP is used
   __set_CONTROL(__get_CONTROL() | BIT(0));
 
-  //ret_val = release_processor();
+  // ret_val = release_processor();
   // test_memory();
 
   return 0;

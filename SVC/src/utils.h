@@ -17,9 +17,12 @@ typedef void (*func_ptr_t)();
 #define END_OF_MEM              0x10008000
 #define XPSR                    0x01000000 // default processor state register value
 
+#define KERNEL_MEM_BLOCK_PID    0xFFFFFFFE
+#define FREE_MEM_BLOCK_PID      0xFFFFFFFF
+
 #define STACK_SIZE              0x100
 #define NUM_PRIORITIES          5
-#define NUM_PROCESSES           2
+#define NUM_PROCESSES           7
 
 #define ASSERT_FALSE(i)         i = 0 / 0
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))

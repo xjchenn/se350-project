@@ -90,7 +90,7 @@ uint32_t k_init_memory_blocks(void) {
         ((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
         ((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
 
-        mem_table[j].owner_pid = -1;
+        mem_table[j].owner_pid = FREE_MEM_BLOCK_PID;
         mem_table[j].blk = ((mem_blk_t*)i);
     }
     end_of_heap = i + MEM_BLOCK_SIZE;
@@ -138,14 +138,14 @@ void* k_request_memory_block(void) {
         *((uint32_t *)i) = 0;
     }
 
-    //for (i = 0; i < MAX_MEM_BLOCKS; i++) {
-    //    if (mem_table[i]->blk == ret_blk) {
-    //        mem_table[i]->owner_pid = current_pcb->pid;
+    for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+        if (mem_table[i].blk == ret_blk) {
+            mem_table[i].owner_pid = current_pcb->pid;
             blocks_allocated++;
             return (void *)ret_blk->data;
-    //    }
-    //}
-    //return NULL;
+        }
+    }
+    return NULL;
 }
 
 uint32_t k_release_memory_block(void* p_mem_blk) {
@@ -167,14 +167,13 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
 
     to_del->next = free_mem;
     to_del->prev = NULL;
-    free_mem = to_del;
-    //for (i = 0; i < MAX_MEM_BLOCKS; i++) {
-    //    if (mem_table[i]->blk == to_del) {
-    //        mem_table[i]->owner_pid = -1;
-    //        mem_table[i]->allocated = 0;
+    for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+        if (mem_table[i].blk == to_del && mem_table[i].owner_pid == current_pcb->pid) {
+            mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
             blocks_allocated--;
+            free_mem = to_del;
             return 0;
-    //    }
-    //}
-    //return 2;
+        }
+    }
+    return 2;
 }

@@ -19,14 +19,15 @@ uint32_t blocks_allocated;
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
 
-void allocate_memory_to_queue(linkedlist_t** ll) {
+void allocate_memory_to_queue(linkedlist_t*** ll) {
     uint32_t i = 0;
-    ll = (linkedlist_t **)heap_start;
+    *ll = (linkedlist_t **)heap_start;
 
     heap_start += NUM_PRIORITIES * sizeof(linkedlist_t *);
 
     for (i = 0; i < NUM_PRIORITIES; i++) {
-        ll[i] = (linkedlist_t *)heap_start;
+        (*ll)[i] = (linkedlist_t *)heap_start;
+		linkedlist_init((*ll)[i]);
         heap_start += sizeof(linkedlist_t);
     }
 }
@@ -46,7 +47,8 @@ void allocate_memory_to_pcbs(void) {
 
 int k_init_memory_blocks(void) {
     uint32_t i;
-
+	uint32_t heap_end;
+    blocks_allocated = 0;
     heap_start = END_OF_IMAGE + MEM_OFFSET_SIZE;
 
     //Zero out all of the memory we have to avoid garbage
@@ -54,8 +56,8 @@ int k_init_memory_blocks(void) {
         *((uint32_t *)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
-    allocate_memory_to_queue(ready_pqs);
-    allocate_memory_to_queue(mem_blocked_pqs);
+    allocate_memory_to_queue(&ready_pqs);
+    allocate_memory_to_queue(&mem_blocked_pqs);
     allocate_memory_to_pcbs();
 
     stack = (uint32_t *)END_OF_MEM;
@@ -69,9 +71,14 @@ int k_init_memory_blocks(void) {
     free_mem->prev = NULL;
     alloc_mem = NULL;
 
-    for(i = heap_start; i < heap_start + MEM_BLOCK_SIZE * MAX_MEM_BLOCKS; i+= MEM_BLOCK_SIZE) {
-        ((mem_blk_t *)i)->next = (i < MAX_MEM_BLOCKS - 1) ? (mem_blk_t *)(i + MEM_BLOCK_SIZE) : NULL;
-        ((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
+    heap_end = heap_start + MEM_BLOCK_SIZE * MAX_MEM_BLOCKS;
+    for(i = heap_start; i < heap_end; i+= MEM_BLOCK_SIZE) {
+        if (i < heap_end - MEM_BLOCK_SIZE) {
+            ((mem_blk_t *)i)->next = (mem_blk_t *)(i + MEM_BLOCK_SIZE);
+            ((mem_blk_t *)i)->next->prev = (mem_blk_t *)i;
+        } else {
+            ((mem_blk_t *)i)->next = NULL;
+        }
         ((mem_blk_t *)i)->data = (void *)(i + MEM_BLOCK_HEADER_SIZE);
         ((mem_blk_t *)i)->padding = SWAP_UINT32(0xABAD1DEA);
     }

@@ -16,6 +16,8 @@ typedef struct {
     int length;
 } linkedlist_t;
 
+int linkedlist_init(linkedlist_t* list);
+
 int linkedlist_push_front(linkedlist_t *list, void *value);
 int linkedlist_push_back(linkedlist_t *list, void *value);
 

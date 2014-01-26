@@ -2,6 +2,18 @@
 #include "memory.h"
 #include "utils.h"
 
+int linkedlist_init(linkedlist_t* list) {
+    if (list == NULL) {
+        return 1;
+    }
+
+    list->first = NULL;
+    list->last = NULL;
+    list->length = 0;
+
+    return 0;
+}
+
 int linkedlist_push_front(linkedlist_t *list, void *value) {
     node_t* newNode = NULL;
 
@@ -18,6 +30,8 @@ int linkedlist_push_front(linkedlist_t *list, void *value) {
     if (list->last == NULL) {
         list->last = newNode;
     }
+
+    list->length++;
 
     return 0;
 }
@@ -38,6 +52,8 @@ int linkedlist_push_back(linkedlist_t *list, void *value) {
     if (list->first == NULL) {
         list->first = newNode;
     }
+
+    list->length++;
 
     return 0;
 }
@@ -61,6 +77,9 @@ void* linkedlist_pop_front(linkedlist_t *list) {
     list->first = secondNode;
 
     k_release_memory_block(firstNode);
+
+    list->length--;
+
     return nodeValue;
 }
 
@@ -83,5 +102,8 @@ void* linkedlist_pop_back(linkedlist_t *list) {
     list->last = secondLastNode;
     
     k_release_memory_block(lastNode);
+
+    list->length--;
+
     return nodeValue;
 }

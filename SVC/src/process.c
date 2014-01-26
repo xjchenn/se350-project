@@ -1,16 +1,29 @@
 #include "process.h"
-#include "memory.h"
+#include "k_memory.h"
 #include "printf.h"
 #include "utils.h"
 #include "linkedlist.h"
+#include "uart_polling.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
+// #include "usr_proc.h"
 
 linkedlist_t** ready_pqs;
 linkedlist_t** mem_blocked_pqs;
 
 pcb_t** pcbs;
 pcb_t* current_pcb = NULL;
+
+void null_proc(){
+    while (1) {
+
+        //if (i % 10000 == 0) {
+            printf("PROCESSING NULL\r\n");
+        //}
+        //i++;
+        k_release_processor();
+    }
+}
 
 pcb_t* get_next_process(void) {
     uint32_t i;
@@ -25,7 +38,6 @@ pcb_t* get_next_process(void) {
         }
     }
 
-    ASSERT_FALSE(i);
     return (pcb_t*)NULL;
 }
 
@@ -57,10 +69,29 @@ int switch_process(pcb_t *old_pcb) {
         }
     }
 
+    //null_proc();
+
     return 0;
 }
 
 int k_init_processor(void) {
+    int32_t i = 0;
+    uint32_t stack_size = 0x100;
+    uint32_t* stack_ptr;
+    pcbs[0]->pid = 0;
+    pcbs[0]->priority = LOWEST;
+    stack_ptr = k_alloc_stack(stack_size);
+    *(--stack_ptr) = XPSR;
+    *(--stack_ptr) = (uint32_t)(&null_proc);
+
+    for (i = 0; i < 6; i++) {
+        *(--stack_ptr) = NULL;
+    }
+
+    pcbs[0]->stack_ptr = stack_ptr;
+    pcbs[0]->state = NEW;
+    current_pcb = pcbs[0];
+		null_proc();
     return 0;
 }
 

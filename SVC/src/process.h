@@ -9,7 +9,7 @@ typedef enum {
     READY,
     RUNNING,
     WAITING,
-    EXITED,
+    EXIT
 } PROCESS_STATE;
 
 typedef enum {
@@ -32,6 +32,9 @@ typedef struct {
 } pcb_t;
 
 extern pcb_t** pcbs;
+extern void __rte(void);
+
+#define XPSR 0x01000000
 
 int k_init_processor(void);
 int k_release_processor(void);

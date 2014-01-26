@@ -168,7 +168,6 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
     to_del->next = free_mem;
     to_del->prev = NULL;
     free_mem = to_del;
-
     //for (i = 0; i < MAX_MEM_BLOCKS; i++) {
     //    if (mem_table[i]->blk == to_del) {
     //        mem_table[i]->owner_pid = -1;

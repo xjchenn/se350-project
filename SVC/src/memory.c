@@ -147,7 +147,7 @@ int k_release_memory_block(void* p_mem_blk) {
     mem_blk_t *to_del = (mem_blk_t *)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
     if (p_mem_blk == NULL || (uint32_t)p_mem_blk < heap_start || (uint32_t)p_mem_blk > END_OF_MEM) {
-        printf("memory invalid\r\n");
+        printf("Invalid memory\r\n");
         return 1;
     }
 
@@ -163,7 +163,6 @@ int k_release_memory_block(void* p_mem_blk) {
     to_del->prev = NULL;
     free_mem = to_del;
 
-    printf("k_release_memory_block: releasing block @ 0x%x\r\n", p_mem_blk);
     blocks_allocated--;
     return 0;
 }

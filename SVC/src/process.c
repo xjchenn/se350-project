@@ -70,7 +70,7 @@ int k_init_processor(void) {
 
     set_procs();
 
-    for (i = 0; i < 2 /*NUM_PROCESSES*/; ++i)
+    for (i = 0; i < NUM_PROCESSES; ++i)
     {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;

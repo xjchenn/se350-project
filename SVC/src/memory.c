@@ -177,6 +177,11 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
                 mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
                 blocks_allocated--;
                 free_mem = to_del;
+                
+                if(k_should_prempt_current_process()) {
+                    k_release_processor();
+                }
+                
                 return 0;
             }
         }

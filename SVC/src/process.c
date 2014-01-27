@@ -50,6 +50,22 @@ void* k_linkedlist_remove(linkedlist_t* list, void* value) {
     return ret;
 }
 
+int32_t k_should_prempt_current_process(void) {
+    uint32_t i;
+    
+    if(current_pcb == &kernel_pcb) {
+        return 0;
+    }
+    
+    for(i = 0; i < current_pcb->priority; i++) {
+        if(mem_blocked_pqs[i]->first != NULL) {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
 pcb_t* get_next_process(void) {
     uint32_t i;
 

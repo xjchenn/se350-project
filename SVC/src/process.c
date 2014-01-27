@@ -54,12 +54,12 @@ pcb_t* get_next_process(void) {
     uint32_t i;
 
     for (i = 0; i < NUM_PRIORITIES; i++) {
-        if(ready_pqs[i]->first != NULL) {
-            return (pcb_t*) k_linkedlist_pop_front(ready_pqs[i]);
-        }
-
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
             return (pcb_t*) k_linkedlist_pop_front(mem_blocked_pqs[i]);
+        }
+
+        if(ready_pqs[i]->first != NULL) {
+            return (pcb_t*) k_linkedlist_pop_front(ready_pqs[i]);
         }
     }
 
@@ -68,23 +68,36 @@ pcb_t* get_next_process(void) {
 
 uint32_t switch_process(pcb_t *old_pcb) {
     PROCESS_STATE current_state = current_pcb->state;
-
+    
     if (current_state == NEW) {
         if (current_pcb != old_pcb && old_pcb->state != NEW) {
-            old_pcb->state = READY;
+            if(old_pcb->state != BLOCKED) {
+                old_pcb->state = READY;
+            }
             old_pcb->stack_ptr = (uint32_t *)__get_MSP();
 
-            k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+            if(old_pcb->state == READY) {
+                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+            } else {
+                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
+            }
         }
         current_pcb->state = RUNNING;
         __set_MSP((uint32_t)current_pcb->stack_ptr);
         __rte();
     } else if (current_pcb != old_pcb) {
-        if (current_state == READY) {
-            old_pcb->state = READY;
+        if (current_state == READY || current_state == BLOCKED) {
+            if(old_pcb->state != BLOCKED) {
+                old_pcb->state = READY;
+            }
+                            
             old_pcb->stack_ptr = (uint32_t *)__get_MSP();
-
-            k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+                
+            if(old_pcb->state == READY) {
+                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+            } else {
+                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
+            }
 
             current_pcb->state = RUNNING;
             __set_MSP((uint32_t) current_pcb->stack_ptr);

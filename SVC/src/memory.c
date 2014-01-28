@@ -118,10 +118,10 @@ void* k_request_memory_block(void) {
     uint32_t i = 0;
     mem_blk_t* ret_blk = free_mem;
 
-    if (ret_blk == NULL /* same as free_mem == NULL */) {
+    while (ret_blk == NULL /* same as free_mem == NULL */) {
         current_pcb->state = BLOCKED;
         k_release_processor();
-        return NULL;
+        ret_blk = free_mem;
     }
 
     free_mem = free_mem->next;

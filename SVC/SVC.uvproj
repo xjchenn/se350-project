@@ -461,6 +461,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\k_rtx_init.c</FilePath>
             </File>
+            <File>
+              <FileName>k_proc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\k_proc.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -919,6 +924,11 @@
               <FileName>k_rtx_init.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_rtx_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>k_proc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\k_proc.c</FilePath>
             </File>
           </Files>
         </Group>

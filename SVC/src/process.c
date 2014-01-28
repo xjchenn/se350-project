@@ -213,6 +213,10 @@ int32_t k_set_process_priority(int32_t process_id, int32_t priority) {
         k_linkedlist_push_back(mem_blocked_pqs[priority], to_change);
     } else {
         k_linkedlist_push_back(ready_pqs[priority], to_change);
+
+        if (priority < current_pcb->priority) {
+            k_release_processor();
+        }
     }
 
     return 0;

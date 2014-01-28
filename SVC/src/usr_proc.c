@@ -5,6 +5,8 @@
 
 proc_image_t proc_table[7];
 
+int32_t test_results[6];
+
 // Init function
 void set_procs(){
     uint32_t i;
@@ -14,6 +16,9 @@ void set_procs(){
         proc_table[i].priority      = LOWEST;
         proc_table[i].stack_size    = STACK_SIZE;
     }
+		for (i = 0; i < 6; i++) {
+			test_results[i] = 1;
+		}
     //proc_table[1].priority   = HIGHEST;
     //proc_table[2].priority   = HIGHEST;
     proc_table[0].proc_start = &null_proc;
@@ -23,6 +28,11 @@ void set_procs(){
     proc_table[4].proc_start = &usr_proc_4;
     proc_table[5].proc_start = &usr_proc_5;
     proc_table[6].proc_start = &usr_proc_6;
+
+    // Start the test output required
+    uart0_put_string("G005_test: START\r\n");
+    uart0_put_string("G005_test: total 6 tests\r\n");
+
 }
 
 /*  Process 1:
@@ -33,7 +43,8 @@ void usr_proc_1(){
     static int i = 0;
     while (1) {
         if (i != 0 && i%5 == 0) {
-            uart0_put_string("PROCESS 1 WORKS!\r\n");
+            uart0_put_string("test 1 OK\r\n");
+            test_results[1] = 1;
             release_processor();
         }
         uart0_put_char('A' + i % 26);
@@ -48,66 +59,65 @@ void usr_proc_1(){
 void usr_proc_2(){
     int ret;
     int i = 0;
-    int didPass = 1;
-
+    int proc = 2;
     void* memory1 = 0;
     void* memory2 = 0;
 
     while (1) {
-        if (i == 0){
-            memory1 = request_memory_block();
-            memory2 = request_memory_block();
+        memory1 = request_memory_block();
+        memory2 = request_memory_block();
 
-            *((int*)memory1) = 0xDEAD10CC;
-            *((int*)memory2) = 0xDEADC0DE;
+        *((int*)memory1) = 0xDEAD10CC;
+        *((int*)memory2) = 0xDEADC0DE;
 
-            if (*((int*)memory1) != 0xDEAD10CC) {
-                didPass = 0;
-                uart0_put_string("Test 2 FAIL\r\n");
-            }
-            ret = release_memory_block(memory1);
-            if (ret != 0){
-                didPass = 0;
-                uart0_put_string("Test 2 FAIL\r\n");
-            }
-
-            if (*((int*)memory2) != 0xDEADC0DE) {
-                didPass = 0;
-                uart0_put_string("Test 2 FAIL\r\n");
-            }
-            ret = release_memory_block(memory2);
-            if (ret != 0){
-                didPass = 0;
-                uart0_put_string("Test 2 FAIL\r\n");
-            }
-
-            if (didPass > 0) {
-                uart0_put_string("Test 2 PASS\r\n");
-            }
-
-
-            ret = release_processor();
+        if (*((int*)memory1) != 0xDEAD10CC) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        ret = release_memory_block(memory1);
+        if (ret != 0 && i == 0){
+            test_results[proc_table[proc].pid] = 0;
         }
 
+        if (*((int*)memory2) != 0xDEADC0DE) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        ret = release_memory_block(memory2);
+        if (ret != 0){
+            test_results[proc_table[proc].pid] = 0;            
+        }
+        if (i == 0) {
+            if (test_results[proc] == 1) {
+                uart0_put_string("test 2 OK\r\n");
+            } else {
+                uart0_put_string("test 2 FAIL\r\n");
+            }
+        }
+        i = 1;
+        ret = release_processor();     
     }
 }
 
 void usr_proc_3(){
     int i = 0;
     int ret;
+    int proc = 3;
     void* memory = 0;
     while (1) {
-        if (i == 0){
             memory = (void*) 0xDEADC0DE;
 
             ret = release_memory_block(memory);
             if (ret == 0) {
-                uart0_put_string("Test 3 FAIL\r\n");
-            } else {
-                uart0_put_string("Test 3 PASS\r\n");
+                test_results[proc_table[proc].pid] = 0;
             }
+            if (i == 0) {
+                if (test_results[proc] == 1) {
+                    uart0_put_string("test 2 OK\r\n");
+                } else {
+                    uart0_put_string("test 2 FAIL\r\n");
+                }
+            }
+            i = 1;
             ret = release_processor();
-        }
     }
 }
 
@@ -118,85 +128,89 @@ void usr_proc_3(){
 void usr_proc_4(){
     int i = 0;
     int ret;
-    int proc = 3; // TODO enum
+    int proc = 4; // TODO enum
     while (1) {
-        if (i == 0) {
-            /*ret = get_process_priority(proc_table[proc].pid);
-            if (ret != LOWEST) {
-                uart0_put_string("Test 4 FAIL\r\n");
-            }
-            ret = set_process_priority(proc_table[proc].pid, HIGHEST);
-            if (ret != 0) {
-                uart0_put_string("Test 4 FAIL\r\n");
-            }
-            ret = get_process_priority(proc_table[proc].pid);
-            if (ret != HIGHEST) {
-                uart0_put_string("Test 4 FAIL\r\n");
-            }
-            ret = release_processor();
-            if (ret != 0) {
-                uart0_put_string("Test 4 FAIL\r\n");
-            }
-            uart0_put_string("Test 4 PASS\r\n");
-            */
-            uart0_put_string("Test 4 RUNNING\r\n");
-            ret = release_processor();
+        ret = get_process_priority(proc_table[proc].pid);
+        if (ret != LOWEST) {
+            test_results[proc_table[proc].pid] = 0;
         }
-    }
+        ret = set_process_priority(proc_table[proc+1].pid, HIGHEST);
+        if (ret != 0) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        ret = get_process_priority(proc_table[proc+1].pid);
+        if (ret != HIGHEST) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        if (i == 0) {
+            if (test_results[proc] == 1) {
+                uart0_put_string("test 2 OK\r\n");
+            } else {
+                uart0_put_string("test 2 FAIL\r\n");
+            }
+        }
+        i = 1;
+        ret = release_processor();
+        }
 }
 
 void usr_proc_5(){
     int i = 0;
     int ret;
-    int didPass = 1;
-    int proc = 6; // TODO enum
+    int proc = 5; // TODO enum
 
     while (1) {
-        if (i == 0) {
-            ret = get_process_priority(proc_table[proc].pid);
-            if (ret != proc_table[proc].priority) {
-                uart0_put_string("Test 5 FAIL\r\n");
-                didPass = 0;
-            }
-            ret = set_process_priority(proc_table[proc].pid, 10);
-            
-            if (ret == 0) {
-                uart0_put_string("Test 5 FAIL\r\n");
-                didPass = 0;
-            }
-            
-            ret = set_process_priority(proc_table[proc].pid, 0);
-            
-            if (ret != 0){
-                uart0_put_string("Test 5 FAIL\r\n");
-                didPass = 0;
-            }
-            
-            ret = get_process_priority(proc_table[proc].pid);
-            
-            if (ret != 0) {
-                uart0_put_string("Test 5 FAIL\r\n");
-                didPass = 0;
-            }
-            if(didPass > 0) {
-                uart0_put_string("Test 5 PASS\r\n");
-            }
-            
-            ret = release_processor();
+        ret = get_process_priority(proc_table[proc].pid);
+        if (ret != proc_table[proc].priority) {
+            test_results[proc_table[proc].pid] = 0;
         }
+        ret = set_process_priority(proc_table[proc].pid, 10);
+        
+        if (ret == 0) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        
+        ret = set_process_priority(proc_table[proc].pid, LOWEST);
+        
+        if (ret != 0) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+        
+        ret = get_process_priority(proc_table[proc].pid);
+        
+        if (ret != 0) {
+            test_results[proc_table[proc].pid] = 0;
+        }
+
+        if (i == 0) {
+            if (test_results[proc] == 1) {
+                uart0_put_string("test 2 OK\r\n");
+            } else {
+                uart0_put_string("test 2 FAIL\r\n");
+            }
+        }
+        i = 1;
+        ret = release_processor();
     }
 }
 void usr_proc_6(){
-    int i = 0;
-    int ret;
-    while (1) {
-        if (i == 0) {
-            for (i = 0; i < 7; i++) {
-                printf("%d\r\n", get_process_priority(i));
+    int i;
+    int ranOnce = 0;
+    int passed = 0;
+    while (1){
+        if (ranOnce){
+            for (i = 0; i < 6; i++) {
+                if (test_results[i] == 1){
+                    passed++;
+                }
             }
-            i = 0;
-            uart0_put_string("Test 6 PASS\r\n");
-            ret = release_processor();
+            uart0_put_string("G005_test: ");
+            uart0_put_char((char)passed);
+            uart0_put_string("/6 OK\r\n");
+            uart0_put_string("G005_test: ");
+            uart0_put_char((char)(6 - passed));
+            uart0_put_string("/6 FAIL\r\n");
+            uart0_put_string("G005_test: END\r\n");
         }
     }
 }

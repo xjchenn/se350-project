@@ -52,17 +52,17 @@ void* k_linkedlist_remove(linkedlist_t* list, void* value) {
 
 int32_t k_should_prempt_current_process(void) {
     uint32_t i;
-    
+
     if(current_pcb == &kernel_pcb) {
         return 0;
     }
-    
+
     for(i = 0; i < current_pcb->priority; i++) {
         if(mem_blocked_pqs[i]->first != NULL) {
             return 1;
         }
     }
-    
+
     return 0;
 }
 
@@ -82,15 +82,15 @@ pcb_t* get_next_process(void) {
     return (pcb_t*)NULL;
 }
 
-uint32_t switch_process(pcb_t *old_pcb) {
+uint32_t switch_process(pcb_t* old_pcb) {
     PROCESS_STATE current_state = current_pcb->state;
-    
+
     if (current_state == NEW) {
         if (current_pcb != old_pcb && old_pcb->state != NEW) {
             if(old_pcb->state != BLOCKED) {
                 old_pcb->state = READY;
             }
-            old_pcb->stack_ptr = (uint32_t *)__get_MSP();
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
 
             if(old_pcb->state == READY) {
                 k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
@@ -106,9 +106,9 @@ uint32_t switch_process(pcb_t *old_pcb) {
             if(old_pcb->state != BLOCKED) {
                 old_pcb->state = READY;
             }
-                            
-            old_pcb->stack_ptr = (uint32_t *)__get_MSP();
-                
+
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
+
             if(old_pcb->state == READY) {
                 k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
             } else {
@@ -133,8 +133,7 @@ uint32_t k_init_processor(void) {
     set_procs();
     kernel_pcb.pid = KERNEL_MEM_BLOCK_PID;
 
-    for (i = 0; i < NUM_PROCESSES; ++i)
-    {
+    for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
         *(--stack_ptr) = (uint32_t)(proc_table[i].proc_start);
@@ -173,38 +172,38 @@ int32_t k_set_process_priority(int32_t process_id, int32_t priority) {
     pcb_t* to_change;
     pcb_t* to_find = NULL;
     uint32_t old_priority;
-    
+
     if (process_id < 1 || process_id >= NUM_PROCESSES || priority < 0 || priority >= (NUM_PRIORITIES - 1)) {
         return -1;
     }
-    
+
     to_change = pcbs[process_id];
     old_priority = to_change->priority;
-    
+
     if(old_priority == priority) {
         return 0;
     }
-    
+
     to_change->priority = priority;
-    
+
     if(to_change == current_pcb) {
         return 0;
     }
-    
-    to_find = (pcb_t *)k_linkedlist_remove(ready_pqs[old_priority], to_change);
-    
+
+    to_find = (pcb_t*)k_linkedlist_remove(ready_pqs[old_priority], to_change);
+
     if(to_find == NULL) {
-        to_find = (pcb_t *)k_linkedlist_remove(mem_blocked_pqs[old_priority], to_change);
-        
+        to_find = (pcb_t*)k_linkedlist_remove(mem_blocked_pqs[old_priority], to_change);
+
         if (to_find == NULL) {
             return 1;
         }
-        
+
         k_linkedlist_push_back(mem_blocked_pqs[priority], to_change);
     } else {
         k_linkedlist_push_back(ready_pqs[priority], to_change);
     }
-        
+
     return 0;
 }
 
@@ -212,6 +211,6 @@ int32_t k_get_process_priority(int32_t process_id) {
     if (process_id < 0 || process_id >= NUM_PROCESSES) {
         return -1;
     }
-    
+
     return pcbs[process_id]->priority;
 }

@@ -16,7 +16,7 @@ typedef struct {
     uint32_t pid;
     PROCESS_STATE state;
     uint32_t priority;
-    uint32_t *stack_ptr;
+    uint32_t* stack_ptr;
 } pcb_t;
 
 extern linkedlist_t** ready_pqs;

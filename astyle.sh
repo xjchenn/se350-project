@@ -1,6 +1,6 @@
 #!/bin/bash
 
-astyle \
+~/astyle \
     --indent=spaces=4 \
     --style=java \
     --add-brackets \

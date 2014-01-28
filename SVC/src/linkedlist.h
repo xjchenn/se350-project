@@ -5,14 +5,14 @@
 #include "memory.h"
 
 typedef struct node {
-    struct node *next;
-    struct node *prev;
-    void *value;
+    struct node* next;
+    struct node* prev;
+    void* value;
 } node_t;
 
 typedef struct {
-    node_t *first;
-    node_t *last;
+    node_t* first;
+    node_t* last;
     int length;
 } linkedlist_t;
 

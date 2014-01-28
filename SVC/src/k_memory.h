@@ -16,7 +16,7 @@ typedef struct mem_table_entry {
 } mem_table_entry_t;
 
 void* k_request_memory_block(void);
-uint32_t k_release_memory_block(void *);
+uint32_t k_release_memory_block(void*);
 uint32_t k_init_memory_blocks(void);
 uint32_t* k_alloc_stack(uint32_t size);
 

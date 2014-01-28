@@ -5,9 +5,11 @@
     --style=java \
     --add-brackets \
     --pad-oper \
+    --pad-header \
     --align-pointer=type \
     --align-reference=name \
     --convert-tabs \
     --recursive \
     ./*.c \
-    ./*.h
+    ./*.h \
+    --exclude=SVC/src/HAL.c

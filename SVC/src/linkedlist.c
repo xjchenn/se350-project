@@ -22,20 +22,20 @@ void* linkedlist_remove(linkedlist_t* list, void* value) {
         return NULL;
     }
 
-    if(list->first != NULL && list->first->value == value) {
+    if (list->first != NULL && list->first->value == value) {
         return linkedlist_pop_front(list);
     }
 
-    if(list->last != NULL && list->last->value == value) {
+    if (list->last != NULL && list->last->value == value) {
         return linkedlist_pop_back(list);
     }
 
     itr = list->first;
 
-    while(itr != NULL && itr->next != NULL) {
-        if(itr->value == value) {
+    while (itr != NULL && itr->next != NULL) {
+        if (itr->value == value) {
             ret = itr->value;
-            if(itr->next != NULL) {
+            if (itr->next != NULL) {
                 itr->next->prev = itr->prev;
             }
 

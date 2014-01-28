@@ -22,7 +22,10 @@ typedef void (*func_ptr_t)();
 
 #define STACK_SIZE              0x100
 #define NUM_PRIORITIES          5
-#define NUM_PROCESSES           7
+
+#define NUM_K_PROCESSES         1
+#define NUM_USR_PROCESSES       6
+#define NUM_PROCESSES           NUM_USR_PROCESSES + NUM_K_PROCESSES
 
 #define ASSERT_FALSE(i)         i = 0 / 0
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))

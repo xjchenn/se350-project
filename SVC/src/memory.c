@@ -37,7 +37,7 @@ void allocate_memory_to_pcbs(void) {
     uint32_t i = 0;
 
     pcbs = (pcb_t**)start_of_heap;
-    start_of_heap += NUM_PROCESSES * sizeof(pcb_t*);
+    start_of_heap += 7 * sizeof(pcb_t*); //  NUM_PROCESSES * sizeof(pcb_t*); apparently compiler thinks this is equal to 0xA instead of 28 so this is hardcoded
 
     for (i = 0; i < NUM_PROCESSES; i++) {
         pcbs[i] = (pcb_t*)start_of_heap;
@@ -53,7 +53,7 @@ uint32_t k_init_memory_blocks(void) {
     start_of_heap = end_of_image + MEM_OFFSET_SIZE;
 
     //Zero out all of the memory we have to avoid garbage
-    for(i = start_of_heap; i < END_OF_MEM - 8; i += 4) {
+    for (i = start_of_heap; i < END_OF_MEM - 8; i += 4) {
         *((uint32_t*)i) = SWAP_UINT32(INVALID_MEMORY);
     }
 
@@ -78,7 +78,7 @@ uint32_t k_init_memory_blocks(void) {
     heap_end = start_of_heap + MAX_MEM_BLOCKS * MEM_BLOCK_SIZE;
     i = start_of_heap;
     j = 0;
-    for(; i < heap_end; i += MEM_BLOCK_SIZE, j++) {
+    for (; i < heap_end; i += MEM_BLOCK_SIZE, j++) {
         if (i < heap_end - MEM_BLOCK_SIZE) {
             // not last block
             ((mem_blk_t*)i)->next = (mem_blk_t*)(i + MEM_BLOCK_SIZE);
@@ -155,10 +155,10 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
     if (to_del == NULL) {
-        printf("Trying to free NULL\r\n");
+        //printf("Trying to free NULL\r\n");
         return 1;
     } else if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
-        printf("Trying to free memory out of bounds\r\n");
+        //printf("Trying to free memory out of bounds\r\n");
         return 2;
     } else {
         for (i = 0; i < MAX_MEM_BLOCKS; i++) {
@@ -178,7 +178,7 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
                 blocks_allocated--;
                 free_mem = to_del;
 
-                if(k_should_prempt_current_process()) {
+                if (k_should_prempt_current_process()) {
                     k_release_processor();
                 }
 

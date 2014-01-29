@@ -184,7 +184,7 @@ int32_t k_set_process_priority(int32_t process_id, int32_t priority) {
     pcb_t* to_find = NULL;
     uint32_t old_priority;
 
-    if (process_id < 1 || process_id >= NUM_PROCESSES || priority < 0 || priority > (NUM_PRIORITIES - 1)) {
+    if (process_id < 1 || process_id >= NUM_PROCESSES || priority < 0 || priority >= (NUM_PRIORITIES - 1)) {
         return -1;
     }
 

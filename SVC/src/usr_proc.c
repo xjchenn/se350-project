@@ -13,7 +13,7 @@ void usr_set_procs() {
 
     for (i = 0; i < NUM_PROCS; i++) {
         usr_proc_table[i].pid        = i + 1;
-        usr_proc_table[i].priority   = LOWEST;
+        usr_proc_table[i].priority   = LOW;
         usr_proc_table[i].stack_size = STACK_SIZE;
     }
 
@@ -138,7 +138,7 @@ void usr_proc_4() {
     while (1) {
         //printf("Process 4\r\n");
         ret = get_process_priority(usr_proc_table[proc].pid);
-        if (ret != LOWEST) {
+        if (ret != LOW) {
             test_results[usr_proc_table[proc].pid] = 0;
         }
         ret = set_process_priority(usr_proc_table[proc].pid, HIGH);
@@ -150,7 +150,7 @@ void usr_proc_4() {
             test_results[usr_proc_table[proc].pid] = 0;
         }
 
-        ret = set_process_priority(usr_proc_table[proc].pid, LOWEST);
+        ret = set_process_priority(usr_proc_table[proc].pid, LOW);
         if (ret != 0) {
             test_results[usr_proc_table[proc].pid] = 0;
         }
@@ -174,7 +174,7 @@ void usr_proc_5() {
     while (1) {
         //printf("Process 5\r\n");
         ret = get_process_priority(usr_proc_table[proc].pid);
-        if (ret != LOWEST) {
+        if (ret != LOW) {
             test_results[usr_proc_table[proc].pid] = 0;
         }
         ret = set_process_priority(usr_proc_table[proc].pid, 10);
@@ -194,7 +194,7 @@ void usr_proc_5() {
         if (ret != HIGH) {
             test_results[usr_proc_table[proc].pid] = 0;
         }
-        ret = set_process_priority(usr_proc_table[proc].pid, LOWEST);
+        ret = set_process_priority(usr_proc_table[proc].pid, LOW);
         if (ret != 0) {
             test_results[usr_proc_table[proc].pid] = 0;
         }

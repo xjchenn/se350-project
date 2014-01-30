@@ -26,7 +26,7 @@ extern pcb_t* current_pcb;
 
 extern void __rte(void);
 
-int32_t k_should_prempt_current_process(void);
+int32_t k_should_preempt_current_process(void);
 
 uint32_t k_init_processor(void);
 uint32_t k_release_processor(void);

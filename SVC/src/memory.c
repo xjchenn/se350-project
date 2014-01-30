@@ -20,6 +20,10 @@ mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
 mem_table_entry_t mem_table[MAX_MEM_BLOCKS];
 
+/**
+ * Allocates memory for the ready/blocked queues (implemented as doubly linked lists) at the top of the heap
+ * @param ll    Reference to array of linkedlist*
+ */
 void allocate_memory_to_queue(linkedlist_t** * ll) {
     uint32_t i = 0;
     *ll = (linkedlist_t**)start_of_heap;
@@ -33,6 +37,9 @@ void allocate_memory_to_queue(linkedlist_t** * ll) {
     }
 }
 
+/**
+ * Allocates memory for all of our PCBs at the top of the heap
+ */
 void allocate_memory_to_pcbs(void) {
     uint32_t i = 0;
 
@@ -45,6 +52,11 @@ void allocate_memory_to_pcbs(void) {
     }
 }
 
+/**
+ * Allocates the top of the heap for all of our kernel objects then use the remaining space
+ * to setup the memory blocks which are then later allocated through request_memory_block()
+ * @return  Zero if successful
+ */
 uint32_t k_init_memory_blocks(void) {
     uint32_t i;
     uint32_t j;
@@ -98,6 +110,11 @@ uint32_t k_init_memory_blocks(void) {
     return 0;
 }
 
+/**
+ * Allocates space for a stack
+ * @param  size     Size for the allocated stack in bytes
+ * @return          Address to the start of allocated stack
+ */
 uint32_t* k_alloc_stack(uint32_t size) {
     uint32_t* stack_ptr = stack;
 
@@ -114,21 +131,26 @@ uint32_t* k_alloc_stack(uint32_t size) {
     return stack_ptr;
 }
 
+
+/**
+ * Requests a memory block
+ * @return           Returns a pointer to a memory block (void*) that can be used
+ */
 void* k_request_memory_block(void) {
     uint32_t i = 0;
     mem_blk_t* ret_blk = free_mem;
 
-    while (ret_blk == NULL /* same as free_mem == NULL */) {
+    // if we can't get free memory, block the current process
+    while (ret_blk == NULL) {
         current_pcb->state = BLOCKED;
         k_release_processor();
         ret_blk = free_mem;
     }
-
+    // otherwise increment global memory pointer
     free_mem = free_mem->next;
     if (free_mem != NULL) {
         free_mem->prev = NULL;
-    }
-
+    } 
     ret_blk->next = alloc_mem;
     if (alloc_mem != NULL) {
         alloc_mem->prev = ret_blk;
@@ -139,7 +161,7 @@ void* k_request_memory_block(void) {
     for (i = (uint32_t)ret_blk->data; i < ((uint32_t)ret_blk + MEM_BLOCK_SIZE - 1); i += 4) {
         *((uint32_t*)i) = 0;
     }
-
+    // assigns the current process to the memory blocks given
     for (i = 0; i < MAX_MEM_BLOCKS; i++) {
         if (mem_table[i].blk == ret_blk) {
             mem_table[i].owner_pid = current_pcb->pid;
@@ -149,19 +171,24 @@ void* k_request_memory_block(void) {
     }
     return NULL;
 }
-
+/**
+ * Releases a memory block from control by a process
+ * @param  p_mem_blk        the memory block owned by the process
+ * @return                  returns a status code as to the success of release                
+ */
 uint32_t k_release_memory_block(void* p_mem_blk) {
     uint32_t i;
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
+    // if we get a null block we return a status code telling us that
     if (to_del == NULL) {
-        //printf("Trying to free NULL\r\n");
         return 1;
+    // otherwise we want to verify the range of the memory block
     } else if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
-        //printf("Trying to free memory out of bounds\r\n");
         return 2;
     } else {
         for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+            // if the ownership of the memory block is correct, we can reclaim it
             if (mem_table[i].blk == to_del && mem_table[i].owner_pid == current_pcb->pid) {
                 if (to_del->prev != NULL) {
                     to_del->prev->next = to_del->next;
@@ -178,7 +205,8 @@ uint32_t k_release_memory_block(void* p_mem_blk) {
                 blocks_allocated--;
                 free_mem = to_del;
 
-                if (k_should_prempt_current_process()) {
+                // release the processor if we have to preempt a blocked process
+                if (k_should_preempt_current_process()) {
                     k_release_processor();
                 }
 

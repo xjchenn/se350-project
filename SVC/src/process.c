@@ -105,6 +105,7 @@ pcb_t* get_next_process(void) {
 
     for (i = 0; i < NUM_PRIORITIES; i++) {
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
+						// should be pushing this to the back of the ready queue instead of execution
             return (pcb_t*) k_linkedlist_pop_front(mem_blocked_pqs[i]);
         }
 

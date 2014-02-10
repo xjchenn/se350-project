@@ -102,11 +102,13 @@ int32_t k_should_preempt_current_process(void) {
 **/
 pcb_t* get_next_process(void) {
     uint32_t i;
+    pcb_t* unblocked_pcb;
 
     for (i = 0; i < NUM_PRIORITIES; i++) {
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
-						// should be pushing this to the back of the ready queue instead of execution
-            return (pcb_t*) k_linkedlist_pop_front(mem_blocked_pqs[i]);
+			unblocked_pcb = k_linkedlist_pop_front(mem_blocked_pqs[i]);
+            unblocked_pcb->state = READY;
+            k_linkedlist_push_back(ready_pqs[i], unblocked_pcb);
         }
 
         if (ready_pqs[i]->first != NULL) {
@@ -127,6 +129,7 @@ uint32_t switch_process(pcb_t* old_pcb) {
     PROCESS_STATE current_state = current_pcb->state;
     // If the current state is new, then we put the process given into the ready queue
     // If the process's state is not READY, we push it on to the memory blocked queue
+    
     if (current_state == NEW) {
         if (current_pcb != old_pcb && old_pcb->state != NEW) {
             if (old_pcb->state != BLOCKED) {

@@ -119,7 +119,7 @@ pcb_t* get_next_process(void) {
     return (pcb_t*)NULL;
 }
 
-uint32_t swap_process(pcb_t* old_pcb) {
+uint32_t swap_out_process(pcb_t* old_pcb) {
     if (old_pcb->state != BLOCKED) {
         old_pcb->state = READY;
     }
@@ -143,7 +143,7 @@ uint32_t run_current_process() {
 
 uint32_t switch_new_process(pcb_t* old_pcb) {
     if (current_pcb != old_pcb && old_pcb->state != NEW) {
-        swap_process(old_pcb);
+        swap_out_process(old_pcb);
     }
     run_current_process();
     __rte();
@@ -153,7 +153,7 @@ uint32_t switch_new_process(pcb_t* old_pcb) {
 
 uint32_t switch_ready_or_blocked_process(pcb_t* old_pcb) {
     if(current_pcb != old_pcb) {
-        swap_process(old_pcb);
+        swap_out_process(old_pcb);
         run_current_process();
     }
     return 0;

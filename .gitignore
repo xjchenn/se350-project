@@ -14,6 +14,7 @@ SVC/SVC*
 SVC/lst
 *.__i
 SVC/SVC.uvopt
+SVC/RAM/SVC.*
 
 # Libraries
 *.lib

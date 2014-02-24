@@ -7,12 +7,14 @@
 
 # Build files
 *.d
+SVC/flash/SVC.*
 
 # Log output files
 SVC/SVC*
 SVC/lst
 *.__i
 SVC/SVC.uvopt
+SVC/RAM/SVC.*
 
 # Libraries
 *.lib
@@ -29,3 +31,7 @@ SVC/SVC.uvopt
 *.out
 *.app
 *.crf
+
+# User
+*.sublime-project
+*.sublime-workspace

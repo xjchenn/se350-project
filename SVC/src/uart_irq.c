@@ -8,10 +8,11 @@
 #include <LPC17xx.h>
 #include "uart.h"
 #include "uart_polling.h"
+#include "k_process.h"
+
 #ifdef DEBUG_0
 #include "printf.h"
 #endif
-
 
 uint8_t g_buffer[]= "You Typed a Q\n\r";
 uint8_t *gp_buffer = g_buffer;
@@ -21,7 +22,8 @@ uint8_t g_char_out;
 
 extern uint32_t g_switch_flag;
 
-extern int k_release_processor(void);
+extern uint32_t k_release_processor(void);
+
 /**
  * @brief: initialize the n_uart
  * NOTES: It only supports UART0. It can be easily extended to support UART1 IRQ.
@@ -153,7 +155,6 @@ int uart_irq_init(int n_uart) {
 	return 0;
 }
 
-
 /**
  * @brief: use CMSIS ISR for UART0 IRQ Handler
  * NOTE: This example shows how to save/restore all registers rather than just
@@ -163,25 +164,30 @@ int uart_irq_init(int n_uart) {
  */
 __asm void UART0_IRQHandler(void)
 {
+    CPSID i                         ; disable interrupts
 	PRESERVE8
 	IMPORT c_UART0_IRQHandler
 	IMPORT k_release_processor
 	PUSH{r4-r11, lr}
 	BL c_UART0_IRQHandler
-	LDR R4, =__cpp(&g_switch_flag)
+	LDR R4, =__cpp(&g_switch_flag)  ; check switch_flag set by handler
 	LDR R4, [R4]
 	MOV R5, #0     
 	CMP R4, R5
-	BEQ  RESTORE    ; if g_switch_flag == 0, then restore the process that was interrupted
-	BL k_release_processor  ; otherwise (i.e g_switch_flag == 1, then switch to the other process)
+	BEQ  RESTORE                    ; if g_switch_flag == 0, then restore the process that was interrupted
+
+SWITCH
+    CPSIE i                         ; enable interrupts
+	BL k_release_processor          ; otherwise (i.e g_switch_flag == 1, then switch to the other process)
+
 RESTORE
+    CPSIE i
 	POP{r4-r11, pc}
-} 
-/**
- * @brief: c UART0 IRQ Handler
- */
+}
+
+
 void c_UART0_IRQHandler(void)
-{
+{    
 	uint8_t IIR_IntId;	    // Interrupt ID from IIR 		 
 	LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
 	
@@ -191,23 +197,61 @@ void c_UART0_IRQHandler(void)
 
 	/* Reading IIR automatically acknowledges the interrupt */
 	IIR_IntId = (pUart->IIR) >> 1 ; // skip pending bit in IIR 
-	if (IIR_IntId & IIR_RDA) { // Receive Data Avaialbe
+	if (IIR_IntId & IIR_RDA) { // Receive Data Avaiable
 		/* read UART. Read RBR will clear the interrupt */
 		g_char_in = pUart->RBR;
+        
 #ifdef DEBUG_0
 		uart1_put_string("Reading a char = ");
 		uart1_put_char(g_char_in);
 		uart1_put_string("\n\r");
 #endif // DEBUG_0
+        
 		g_buffer[12] = g_char_in; // nasty hack
 		g_send_char = 1;
 		
-		/* setting the g_switch_flag */
-		if ( g_char_in == 'S' ) {
-			g_switch_flag = 1; 
-		} else {
-			g_switch_flag = 0;
-		}
+		/**
+         * ------------------------------------------------ begin our code
+         */
+#ifdef DEBUG_HOTKEYS
+        PRINT_HEADER;
+        
+        println("CURRENT PROCESS:");
+        println("PID:%d Priority:%d SP:%x", current_pcb->pid, current_pcb->priority, current_pcb->stack_ptr);
+        PRINT_NEWLINE;
+        
+        switch (g_char_in) { 
+            case KEY_READY_QUEUE:
+                println("READY QUEUE:");
+                k_print_queues(ready_pqs);
+                break;
+            
+            case KEY_BLOCKED_MEM_QUEUE:
+                println("MEM BLOCKED QUEUE:");
+                k_print_queues(mem_blocked_pqs);
+                break;
+            
+            case KEY_BLOCKED_MSG_QUEUE:
+                println("KEY BLOCKED QUEUE:");
+                // TODO
+                break;
+            
+            case KEY_MSG_LOG_BUFFER:
+                println("KEY MSG LOG BUFFER:");
+                // TODO
+                break;
+            
+            default:
+                break;
+        }
+        
+        PRINT_HEADER;
+		g_switch_flag = 0; 
+#endif
+		/**
+         * ------------------------------------------------ end our code
+         */
+        
 	} else if (IIR_IntId & IIR_THRE) {
 	/* THRE Interrupt, transmit holding register becomes empty */
 
@@ -238,5 +282,5 @@ void c_UART0_IRQHandler(void)
 			uart1_put_string("Should not get here!\n\r");
 #endif // DEBUG_0
 		return;
-	}	
+	}
 }

@@ -53,6 +53,8 @@ void usr_set_procs() {
     uart0_put_string("G005_test: START\r\n");
     uart0_put_string("G005_test: total 5 tests\r\n");
     */
+    printf("G005_test: START\r\n");
+    printf("G005_test: total 5 tests\r\n");
 }
 
 /**
@@ -66,7 +68,7 @@ void usr_proc_1() {
         if (i != 0 && i % 5 == 0) {
             test_results[1] = 1;
             if (ranOnce == 0) {
-                uart0_put_string("G005_test: test 1 OK\r\n");
+                printf("G005_test: test 1 OK\r\n");
             }
             ranOnce++;
             release_processor();
@@ -111,9 +113,9 @@ void usr_proc_2() {
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
-                uart0_put_string("G005_test: test 2 OK\r\n");
+                printf("G005_test: test 2 OK\r\n");
             } else {
-                uart0_put_string("G005_test: test 2 FAIL\r\n");
+                printf("G005_test: test 2 FAIL\r\n");
             }
         }
         i = 1;
@@ -137,9 +139,9 @@ void usr_proc_3() {
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
-                uart0_put_string("G005_test: test 3 OK\r\n");
+                printf("G005_test: test 3 OK\r\n");
             } else {
-                uart0_put_string("G005_test: test 3 FAIL\r\n");
+                printf("G005_test: test 3 FAIL\r\n");
             }
         }
         i = 1;
@@ -176,9 +178,9 @@ void usr_proc_4() {
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
-                uart0_put_string("G005_test: test 4 OK\r\n");
+                printf("G005_test: test 4 OK\r\n");
             } else {
-                uart0_put_string("G005_test: test 4 FAIL\r\n");
+                printf("G005_test: test 4 FAIL\r\n");
             }
         }
         i = 1;
@@ -221,9 +223,9 @@ void usr_proc_5() {
         if (i == 0) {
 
             if (test_results[proc] == 1) {
-                uart0_put_string("G005_test: test 5 OK\r\n");
+                printf("G005_test: test 5 OK\r\n");
             } else {
-                uart0_put_string("G005_test: test 5 FAIL\r\n");
+                printf("G005_test: test 5 FAIL\r\n");
             }
         }
         i = 1;
@@ -241,13 +243,13 @@ void usr_proc_6() {
                     passed++;
                 }
             }
-            uart0_put_string("G005_test: ");
-            uart0_put_char('0' + passed);
-            uart0_put_string("/5 OK\r\n");
-            uart0_put_string("G005_test: ");
-            uart0_put_char('0' + (5 - passed));
-            uart0_put_string("/5 FAIL\r\n");
-            uart0_put_string("G005_test: END\r\n");
+            printf("G005_test: ");
+            printf("%d", passed);
+            printf("/5 OK\r\n");
+            printf("G005_test: ");
+            printf("%d", (5 - passed));
+            printf("/5 FAIL\r\n");
+            printf("G005_test: END\r\n");
             ranOnce = 1;
         }
         release_processor();

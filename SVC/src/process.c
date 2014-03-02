@@ -83,10 +83,6 @@ void* k_linkedlist_remove(linkedlist_t* list, void* value) {
 int32_t k_should_preempt_current_process(void) {
     uint32_t i;
 
-    if (current_pcb == &kernel_pcb) {
-        return 0;
-    }
-
     for (i = 0; i < current_pcb->priority; i++) {
         if (mem_blocked_pqs[i]->first != NULL) {
             return 1;
@@ -182,7 +178,6 @@ uint32_t k_init_processor(void) {
 
     usr_set_procs();
     k_set_procs();
-    kernel_pcb.pid = KERNEL_MEM_BLOCK_PID;
 
     for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);

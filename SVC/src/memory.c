@@ -38,6 +38,21 @@ void allocate_memory_to_queue(linkedlist_t** * ll) {
 }
 
 /**
+ * Allocates memory for all of our pcb nodes
+ */
+void allocate_memory_to_queue_nodes(void) {
+    uint32_t i = 0;
+
+    pcb_nodes = (node_t**)start_of_heap;
+    start_of_heap += NUM_PROCESSES * sizeof(node_t*);
+    
+    for (i = 0; i < NUM_PROCESSES; i++) {
+        start_of_heap += sizeof(node_t);
+        pcb_nodes[i] = (node_t*)start_of_heap;
+    }
+}
+
+/**
  * Allocates memory for all of our PCBs at the top of the heap
  */
 void allocate_memory_to_pcbs(void) {
@@ -71,6 +86,7 @@ uint32_t k_init_memory_blocks(void) {
 
     allocate_memory_to_queue(&ready_pqs);
     allocate_memory_to_queue(&mem_blocked_pqs);
+    allocate_memory_to_queue_nodes();
     allocate_memory_to_pcbs();
 
     stack = (uint32_t*)END_OF_MEM;
@@ -139,13 +155,16 @@ uint32_t* k_alloc_stack(uint32_t size) {
 void* k_request_memory_block(void) {
     uint32_t i = 0;
     mem_blk_t* ret_blk = free_mem;
+    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
 
     // if we can't get free memory, block the current process
     while (ret_blk == NULL) {
         current_pcb->state = BLOCKED;
         k_release_processor();
+        DEBUG_PRINT("We should never get here...");
         ret_blk = free_mem;
     }
+
     // otherwise increment global memory pointer
     free_mem = free_mem->next;
     if (free_mem != NULL) {
@@ -178,6 +197,7 @@ void* k_request_memory_block(void) {
  */
 uint32_t k_release_memory_block(void* p_mem_blk) {
     uint32_t i;
+    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
     // if we get a null block we return a status code telling us that

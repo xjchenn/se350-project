@@ -25,10 +25,16 @@ typedef void (*func_ptr_t)();
 
 #define NUM_K_PROCESSES         1
 #define NUM_USR_PROCESSES       6
-#define NUM_PROCESSES           NUM_USR_PROCESSES + NUM_K_PROCESSES
+#define NUM_PROCESSES           (uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES)
 
 #define ASSERT_FALSE(i)         i = 0 / 0
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
+
+#ifdef DEBUG
+#define DEBUG_PRINT(msg)        printf(msg)
+#else
+#define DEBUG_PRINT(msg)        ;
+#endif
 
 #endif

@@ -348,7 +348,7 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define></Define>
+              <Define>DEBUG</Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>
@@ -417,14 +417,19 @@
           <GroupName>System Code</GroupName>
           <Files>
             <File>
-              <FileName>system_LPC17xx.c</FileName>
+              <FileName>uart_irq.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\system_LPC17xx.c</FilePath>
+              <FilePath>.\src\uart_irq.c</FilePath>
             </File>
             <File>
               <FileName>uart_polling.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_polling.c</FilePath>
+            </File>
+            <File>
+              <FileName>system_LPC17xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\system_LPC17xx.c</FilePath>
             </File>
             <File>
               <FileName>printf.c</FileName>
@@ -881,14 +886,19 @@
           <GroupName>System Code</GroupName>
           <Files>
             <File>
-              <FileName>system_LPC17xx.c</FileName>
+              <FileName>uart_irq.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\src\system_LPC17xx.c</FilePath>
+              <FilePath>.\src\uart_irq.c</FilePath>
             </File>
             <File>
               <FileName>uart_polling.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_polling.c</FilePath>
+            </File>
+            <File>
+              <FileName>system_LPC17xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\system_LPC17xx.c</FilePath>
             </File>
             <File>
               <FileName>printf.c</FileName>

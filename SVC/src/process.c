@@ -20,6 +20,12 @@ linkedlist_t** mem_blocked_pqs;
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 
+// whether to continue running the process after UART interrupt
+// the UART handler is responsbile for setting this var
+//      1 to switch (calls release_processor)
+//      0 to restore current process
+uint32_t g_switch_flag = 0;
+
 /**
  * Checks to see if there is a higher priority process to preempt (with the exception) of the kernel process
  * @return      1 if need to preempt, else 0

@@ -11,7 +11,7 @@
 
 #include <LPC17xx.h>
 #include "printf.h"
-#include "uart_polling.h"
+#include "uart_def.h"
 #include "rtx.h"
 
 void test_memory() {

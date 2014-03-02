@@ -1,5 +1,0 @@
---cpu Cortex-M3 ".\ram\startup_lpc17xx.o" ".\ram\usr_proc.o" ".\ram\main_svc.o" ".\ram\system_lpc17xx.o" ".\ram\uart_polling.o" ".\ram\printf.o" ".\ram\linkedlist.o" ".\ram\hal.o" ".\ram\memory.o" ".\ram\process.o" ".\ram\k_rtx_init.o" ".\ram\k_proc.o" ".\ram\k_message.o" 
---library_type=microlib --strict --scatter ".\RAM\SVC.sct" 
---summary_stderr --info summarysizes --map --xref --callgraph --symbols 
---info sizes --info totals --info unused --info veneers 
- --list ".\lst\SVC.map" -o .\RAM\SVC.axf

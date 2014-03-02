@@ -119,55 +119,6 @@ pcb_t* get_next_process(void) {
     return (pcb_t*)NULL;
 }
 
-uint32_t swap_out_process(pcb_t* old_pcb) {
-    if (old_pcb->state != BLOCKED) {
-        old_pcb->state = READY;
-    }
-
-    old_pcb->stack_ptr = (uint32_t*)__get_MSP();
-
-    if (old_pcb->state == READY) {
-        k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
-    } else {
-        k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
-    }
-    
-    return 0;
-}
-
-uint32_t run_current_process() {
-    current_pcb->state = RUNNING;
-    __set_MSP((uint32_t)current_pcb->stack_ptr);
-    return 0;
-}
-
-uint32_t switch_new_process(pcb_t* old_pcb) {
-    if (current_pcb != old_pcb && old_pcb->state != NEW) {
-        swap_out_process(old_pcb);
-    }
-    run_current_process();
-    __rte();
-    
-    return 0;
-}
-
-uint32_t switch_ready_or_blocked_process(pcb_t* old_pcb) {
-    if(current_pcb != old_pcb) {
-        swap_out_process(old_pcb);
-        run_current_process();
-    }
-    return 0;
-}
-
-uint32_t switch_other_process(pcb_t* old_pcb) {
-    if(current_pcb != old_pcb) {
-        current_pcb = old_pcb;
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
 /*  The process switcher
  *  pcb_t* old_pcb:
  *      takes the old pcb to switch to the next pcb from
@@ -179,15 +130,44 @@ uint32_t switch_process(pcb_t* old_pcb) {
     // If the current state is new, then we put the process given into the ready queue
     // If the process's state is not READY, we push it on to the memory blocked queue
     
-    switch(current_state) {
-        case NEW:
-            return switch_new_process(old_pcb);
-        case READY:
-        case BLOCKED:
-           return switch_ready_or_blocked_process(old_pcb);
-        default:
-            return switch_other_process(old_pcb);
+    if (current_state == NEW) {
+        if (current_pcb != old_pcb && old_pcb->state != NEW) {
+            if (old_pcb->state != BLOCKED) {
+                old_pcb->state = READY;
+            }
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
+
+            if (old_pcb->state == READY) {
+                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+            } else {
+                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
+            }
+        }
+        current_pcb->state = RUNNING;
+        __set_MSP((uint32_t)current_pcb->stack_ptr);
+        __rte();
+    } else if (current_pcb != old_pcb) {
+        if (current_state == READY || current_state == BLOCKED) {
+            if (old_pcb->state != BLOCKED) {
+                old_pcb->state = READY;
+            }
+
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
+
+            if (old_pcb->state == READY) {
+                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
+            } else {
+                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
+            }
+
+            current_pcb->state = RUNNING;
+            __set_MSP((uint32_t) current_pcb->stack_ptr);
+        } else {
+            current_pcb = old_pcb;
+            return 1;
+        }
     }
+    return 0;
 }
 
 /*  This initializes the process control blocks for the user and null processes

@@ -1,0 +1,32 @@
+*** Creating Trace Output File '.\RAM\SVC.tra' Ok.
+### Preparing for ADS-LD.
+### Creating ADS-LD Command Line
+### List of Objects: adding '".\ram\startup_lpc17xx.o"'
+### List of Objects: adding '".\ram\usr_proc.o"'
+### List of Objects: adding '".\ram\main_svc.o"'
+### List of Objects: adding '".\ram\system_lpc17xx.o"'
+### List of Objects: adding '".\ram\uart_polling.o"'
+### List of Objects: adding '".\ram\printf.o"'
+### List of Objects: adding '".\ram\linkedlist.o"'
+### List of Objects: adding '".\ram\hal.o"'
+### List of Objects: adding '".\ram\memory.o"'
+### List of Objects: adding '".\ram\process.o"'
+### List of Objects: adding '".\ram\k_rtx_init.o"'
+### List of Objects: adding '".\ram\k_proc.o"'
+### List of Objects: adding '".\ram\k_message.o"'
+### ADS-LD Command completed:
+--cpu Cortex-M3 ".\ram\startup_lpc17xx.o" ".\ram\usr_proc.o" ".\ram\main_svc.o" ".\ram\system_lpc17xx.o" ".\ram\uart_polling.o" ".\ram\printf.o" ".\ram\linkedlist.o" ".\ram\hal.o" ".\ram\memory.o" ".\ram\process.o" ".\ram\k_rtx_init.o" ".\ram\k_proc.o" ".\ram\k_message.o" 
+--library_type=microlib --strict --scatter ".\RAM\SVC.sct" 
+--summary_stderr --info summarysizes --map --xref --callgraph --symbols 
+--info sizes --info totals --info unused --info veneers 
+ --list ".\lst\SVC.map" -o .\RAM\SVC.axf### Preparing Environment (PrepEnvAds)
+### ADS-LD Output File: '.\RAM\SVC.axf'
+### ADS-LD Command File: '.\RAM\SVC.lnp'
+### Checking for dirty Components...
+### Creating CmdFile '.\RAM\SVC.lnp', Handle=0x00000210
+### Writing '.lnp' file
+### ADS-LD Command file '.\RAM\SVC.lnp' is ready.
+### ADS-LD: About to start ADS-LD Thread.
+### ADS-LD: executed with 1 errors
+### Updating obj list
+### LDADS_file() completed.

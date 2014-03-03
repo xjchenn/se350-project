@@ -75,6 +75,11 @@ node_t* linkedlist_pop_front(linkedlist_t* list) {
     }
 
     list->first = second_node;
+    
+    if(list->first == NULL) {
+        list->last = NULL;
+    }
+    
     list->length--;
 
     return first_node;
@@ -97,6 +102,11 @@ node_t* linkedlist_pop_back(linkedlist_t* list) {
     }
 
     list->last = second_last_node;
+    
+    if(list->last == NULL) {
+        list->first = NULL;
+    }
+    
     list->length--;
 
     return last_node;
@@ -108,7 +118,15 @@ node_t* linkedlist_remove(linkedlist_t* list, void* target_value) {
     if (list == NULL) {
         return NULL;
     }
+    
+    if (list->first != NULL && list->first->value == target_value) {
+        return linkedlist_pop_front(list);
+    }
 
+    if (list->last != NULL && list->last->value == target_value) {
+        return linkedlist_pop_back(list);
+    }
+    
     iter = list->first;
 
     while (iter != NULL) {

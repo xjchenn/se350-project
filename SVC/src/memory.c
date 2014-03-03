@@ -47,8 +47,9 @@ void allocate_memory_to_queue_nodes(void) {
     start_of_heap += NUM_PROCESSES * sizeof(node_t*);
     
     for (i = 0; i < NUM_PROCESSES; i++) {
-        start_of_heap += sizeof(node_t);
         pcb_nodes[i] = (node_t*)start_of_heap;
+        pcb_nodes[i]->next = pcb_nodes[i]->prev = pcb_nodes[i]->value = NULL;
+        start_of_heap += sizeof(node_t);
     }
 }
 
@@ -161,7 +162,6 @@ void* k_request_memory_block(void) {
     while (ret_blk == NULL) {
         current_pcb->state = BLOCKED;
         k_release_processor();
-        DEBUG_PRINT("We should never get here...");
         ret_blk = free_mem;
     }
 
@@ -190,50 +190,59 @@ void* k_request_memory_block(void) {
     }
     return NULL;
 }
+
 /**
  * Releases a memory block from control by a process
  * @param  p_mem_blk        the memory block owned by the process
  * @return                  returns a status code as to the success of release                
  */
-uint32_t k_release_memory_block(void* p_mem_blk) {
+int32_t k_release_memory_block(void* p_mem_blk) {
     uint32_t i;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
-    // if we get a null block we return a status code telling us that
+    // verify non null block
     if (to_del == NULL) {
-        return 1;
-    // otherwise we want to verify the range of the memory block
-    } else if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
-        return 2;
-    } else {
-        for (i = 0; i < MAX_MEM_BLOCKS; i++) {
-            // if the ownership of the memory block is correct, we can reclaim it
-            if (mem_table[i].blk == to_del && mem_table[i].owner_pid == current_pcb->pid) {
-                if (to_del->prev != NULL) {
-                    to_del->prev->next = to_del->next;
-                }
-
-                if (to_del->next != NULL) {
-                    to_del->next->prev = to_del->prev;
-                }
-
-                to_del->next = free_mem;
-                to_del->prev = NULL;
-
-                mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
-                blocks_allocated--;
-                free_mem = to_del;
-
-                // release the processor if we have to preempt a blocked process
-                if (k_should_preempt_current_process()) {
-                    k_release_processor();
-                }
-
-                return 0;
-            }
-        }
-
-        return 3;
+        return -1;
     }
+
+    // verify the range of the memory block
+    if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
+        return -1;
+    }
+
+    // verify ownership in memory table
+    /*for (i = 0; i < MAX_MEM_BLOCKS; i++) {
+        if (mem_table[i].blk == to_del) {
+            if (mem_table[i].owner_pid != current_pcb->pid) {
+                // trying to free someone else's memory or
+                // trying to free memory that's already free
+                return -1;
+            }*/
+
+            if (to_del->prev != NULL) {
+                to_del->prev->next = to_del->next;
+            }
+
+            if (to_del->next != NULL) {
+                to_del->next->prev = to_del->prev;
+            }
+
+            to_del->next = free_mem;
+            to_del->prev = NULL;
+
+            //mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
+            blocks_allocated--;
+            free_mem = to_del;
+
+            // release the processor if we have to preempt a blocked process
+            if (k_should_preempt_current_process()) {
+                k_release_processor();
+            }
+
+            return 0;
+    /*    }
+    }*/
+
+    return -1;
 }

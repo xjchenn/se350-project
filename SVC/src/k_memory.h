@@ -15,9 +15,13 @@ typedef struct mem_table_entry {
     mem_blk_t* blk;
 } mem_table_entry_t;
 
-void* k_request_memory_block(void);
-uint32_t k_release_memory_block(void*);
-uint32_t k_init_memory_blocks(void);
+// used by k_init_processor() to assign stacks to individual processes
 uint32_t* k_alloc_stack(uint32_t size);
+
+// handles alloc/free dynamic memory
+uint32_t k_init_memory_blocks(void);
+void* k_request_memory_block(void);
+int32_t k_release_memory_block(void*);
+
 
 #endif

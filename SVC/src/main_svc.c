@@ -39,7 +39,7 @@ int main() {
     SystemInit();  /* initialize the system */
 
     rtx_init();
-    timer_init(0);
+    // timer_init(0);
 
     // transit to unprivileged level, default MSP is used
     __set_CONTROL(__get_CONTROL() | BIT(0));

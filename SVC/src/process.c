@@ -107,7 +107,7 @@ node_t* get_next_process(void) {
     node_t* ret_pcb_node;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     
-    int loop_max = current_pcb->state == BLOCKED ? NUM_PRIORITIES : (current_pcb->priority/* + 1*/);
+    int loop_max = current_pcb->state == BLOCKED ? NUM_PRIORITIES : (current_pcb->priority + 1);
    
     for (i = 0; i < loop_max; i++) {
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
@@ -126,13 +126,11 @@ node_t* get_next_process(void) {
 
             switch(current_pcb->state) {
                 case BLOCKED:
-                    linkedlist_push_back(mem_blocked_pqs[i], current_pcb_node);
+                    linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
-
                 case READY:
-                    linkedlist_push_back(ready_pqs[i], current_pcb_node);
+                    linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;
-
                 default:
                     break;
             }
@@ -239,24 +237,24 @@ int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
                 break;
             }
         }
-    } else {
+        return 0;
+    } 
         // just changed another's priority
-        to_change_pcb_node = (node_t*)linkedlist_remove(ready_pqs[old_priority], to_change_pcb);
+    to_change_pcb_node = (node_t*)linkedlist_remove(ready_pqs[old_priority], to_change_pcb);
+
+    if (to_change_pcb_node == NULL) {
+        to_change_pcb_node = (node_t*)linkedlist_remove(mem_blocked_pqs[old_priority], to_change_pcb);
 
         if (to_change_pcb_node == NULL) {
-            to_change_pcb_node = (node_t*)linkedlist_remove(mem_blocked_pqs[old_priority], to_change_pcb);
+            return -1;
+        }
 
-            if (to_change_pcb_node == NULL) {
-                return -1;
-            }
+        linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
+    } else {
+        linkedlist_push_back(ready_pqs[new_priority], to_change_pcb_node);
 
-            linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
-        } else {
-            linkedlist_push_back(ready_pqs[new_priority], to_change_pcb_node);
-
-            if (new_priority <= current_pcb->priority) {
-                k_release_processor();
-            }
+        if (new_priority <= current_pcb->priority) {
+            k_release_processor();
         }
     }
     

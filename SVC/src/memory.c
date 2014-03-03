@@ -197,8 +197,6 @@ void* k_request_memory_block(void) {
  * @return                  returns a status code as to the success of release                
  */
 int32_t k_release_memory_block(void* p_mem_blk) {
-    uint32_t i;
-    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
 
     // verify non null block
@@ -211,38 +209,25 @@ int32_t k_release_memory_block(void* p_mem_blk) {
         return -1;
     }
 
-    // verify ownership in memory table
-    /*for (i = 0; i < MAX_MEM_BLOCKS; i++) {
-        if (mem_table[i].blk == to_del) {
-            if (mem_table[i].owner_pid != current_pcb->pid) {
-                // trying to free someone else's memory or
-                // trying to free memory that's already free
-                return -1;
-            }*/
+    if (to_del->prev != NULL) {
+        to_del->prev->next = to_del->next;
+    }
 
-            if (to_del->prev != NULL) {
-                to_del->prev->next = to_del->next;
-            }
+    if (to_del->next != NULL) {
+        to_del->next->prev = to_del->prev;
+    }
 
-            if (to_del->next != NULL) {
-                to_del->next->prev = to_del->prev;
-            }
+    to_del->next = free_mem;
+    to_del->prev = NULL;
 
-            to_del->next = free_mem;
-            to_del->prev = NULL;
+    //mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
+    blocks_allocated--;
+    free_mem = to_del;
 
-            //mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
-            blocks_allocated--;
-            free_mem = to_del;
+    // release the processor if we have to preempt a blocked process
+    if (k_should_preempt_current_process()) {
+        k_release_processor();
+    }
 
-            // release the processor if we have to preempt a blocked process
-            if (k_should_preempt_current_process()) {
-                k_release_processor();
-            }
-
-            return 0;
-    /*    }
-    }*/
-
-    return -1;
+    return 0;
 }

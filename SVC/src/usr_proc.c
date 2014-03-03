@@ -17,19 +17,19 @@ void usr_set_procs() {
     }
 
     // a
-    usr_proc_table[0].priority = MEDIUM;
-    usr_proc_table[1].priority = MEDIUM;
+    //usr_proc_table[0].priority = MEDIUM;
+    //usr_proc_table[1].priority = MEDIUM;
 
     // b
-    //usr_proc_table[0].priority = MEDIUM;
-    //usr_proc_table[1].priority = HIGH;
+    usr_proc_table[0].priority = MEDIUM;
+    usr_proc_table[1].priority = HIGH;
     
-    usr_proc_table[0].proc_start = &proc_a_1;
-    usr_proc_table[1].proc_start = &proc_a_2;
-    usr_proc_table[2].proc_start = &proc_a_3;
-    usr_proc_table[3].proc_start = &proc_a_4;
-    usr_proc_table[4].proc_start = &proc_a_5;
-    usr_proc_table[5].proc_start = &proc_a_6;
+    usr_proc_table[0].proc_start = &proc_b_1;
+    usr_proc_table[1].proc_start = &proc_b_2;
+    usr_proc_table[2].proc_start = &proc_b_3;
+    usr_proc_table[3].proc_start = &proc_b_4;
+    usr_proc_table[4].proc_start = &proc_b_5;
+    usr_proc_table[5].proc_start = &proc_b_6;
 
     /*
     for (i = 0; i < NUM_PROCS; i++) {

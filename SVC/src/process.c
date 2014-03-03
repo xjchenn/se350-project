@@ -274,10 +274,3 @@ int32_t k_get_process_priority(int32_t process_id) {
     return pcbs[process_id]->priority;
 }
 
-
-
-
-
-
-
-

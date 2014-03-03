@@ -9,7 +9,7 @@ typedef void (*func_ptr_t)();
 
 #define MEM_OFFSET_SIZE         8       // padding between kernel and heap
 #define MEM_BLOCK_SIZE          0x100   // 0x100 bytes / sizeof(mem_blk_t)
-#define MAX_MEM_BLOCKS          0x30    // 48 blocks uses 0x3000 bytes of memory
+#define MAX_MEM_BLOCKS          2 //0x30    // 48 blocks uses 0x3000 bytes of memory
 #define MEM_BLOCK_HEADER_SIZE   0x10
 #define USER_DATA_BLOCK_SIZE    MEM_BLOCK_SIZE - MEM_BLOCK_HEADER_SIZE
 
@@ -25,10 +25,35 @@ typedef void (*func_ptr_t)();
 
 #define NUM_K_PROCESSES         1
 #define NUM_USR_PROCESSES       6
-#define NUM_PROCESSES           NUM_USR_PROCESSES + NUM_K_PROCESSES
+#define NUM_PROCESSES           (uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES)
 
 #define ASSERT_FALSE(i)         i = 0 / 0
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
+
+#ifdef DEBUG
+#define DEBUG_PRINT(msg)        printf(msg)
+#else
+#define DEBUG_PRINT(msg)        /* nop */
+#endif
+
+
+
+#define PID_NULL                0
+#define PID_P1                  1
+#define PID_P2                  2
+#define PID_P3                  3
+#define PID_P4                  4
+#define PID_P5                  5
+#define PID_P6                  6
+#define PID_A                   7
+#define PID_B                   8
+#define PID_C                   9
+#define PID_SET_PRIO            10
+#define PID_CLOCK               11
+#define PID_KCD                 12
+#define PID_CRT                 13
+#define PID_TIMER_IPROC         14
+#define PID_UART_IPROC          15
 
 #endif

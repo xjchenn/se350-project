@@ -10,84 +10,25 @@
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
 
-linkedlist_t** ready_pqs;
-linkedlist_t** mem_blocked_pqs;
+node_t** pcb_nodes;
 
 pcb_t** pcbs;
-pcb_t* current_pcb = NULL;
-pcb_t kernel_pcb;
-pcb_t* stashed_pcb;
+node_t* current_pcb_node = NULL;
+linkedlist_t** ready_pqs;
+linkedlist_t** mem_blocked_pqs;
 
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 
+/**
+ * Checks to see if there is a higher priority process to preempt (with the exception) of the kernel process
+ * @return      1 if need to preempt, else 0
+ */
+uint32_t k_should_preempt_current_process(void) {
+    uint32_t i = 0;
+    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
 
-// necessary for saving the pcb state when changing possession of memory
-void swap_pcb_to_kernel_pcb(void) {
-    stashed_pcb = current_pcb;
-    current_pcb = &kernel_pcb;
-}
-
-// restores current pcb after kernel memory operations have been performed
-void restore_current_pcb(void) {
-    current_pcb = stashed_pcb;
-}
-
-/*  necessary to save the kernel state before pushing memory to the list
- *  linkedlist_t* list:
- *      the list we want to push to
- *  void* value:
- *      the value we want to push
-**/
-void k_linkedlist_push_back(linkedlist_t* list, void* value) {
-    swap_pcb_to_kernel_pcb();
-    linkedlist_push_back(list, value);
-    restore_current_pcb();
-}
-
-/*  necessary to save the kernel state and return the memory block retrieved
- *  linkedlist_t* list:
- *      the list we want to pop from
- *  returns:
- *      a void* to the value we popped
-**/
-void* k_linkedlist_pop_front(linkedlist_t* list) {
-    void* ret;
-    swap_pcb_to_kernel_pcb();
-    ret = linkedlist_pop_front(list);
-    restore_current_pcb();
-    return ret;
-}
-
-/*  necessary to save the kernel state before removing from the middle of a list
- *  linkedlist_t* list:
- *      the list we want to remove from
- *  void* value:
- *      the value we want to remove
- *  returns:
- *      a void* to the value we removed
-**/
-void* k_linkedlist_remove(linkedlist_t* list, void* value) {
-    void* ret = 0;
-    swap_pcb_to_kernel_pcb();
-    ret = linkedlist_remove(list, value);
-    restore_current_pcb();
-    return ret;
-}
-
-/*  checks to see if there is a higher priority process to preempt (with the exception)
- *  of the kernel process
- *  returns:
- *      an int32_t which represents a boolean; 1 being true, 0 being false
-**/
-int32_t k_should_preempt_current_process(void) {
-    uint32_t i;
-
-    if (current_pcb == &kernel_pcb) {
-        return 0;
-    }
-
-    for (i = 0; i < current_pcb->priority; i++) {
+    for (i = 0; i <= current_pcb->priority; i++) {
         if (mem_blocked_pqs[i]->first != NULL) {
             return 1;
         }
@@ -96,85 +37,10 @@ int32_t k_should_preempt_current_process(void) {
     return 0;
 }
 
-/*  Gets the next process that should be dispatched
- *  returns:
- *      The next process to be dispatched (pcb_t*)
-**/
-pcb_t* get_next_process(void) {
-    uint32_t i;
-    pcb_t* unblocked_pcb;
-
-    for (i = 0; i < NUM_PRIORITIES; i++) {
-        if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
-			unblocked_pcb = k_linkedlist_pop_front(mem_blocked_pqs[i]);
-            unblocked_pcb->state = READY;
-            k_linkedlist_push_back(ready_pqs[i], unblocked_pcb);
-        }
-
-        if (ready_pqs[i]->first != NULL) {
-            return (pcb_t*) k_linkedlist_pop_front(ready_pqs[i]);
-        }
-    }
-
-    return (pcb_t*)NULL;
-}
-
-/*  The process switcher
- *  pcb_t* old_pcb:
- *      takes the old pcb to switch to the next pcb from
- *  returns:
- *      a uint32_t which represents a status code
-**/
-uint32_t switch_process(pcb_t* old_pcb) {
-    PROCESS_STATE current_state = current_pcb->state;
-    // If the current state is new, then we put the process given into the ready queue
-    // If the process's state is not READY, we push it on to the memory blocked queue
-    
-    if (current_state == NEW) {
-        if (current_pcb != old_pcb && old_pcb->state != NEW) {
-            if (old_pcb->state != BLOCKED) {
-                old_pcb->state = READY;
-            }
-            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
-
-            if (old_pcb->state == READY) {
-                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
-            } else {
-                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
-            }
-        }
-        current_pcb->state = RUNNING;
-        __set_MSP((uint32_t)current_pcb->stack_ptr);
-        __rte();
-    } else if (current_pcb != old_pcb) {
-        if (current_state == READY || current_state == BLOCKED) {
-            if (old_pcb->state != BLOCKED) {
-                old_pcb->state = READY;
-            }
-
-            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
-
-            if (old_pcb->state == READY) {
-                k_linkedlist_push_back(ready_pqs[old_pcb->priority], old_pcb);
-            } else {
-                k_linkedlist_push_back(mem_blocked_pqs[old_pcb->priority], old_pcb);
-            }
-
-            current_pcb->state = RUNNING;
-            __set_MSP((uint32_t) current_pcb->stack_ptr);
-        } else {
-            current_pcb = old_pcb;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-/*  This initializes the process control blocks for the user and null processes
- *  returns:
- *      a uint32_t which represents a status code
- *  
-**/
+/**
+ *  This initializes the process control blocks for the user and null processes
+ * @return      0 if successful
+ */
 uint32_t k_init_processor(void) {
     uint32_t i;
     uint32_t j;
@@ -182,56 +48,157 @@ uint32_t k_init_processor(void) {
 
     usr_set_procs();
     k_set_procs();
-    kernel_pcb.pid = KERNEL_MEM_BLOCK_PID;
 
     for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
-        // Since the NULL process is not a user process we need to have a special case to initialize
-        if (i < NUM_K_PROCESSES) {
-            *(--stack_ptr) = (uint32_t)(k_proc_table[i].proc_start);
-            pcbs[i]->pid = k_proc_table[i].pid;
-            pcbs[i]->priority = k_proc_table[i].priority;
-        } else {
-            // Here we initialize the user processes
-            *(--stack_ptr) = (uint32_t)(usr_proc_table[i - NUM_K_PROCESSES].proc_start);
-            pcbs[i]->pid = usr_proc_table[i - NUM_K_PROCESSES].pid;
-            pcbs[i]->priority = usr_proc_table[i - NUM_K_PROCESSES].priority;
+
+        switch (i) {
+            case 0:
+                // null process
+                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid = k_proc_table[0].pid;
+                pcbs[i]->priority = k_proc_table[0].priority;
+                break;
+
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                // user process
+                *(--stack_ptr) = (uint32_t)(usr_proc_table[i - 1].proc_start);
+                pcbs[i]->pid = usr_proc_table[i - 1].pid;
+                pcbs[i]->priority = usr_proc_table[i - 1].priority;
+                break;
+            
+            default:
+                // TODO
+                break;
         }
 
+        // add padding to stack?
         for (j = 0; j < 6; j++) {
             *(--stack_ptr) = NULL;
         }
 
         pcbs[i]->stack_ptr = stack_ptr;
         pcbs[i]->state = NEW;
-        k_linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcbs[i]);
+        pcb_nodes[i]->value = (void*)pcbs[i];
+        linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
+    }
+    
+    current_pcb_node = NULL;
+
+    return 0;
+}
+
+/**
+ * Gets the next process that should be dispatched
+ * @return      The next process to be dispatched (pcb_t*)
+ */
+node_t* get_next_process(void) {
+    uint32_t i;
+    
+    node_t* unblocked_pcb_node;
+    pcb_t* unblocked_pcb;
+
+    node_t* ret_pcb_node;
+    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
+    
+    int loop_max = current_pcb->state == BLOCKED ? NUM_PRIORITIES : (current_pcb->priority + 1);
+   
+    for (i = 0; i < loop_max; i++) {
+        if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
+            unblocked_pcb_node = linkedlist_pop_front(mem_blocked_pqs[i]);
+            unblocked_pcb = (pcb_t*)unblocked_pcb_node->value;
+            unblocked_pcb->state = READY;
+            linkedlist_push_back(ready_pqs[i], unblocked_pcb_node);
+        }
+
+        if (ready_pqs[i]->first != NULL) {
+            ret_pcb_node = linkedlist_pop_front(ready_pqs[i]);
+            
+            if (current_pcb->state == RUNNING) {
+                current_pcb->state = READY;
+            }
+
+            switch(current_pcb->state) {
+                case BLOCKED:
+                    linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
+                    break;
+                case READY:
+                    linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
+                    break;
+                default:
+                    break;
+            }
+                  
+            return ret_pcb_node;
+        }
+    }
+
+    return current_pcb_node;
+}
+
+/**
+ * Scheduler (assume current_pcb_node has already been changed)
+ * @param  old_pcb_node     node for old pcb to switch from 
+ * @return                  0 if successful
+ */
+uint32_t switch_process(node_t* old_pcb_node) {
+    pcb_t* old_pcb              = (pcb_t*)old_pcb_node->value;
+    pcb_t* current_pcb          = (pcb_t*)current_pcb_node->value;
+    PROCESS_STATE current_state = current_pcb->state;
+    // If the current state is new, then we put the process given into the ready queue
+    // If the process's state is not READY, we push it on to the memory blocked queue
+    
+    if (current_state == NEW) {
+        if (current_pcb != old_pcb && old_pcb->state != NEW) {
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
+        }
+        
+        current_pcb->state = RUNNING;
+        __set_MSP((uint32_t)current_pcb->stack_ptr);
+        __rte();
+    } else if (current_pcb != old_pcb) {
+        if (current_state == READY || current_state == BLOCKED) {
+            old_pcb->stack_ptr = (uint32_t*)__get_MSP();
+            current_pcb->state = RUNNING;
+            __set_MSP((uint32_t) current_pcb->stack_ptr);
+        } else {
+            current_pcb = old_pcb;
+            return 1;
+        }
     }
 
     return 0;
 }
-/*  This gets the next process from the queue and then calls switch process to switch
- *  returns:
- *      a uint32_t which represents a status code
- *
-**/
+
+/**
+ * This gets the next process from the queue and then calls switch process to switch
+ * @return      0 if successful
+ */
 uint32_t k_release_processor(void) {
-    pcb_t* old_pcb = current_pcb;
+    node_t* old_pcb_node = current_pcb_node;
 
-    current_pcb = get_next_process();
+    current_pcb_node = get_next_process();
 
-    // If the process received from get_next_process() is NULL, keep current_pcb to what was currently running
-    // return not successful return code
-    if (current_pcb == NULL) {
-        current_pcb = old_pcb;
+    // if the process received from get_next_process() is NULL, 
+    // keep current_pcb to what was currently running
+    if (current_pcb_node == NULL) {
+        current_pcb_node = old_pcb_node;
+        DEBUG_PRINT("k_release_processor failed");
         return 1;
     }
 
-    if (old_pcb == NULL) {
-        old_pcb = current_pcb;
+    // first time calling release_processor()
+    if (old_pcb_node == NULL) {
+        old_pcb_node = current_pcb_node;
     }
 
-    return switch_process(old_pcb);
+    return switch_process(old_pcb_node);
 }
 
 /**
@@ -240,46 +207,57 @@ uint32_t k_release_processor(void) {
  * @param  priority     The new priority of the target process
  * @return              Zero if successful
  */
-int32_t k_set_process_priority(int32_t process_id, int32_t priority) {
-    pcb_t* to_change;
-    pcb_t* to_find = NULL;
+int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
+    uint32_t i;
+    
+    pcb_t* to_change_pcb;
+    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
+    node_t* to_change_pcb_node = NULL;
     uint32_t old_priority;
 
-    if (process_id < 1 || process_id >= NUM_PROCESSES || priority < 0 || priority >= (NUM_PRIORITIES - 1)) {
+    if (process_id < 1 || process_id >= NUM_PROCESSES || new_priority < 0 || new_priority >= (NUM_PRIORITIES - 1)) {
         return -1;
     }
 
-    to_change = pcbs[process_id];
-    old_priority = to_change->priority;
+    to_change_pcb = pcbs[process_id];
+    old_priority = to_change_pcb->priority;
 
-    if (old_priority == priority) {
+    if (old_priority == new_priority) {
         return 0;
     }
 
-    to_change->priority = priority;
+    to_change_pcb->priority = new_priority;
 
-    if (to_change == current_pcb) {
+    if (to_change_pcb == current_pcb) {
+        // just changed self priority
+        // check if there's another ready process with higher priority
+        for (i = 0; i <= new_priority; i++) {
+            if (ready_pqs[i]->length != 0) {
+                k_release_processor();
+                break;
+            }
+        }
         return 0;
-    }
+    } 
+        // just changed another's priority
+    to_change_pcb_node = (node_t*)linkedlist_remove(ready_pqs[old_priority], to_change_pcb);
 
-    to_find = (pcb_t*)k_linkedlist_remove(ready_pqs[old_priority], to_change);
+    if (to_change_pcb_node == NULL) {
+        to_change_pcb_node = (node_t*)linkedlist_remove(mem_blocked_pqs[old_priority], to_change_pcb);
 
-    if (to_find == NULL) {
-        to_find = (pcb_t*)k_linkedlist_remove(mem_blocked_pqs[old_priority], to_change);
-
-        if (to_find == NULL) {
-            return 1;
+        if (to_change_pcb_node == NULL) {
+            return -1;
         }
 
-        k_linkedlist_push_back(mem_blocked_pqs[priority], to_change);
+        linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
     } else {
-        k_linkedlist_push_back(ready_pqs[priority], to_change);
+        linkedlist_push_back(ready_pqs[new_priority], to_change_pcb_node);
 
-        if (priority < current_pcb->priority) {
+        if (new_priority <= current_pcb->priority) {
             k_release_processor();
         }
     }
-
+    
     return 0;
 }
 
@@ -295,3 +273,4 @@ int32_t k_get_process_priority(int32_t process_id) {
 
     return pcbs[process_id]->priority;
 }
+

@@ -26,6 +26,7 @@ extern pcb_t** pcbs;
 extern node_t* current_pcb_node;
 extern linkedlist_t** ready_pqs;
 extern linkedlist_t** mem_blocked_pqs;
+extern linkedlist_t** msg_blocked_pqs;
 
 // pop off exception stack frame from the stack
 extern void __rte(void);

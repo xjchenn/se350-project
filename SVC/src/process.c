@@ -16,6 +16,7 @@ pcb_t** pcbs;
 node_t* current_pcb_node = NULL;
 linkedlist_t** ready_pqs;
 linkedlist_t** mem_blocked_pqs;
+linkedlist_t** msg_blocked_pqs;
 
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];

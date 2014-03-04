@@ -87,6 +87,7 @@ uint32_t k_init_memory_blocks(void) {
 
     allocate_memory_to_queue(&ready_pqs);
     allocate_memory_to_queue(&mem_blocked_pqs);
+    allocate_memory_to_queue(&msg_blocked_pqs);
     allocate_memory_to_queue_nodes();
     allocate_memory_to_pcbs();
 

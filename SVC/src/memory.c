@@ -160,7 +160,7 @@ void* k_request_memory_block(void) {
 
     // if we can't get free memory, block the current process
     while (ret_blk == NULL) {
-        current_pcb->state = BLOCKED;
+        current_pcb->state = MEM_BLOCKED;
         k_release_processor();
         ret_blk = free_mem;
     }

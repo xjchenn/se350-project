@@ -8,7 +8,8 @@ typedef enum {
     NEW = 0,
     READY,
     RUNNING,
-    BLOCKED,
+    MEM_BLOCKED,
+    MSG_BLOCKED,
     EXIT
 } PROCESS_STATE;
 

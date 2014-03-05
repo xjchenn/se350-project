@@ -29,5 +29,33 @@ uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
     
     receiver = pcbs[process_id];
     
+    linkedlist_push_back(&receiver->msg_queue, &message->msg_node);
+    
+    if(receiver->state == MSG_BLOCKED) {
+        k_move_pcb_from_msg_blocked_to_ready(receiver);
+        if(receiver->priority <= ((pcb_t *)current_pcb_node->value)->priority) {
+            k_release_processor();
+        }
+    }
+    
     return 0;
+}
+
+void* k_receive_message(int32_t* sender_id) {
+    node_t* message_node;
+    message_t* message;
+    pcb_t* current_pcb;
+    
+    current_pcb = (pcb_t *)current_pcb_node->value;
+    
+    while(current_pcb->msg_queue.length == 0) {
+        current_pcb->state = MSG_BLOCKED;
+        k_release_processor();
+    }
+    
+    message_node = linkedlist_pop_front(&current_pcb->msg_queue);
+    message = (message_t *)message_node->value;
+    *sender_id = message->sender_pid;
+    
+    return (void*)USER_MSG_ADDR(message);
 }

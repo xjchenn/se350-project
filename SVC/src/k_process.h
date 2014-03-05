@@ -32,6 +32,7 @@ extern linkedlist_t** msg_blocked_pqs;
 // pop off exception stack frame from the stack
 extern void __rte(void);
 
+uint32_t k_move_pcb_from_msg_blocked_to_ready(pcb_t*);
 uint32_t k_should_preempt_current_process(void);
 uint32_t k_init_processor(void);
 uint32_t k_release_processor(void);

@@ -21,6 +21,16 @@ linkedlist_t** msg_blocked_pqs;
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 
+uint32_t k_move_pcb_from_msg_blocked_to_ready(pcb_t* pcb) {
+    node_t* pcb_node;
+    
+    pcb->state = READY;
+    pcb_node = linkedlist_remove(msg_blocked_pqs[pcb->priority], pcb);
+    linkedlist_push_back(ready_pqs[pcb->priority], pcb_node);
+    
+    return 0;
+}
+
 /**
  * Checks to see if there is a higher priority process to preempt (with the exception) of the kernel process
  * @return      1 if need to preempt, else 0

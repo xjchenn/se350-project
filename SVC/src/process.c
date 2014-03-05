@@ -86,6 +86,7 @@ uint32_t k_init_processor(void) {
 
         pcbs[i]->stack_ptr = stack_ptr;
         pcbs[i]->state = NEW;
+        linkedlist_init(&pcbs[i]->msg_queue);
         pcb_nodes[i]->value = (void*)pcbs[i];
         linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
     }

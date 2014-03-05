@@ -18,6 +18,7 @@ typedef struct {
     PROCESS_STATE state;
     uint32_t priority;
     uint32_t* stack_ptr;
+    linkedlist_t msg_queue;
 } pcb_t;
 
 // globals in process.c that need to be allocated by memory.c

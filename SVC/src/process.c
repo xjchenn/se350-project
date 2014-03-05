@@ -134,7 +134,7 @@ node_t* get_next_process(void) {
                     linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
                 case MSG_BLOCKED:
-                    linkedlist_push_back(msg_blocked)pqs[current_pcb->priority], current_pcb_node);
+                    linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
                 case READY:
                     linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;

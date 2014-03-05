@@ -117,7 +117,7 @@ uint32_t k_init_memory_blocks(void) {
             // last block
             ((mem_blk_t*)i)->next = NULL;
         }
-        ((mem_blk_t*)i)->data = (void*)(i + MEM_BLOCK_HEADER_SIZE);
+        ((mem_blk_t*)i)->data = (void*)(i + MEM_BLOCK_HEADER_SIZE + KERNEL_MSG_HEADER_SIZE);
         ((mem_blk_t*)i)->padding = SWAP_UINT32(0xABAD1DEA);
 
         mem_table[j].owner_pid = FREE_MEM_BLOCK_PID;
@@ -198,7 +198,7 @@ void* k_request_memory_block(void) {
  * @return                  returns a status code as to the success of release                
  */
 int32_t k_release_memory_block(void* p_mem_blk) {
-    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
+    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
 
     // verify non null block
     if (to_del == NULL) {

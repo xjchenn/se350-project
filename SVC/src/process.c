@@ -7,6 +7,7 @@
 #include "uart_polling.h"
 #include "usr_proc.h"
 #include "k_proc.h"
+#include "memory.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
 

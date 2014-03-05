@@ -1,5 +1,4 @@
 #include "linkedlist.h"
-#include "k_memory.h"
 #include "utils.h"
 
 int linkedlist_init(linkedlist_t* list) {

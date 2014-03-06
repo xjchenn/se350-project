@@ -8,6 +8,7 @@
 #define UART_POLLING_H_
 
 #include <stdint.h>  /* typedefs */
+#include "uart_def.h"
 
 #define NULL 0
 
@@ -26,9 +27,6 @@
    LCR:2-1 8-bit char len
    Table 279, page 306, LPC17xxum.pdf v2
  */
-
-#define BIT(X)(1 << (X))/* convenient macro for bit operation */
-
 
 #define uart0_init()        uart_init(0)
 #define uart0_get_char()    uart_get_char(0)

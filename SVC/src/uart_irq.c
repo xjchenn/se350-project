@@ -174,14 +174,11 @@ __asm void UART0_IRQHandler(void)
 	LDR R4, [R4]
 	MOV R5, #0
 	CMP R4, R5
+	CPSIE i                         ; enable interrupts
 	BEQ  RESTORE                    ; if g_switch_flag == 0, then restore the process that was interrupted
-
-SWITCH
-    CPSIE i                         ; enable interrupts
 	BL k_release_processor          ; otherwise (i.e g_switch_flag == 1, then switch to the other process)
 
 RESTORE
-    CPSIE i
 	POP{r4-r11, pc}
 }
 

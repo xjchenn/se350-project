@@ -22,9 +22,10 @@ uint32_t end_received_msg_idx = 0;
 uint32_t k_init_message(void* message, uint32_t process_id) {
     message_t* msg = (message_t *)message;
     
+uint32_t k_init_message(message_t* msg, uint32_t process_id) {
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
-    msg->msg_node.value = message;
+    msg->msg_node.value = msg;
     msg->sender_pid = ((pcb_t *)(current_pcb_node->value))->pid;
     msg->receiver_pid = process_id;
     
@@ -84,7 +85,7 @@ uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
         return 1;
     }
     
-    k_init_message(message_envelope, process_id);
+    k_init_message(message, process_id);
     
     receiver = pcbs[process_id];
     

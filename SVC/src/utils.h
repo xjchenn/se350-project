@@ -22,8 +22,11 @@ typedef void (*func_ptr_t)();
 #define NUM_PRIORITIES          5
 
 #define NUM_K_PROCESSES         1
+#define NUM_I_PROCESSES         2
 #define NUM_USR_PROCESSES       6
-#define NUM_PROCESSES           (uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES)
+#define NUM_PROCESSES           (uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES + NUM_I_PROCESSES)
+
+#define MSG_LOG_BUFFER_SIZE     10
 
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
@@ -52,5 +55,12 @@ typedef void (*func_ptr_t)();
 #define PID_CRT                 13
 #define PID_TIMER_IPROC         14
 #define PID_UART_IPROC          15
+#define KEY_READY_QUEUE         '1'
+#define KEY_BLOCKED_MEM_QUEUE   '2'
+#define KEY_BLOCKED_MSG_QUEUE   '3'
+#define KEY_MSG_LOG_BUFFER      '4'
+
+#define PRINT_NEWLINE           printf("\r\n")
+#define PRINT_HEADER            printf("----------------------------------------------------------\r\n")
 
 #endif

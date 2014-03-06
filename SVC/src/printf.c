@@ -227,6 +227,14 @@ void tfp_printf(char* fmt, ...) {
     va_end(va);
 }
 
+void tfp_println(char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    tfp_format(stdout_putp, stdout_putf, fmt, va);
+    va_end(va);
+    tfp_printf("\r\n");
+}
+
 static void putcp(void* p, char c) {
     *(*((char**)p))++ = c;
 }

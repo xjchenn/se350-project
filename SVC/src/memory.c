@@ -59,7 +59,7 @@ void allocate_memory_to_pcbs(void) {
     uint32_t i = 0;
 
     pcbs = (pcb_t**)start_of_heap;
-    start_of_heap += 7 * sizeof(pcb_t*); //  NUM_PROCESSES * sizeof(pcb_t*); apparently compiler thinks this is equal to 0xA instead of 28 so this is hardcoded
+    start_of_heap += NUM_PROCESSES * sizeof(pcb_t*); // apparently compiler thinks 7*4 is equal to 0xA instead of 28 so this is hardcoded
 
     for (i = 0; i < NUM_PROCESSES; i++) {
         pcbs[i] = (pcb_t*)start_of_heap;

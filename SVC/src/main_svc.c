@@ -11,7 +11,7 @@
 
 #include <LPC17xx.h>
 #include "printf.h"
-#include "uart_polling.h"
+#include "uart_def.h"
 #include "rtx.h"
 
 void test_memory() {
@@ -37,7 +37,9 @@ int main() {
     volatile unsigned int ret_val = 1234;
 
     SystemInit();  /* initialize the system */
+
     rtx_init();
+    // timer_init(0);
 
     // transit to unprivileged level, default MSP is used
     __set_CONTROL(__get_CONTROL() | BIT(0));

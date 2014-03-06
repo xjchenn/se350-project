@@ -22,6 +22,12 @@ linkedlist_t** msg_blocked_pqs;
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 
+// whether to continue running the process after UART interrupt
+// the UART handler is responsbile for setting this var
+// - 1 to switch (calls release_processor)
+// - 0 to restore current process
+uint32_t g_switch_flag = 0;
+
 uint32_t k_pcb_msg_unblock(pcb_t* pcb) {
     node_t* pcb_node;
     
@@ -61,7 +67,7 @@ uint32_t k_init_processor(void) {
     usr_set_procs();
     k_set_procs();
 
-    for (i = 0; i < NUM_PROCESSES; ++i) {
+    for (i = 0; i < NUM_USR_PROCESSES + 1; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
 
@@ -293,4 +299,21 @@ int32_t k_get_process_priority(int32_t process_id) {
     }
 
     return pcbs[process_id]->priority;
+}
+
+void k_print_queues(linkedlist_t** queues) {
+    uint32_t i;
+    linkedlist_t* queue_itr;
+    node_t* pcb_node_itr;
+    pcb_t* curr_pcb_itr;
+
+    for (i = 0; i < NUM_PRIORITIES; i++) {
+        queue_itr = queues[i];
+        pcb_node_itr = queue_itr->first;
+        while (pcb_node_itr != NULL) {
+            curr_pcb_itr = (pcb_t*) pcb_node_itr->value;
+            println("PID:%d Priority:%d SP:%x", curr_pcb_itr->pid, curr_pcb_itr->priority, curr_pcb_itr->stack_ptr);
+            pcb_node_itr = pcb_node_itr->next;
+        }
+    }
 }

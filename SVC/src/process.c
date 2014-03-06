@@ -67,7 +67,7 @@ uint32_t k_init_processor(void) {
     usr_set_procs();
     k_set_procs();
 
-    for (i = 0; i < NUM_USR_PROCESSES; ++i) {
+    for (i = 0; i < NUM_USR_PROCESSES + 1; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
 

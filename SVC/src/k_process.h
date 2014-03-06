@@ -39,4 +39,6 @@ uint32_t k_release_processor(void);
 int32_t k_set_process_priority(int32_t process_id, int32_t new_priority);
 int32_t k_get_process_priority(int32_t process_id);
 
+void k_print_queues(linkedlist_t** queues);
+
 #endif

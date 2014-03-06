@@ -309,9 +309,11 @@ void usr_proc_p2_2(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xAFFFF; i++) {
+        for (i = 0; i < 0xFFFFFF; i++) {
             ; // nop to induce delay
         }
+
+        release_memory_block(msg_envelope);
     }
 }
 
@@ -325,9 +327,11 @@ void usr_proc_p2_3(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p3\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xAFFFF; i++) {
+        for (i = 0; i < 0xFFFFFF; i++) {
             ; // nop to induce delay
         }
+
+        release_memory_block(msg_envelope);
     }
 }
 
@@ -341,9 +345,11 @@ void usr_proc_p2_4(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p4\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xAFFFF; i++) {
+        for (i = 0; i < 0xFFFFFF; i++) {
             ; // nop to induce delay
         }
+
+        release_memory_block(msg_envelope);
     }
 }
 
@@ -357,9 +363,11 @@ void usr_proc_p2_5(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p5\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xAFFFF; i++) {
+        for (i = 0; i < 0xFFFFFF; i++) {
             ; // nop to induce delay
         }
+
+        release_memory_block(msg_envelope);
     }
 }
 

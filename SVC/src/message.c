@@ -1,11 +1,18 @@
 #include "k_message.h"
 #include "message.h"
 #include "k_process.h"
+#include "timer.h"
 
 #define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
 #define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
 
-uint32_t k_init_message(message_t* msg, uint32_t process_id) {
+
+extern linkedlist_t timeout_queue;
+extern volatile uint32_t g_timer_count;
+
+uint32_t k_init_message(void* message, uint32_t process_id) {
+    message_t* msg = (message_t *)message;
+    
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
     msg->msg_node.value = msg;
@@ -97,6 +104,38 @@ uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
     if(receiver->state == MSG_BLOCKED) {
         k_pcb_msg_unblock(receiver);
     }
-    
+
+int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay) {
+    message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
+    node_t* iter;
+
+    if(process_id < 1 || process_id >= NUM_PROCESSES || delay < 0) {
+        return 1;
+    }
+    // If no delay, send message right away
+    if (delay == 0) {
+        k_send_message(process_id, message_envelope);
+        return 0;
+    }
+
+    // Add the timer_count to keep track of expiry without linear search
+    message->expiry = delay + g_timer_count;
+    message->sender_pid = process_id;
+
+    iter = timeout_queue.first;
+
+    while(iter != NULL) {
+        // We found a place to insert into the queue
+        if (((message_t *)iter->value)->expiry > delay) {
+            node_t* new_node;
+            new_node->prev = iter->prev;
+            new_node->next = iter;
+            new_node->value = (void*)message;
+            iter->prev->next = new_node;
+            return 0;
+        }
+    }
+    // If we get here, then the delay time is greater than all that are in the queue
+    linkedlist_push_back(&timeout_queue, &message->msg_node);
     return 0;
 }

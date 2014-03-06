@@ -8,6 +8,7 @@
 
 #define DEFAULT 0
 #define KCD_REG 1
+#define CRT_DISPLAY 2
 
 typedef struct {
     uint32_t msg_type;

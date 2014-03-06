@@ -476,6 +476,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
             </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
@@ -949,6 +954,11 @@
               <FileName>k_proc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
+            </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
             </File>
           </Files>
         </Group>

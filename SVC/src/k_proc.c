@@ -2,6 +2,7 @@
 #include "uart.h"
 #include "utils.h"
 #include "process.h"
+#include "message.h"
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
@@ -21,11 +22,29 @@ void k_set_procs(void) {
     
     k_proc_table[2].pid = 15;
     k_proc_table[2].proc_start = &c_UART0_IRQHandler;
+    
+    k_proc_table[3].pid = 13;
+    k_proc_table[3].priority = HIGHEST;
+    k_proc_table[3].proc_start = &crt_proc;
 }
 
 void null_proc(void) {
     while (1) {
         release_processor();
+    }
+}
+
+void crt_proc(void) {
+    msg_buf_t* msg;
+    
+    while(1) {
+        msg = receive_message(NULL);
+        
+        if(msg->msg_type == CRT_DISPLAY) {
+            send_message(PID_UART_IPROC, msg);
+        } else {
+            release_memory_block(msg);
+        }
     }
 }
 

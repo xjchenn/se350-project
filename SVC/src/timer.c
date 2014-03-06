@@ -9,6 +9,7 @@
 #include <LPC17xx.h>
 #include "timer.h"
 #include "k_message.h"
+#include "printf.h"
 
 #define BIT(X) (1<<X)
 
@@ -122,12 +123,24 @@ void c_TIMER0_IRQHandler(void)
 }
 
 void timer_i_process(void) {
+	message_t *msg;
+	node_t* iter;
+	int is_empty = 1;
 	// 1) Get any pending requests 
+	while (is_empty != 0) {
+		// Non-Blocking receive_message
+		msg = (message_t *)k_receive_message_i((int32_t *)PID_TIMER_IPROC);
+		if (msg != NULL) {
+			k_delayed_send(msg->receiver_pid, &msg->msg_node, msg->expiry);
+		} else {
+			is_empty = 0;
+		}
+	}
 	// 2) Go through the timeout_queue and find out any messages that are due
-	node_t* iter = timeout_queue.first;
+	iter = timeout_queue.first;
 	while (iter != NULL && ((message_t *)iter)->expiry <= g_timer_count) {
 		node_t * node = (node_t *)linkedlist_pop_front(&timeout_queue);
-		k_send_message(((message_t *)node->value)->sender_pid, &((message_t *)node->value)->msg_node);
+		k_send_message(((message_t *)node->value)->receiver_pid, &((message_t *)node->value)->msg_node);
 		iter = iter->next;
 	}
 }

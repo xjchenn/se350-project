@@ -18,6 +18,7 @@ uint32_t k_init_message(void* message, uint32_t process_id) {
     msg->msg_node.value = msg;
     msg->sender_pid = ((pcb_t *)(current_pcb_node->value))->pid;
     msg->receiver_pid = process_id;
+    msg->expiry = 0;
     
     return 0;
 }
@@ -66,6 +67,28 @@ void* k_receive_message(int32_t* sender_id) {
     
     return (void*)USER_MSG_ADDR(message);
 }
+/* 
+ * Non-blocking version of receive_message
+ * 
+ * returns NULL if no messages available
+ */
+void* k_receive_message_i(int32_t* sender_id) {
+    node_t* message_node;
+    message_t* message;
+    pcb_t* current_pcb;
+    
+    current_pcb = (pcb_t *)current_pcb_node->value;
+    
+    while(current_pcb->msg_queue.length == 0) {
+        return NULL;
+    }
+    
+    message_node = linkedlist_pop_front(&current_pcb->msg_queue);
+    message = (message_t *)message_node->value;
+    *sender_id = message->sender_pid;
+    
+    return (void*)USER_MSG_ADDR(message);
+}
 
 void* k_receive_message_i(int32_t* sender_id) {
     node_t* message_node;
@@ -106,6 +129,7 @@ uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
     }
 
 int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay) {
+    // possibly need a pcb type mailbox... TODO impl?
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     node_t* iter;
 
@@ -120,7 +144,7 @@ int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay
 
     // Add the timer_count to keep track of expiry without linear search
     message->expiry = delay + g_timer_count;
-    message->sender_pid = process_id;
+    message->receiver_pid = process_id;
 
     iter = timeout_queue.first;
 

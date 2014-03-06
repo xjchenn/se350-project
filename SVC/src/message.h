@@ -15,6 +15,8 @@ typedef struct {
     char msg_data[1];
 } msg_buf_t;
 
+void* k_receive_message_i(int32_t*);
+
 extern uint32_t k_send_message(uint32_t, void*);
 #define send_message(process_id, message_envelope) _send_message((uint32_t)k_send_message, process_id, message_envelope)
 extern uint32_t __SVC_0 _send_message(uint32_t p_func, uint32_t process_id, void* message_envelope);

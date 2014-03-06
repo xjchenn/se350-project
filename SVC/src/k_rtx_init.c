@@ -5,6 +5,7 @@
 #include "k_memory.h"
 #include "k_process.h"
 #include "printf.h"
+#include "timer.h"
 
 void k_rtx_init(void) {
     __disable_irq();
@@ -13,6 +14,7 @@ void k_rtx_init(void) {
 		uart1_init();           // uart1, polling
     k_init_memory_blocks();
     k_init_processor();
+    timer_init(0);
     __enable_irq();
 
     k_release_processor();

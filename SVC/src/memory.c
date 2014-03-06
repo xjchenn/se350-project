@@ -18,7 +18,6 @@ uint32_t* stack;
 uint32_t blocks_allocated;
 mem_blk_t* free_mem;
 mem_blk_t* alloc_mem;
-mem_table_entry_t mem_table[MAX_MEM_BLOCKS];
 
 /**
  * Allocates memory for the ready/blocked queues (implemented as doubly linked lists) at the top of the heap
@@ -119,9 +118,6 @@ uint32_t k_init_memory_blocks(void) {
         }
         ((mem_blk_t*)i)->data = (void*)(i + MEM_BLOCK_HEADER_SIZE + KERNEL_MSG_HEADER_SIZE);
         ((mem_blk_t*)i)->padding = SWAP_UINT32(0xABAD1DEA);
-
-        mem_table[j].owner_pid = FREE_MEM_BLOCK_PID;
-        mem_table[j].blk = ((mem_blk_t*)i);
     }
     end_of_heap = i + MEM_BLOCK_SIZE;
 
@@ -170,7 +166,7 @@ void* k_request_memory_block(void) {
     free_mem = free_mem->next;
     if (free_mem != NULL) {
         free_mem->prev = NULL;
-    } 
+    }
     ret_blk->next = alloc_mem;
     if (alloc_mem != NULL) {
         alloc_mem->prev = ret_blk;
@@ -182,20 +178,14 @@ void* k_request_memory_block(void) {
         *((uint32_t*)i) = 0;
     }
     // assigns the current process to the memory blocks given
-    for (i = 0; i < MAX_MEM_BLOCKS; i++) {
-        if (mem_table[i].blk == ret_blk) {
-            mem_table[i].owner_pid = current_pcb->pid;
             blocks_allocated++;
             return (void*)ret_blk->data;
-        }
-    }
-    return NULL;
 }
 
 /**
  * Releases a memory block from control by a process
  * @param  p_mem_blk        the memory block owned by the process
- * @return                  returns a status code as to the success of release                
+ * @return                  returns a status code as to the success of release
  */
 int32_t k_release_memory_block(void* p_mem_blk) {
     mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);

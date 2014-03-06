@@ -1,5 +1,4 @@
 #include "linkedlist.h"
-#include "k_memory.h"
 #include "utils.h"
 
 int linkedlist_init(linkedlist_t* list) {
@@ -14,143 +13,138 @@ int linkedlist_init(linkedlist_t* list) {
     return 0;
 }
 
-void* linkedlist_remove(linkedlist_t* list, void* value) {
-    node_t* itr;
-    void* ret;
-
-    if (list == NULL) {
-        return NULL;
-    }
-
-    if (list->first != NULL && list->first->value == value) {
-        return linkedlist_pop_front(list);
-    }
-
-    if (list->last != NULL && list->last->value == value) {
-        return linkedlist_pop_back(list);
-    }
-
-    itr = list->first;
-
-    while (itr != NULL && itr->next != NULL) {
-        if (itr->value == value) {
-            ret = itr->value;
-            if (itr->next != NULL) {
-                itr->next->prev = itr->prev;
-            }
-
-            if (itr->prev != NULL) {
-                itr->prev->next = itr->next;
-            }
-
-            k_release_memory_block((void*)itr);
-            list->length--;
-            return ret;
-        }
-
-        itr = itr->next;
-    }
-
-    return NULL;
-}
-
-int linkedlist_push_front(linkedlist_t* list, void* value) {
-    node_t* newNode = NULL;
-
+int linkedlist_push_front(linkedlist_t* list, node_t* new_node) {
     if (list == NULL) {
         return 1;
     }
-
-    newNode = (node_t*) k_request_memory_block(); // what a waste of memory
-    newNode->next  = list->first;
-    newNode->prev  = NULL;
-    newNode->value = value;
 
     if (list->first != NULL) {
-        list->first->prev = newNode;
+        list->first->prev = new_node;
     }
 
-    list->first = newNode;
-    if (list->last == NULL) {
-        list->last = newNode;
-    }
+    new_node->next = list->first;
+    new_node->prev = NULL; // whoever gave me this node is responsible for managing the new_node->prev pointer
 
     list->length++;
+    list->first = new_node;
+
+    if (list->last == NULL) {
+        list->last = new_node;
+    }
 
     return 0;
 }
 
-int linkedlist_push_back(linkedlist_t* list, void* value) {
-    node_t* newNode = NULL;
-
+int linkedlist_push_back(linkedlist_t* list, node_t* new_node) {
     if (list == NULL) {
         return 1;
     }
 
-    newNode = (node_t*) k_request_memory_block();
-    newNode->next  = NULL;
-    newNode->prev  = list->last;
-    newNode->value = value;
     if (list->last != NULL) {
-        list->last->next = newNode;
+        list->last->next = new_node;
     }
 
-    list->last = newNode;
-    if (list->first == NULL) {
-        list->first = newNode;
-    }
+    new_node->prev = list->last;
+    new_node->next = NULL; // whoever gave me this node is responsible for managing the new_node->next pointer
 
     list->length++;
+    list->last = new_node;
+
+    if (list->first == NULL) {
+        list->first = new_node;
+    }
 
     return 0;
 }
 
-void* linkedlist_pop_front(linkedlist_t* list) {
-    node_t* firstNode;
-    node_t* secondNode;
-    void* nodeValue;
+node_t* linkedlist_pop_front(linkedlist_t* list) {
+    node_t* first_node;
+    node_t* second_node;
 
     if (list == NULL || list->first == NULL) {
         return NULL;
     }
+    // guarantees list->first is not null
 
-    firstNode  = list->first;
-    secondNode = firstNode->next;
-    nodeValue  = firstNode->value;
+    first_node  = list->first;
+    second_node = first_node->next;
 
-    if (secondNode != NULL) {
-        secondNode->prev = NULL;
+    if (second_node != NULL) {
+        second_node->prev = NULL;
     }
-    list->first = secondNode;
 
-    k_release_memory_block(firstNode);
-
+    list->first = second_node;
+    
+    if(list->first == NULL) {
+        list->last = NULL;
+    }
+    
     list->length--;
 
-    return nodeValue;
+    return first_node;
 }
 
-void* linkedlist_pop_back(linkedlist_t* list) {
-    node_t* lastNode;
-    node_t* secondLastNode;
-    void* nodeValue;
+node_t* linkedlist_pop_back(linkedlist_t* list) {
+    node_t* last_node;
+    node_t* second_last_node;
 
     if (list == NULL || list->last == NULL) {
         return NULL;
     }
+    // guarantees list->last is not null
 
-    lastNode       = list->last;
-    secondLastNode = lastNode->prev;
-    nodeValue      = lastNode->value;
+    last_node        = list->last;
+    second_last_node = last_node->prev;
 
-    if (secondLastNode != NULL) {
-        secondLastNode->next = NULL;
+    if (second_last_node != NULL) {
+        second_last_node->next = NULL;
     }
-    list->last = secondLastNode;
 
-    k_release_memory_block(lastNode);
-
+    list->last = second_last_node;
+    
+    if(list->last == NULL) {
+        list->first = NULL;
+    }
+    
     list->length--;
 
-    return nodeValue;
+    return last_node;
+}
+
+node_t* linkedlist_remove(linkedlist_t* list, void* target_value) {
+    node_t* iter;
+
+    if (list == NULL) {
+        return NULL;
+    }
+    
+    if (list->first != NULL && list->first->value == target_value) {
+        return linkedlist_pop_front(list);
+    }
+
+    if (list->last != NULL && list->last->value == target_value) {
+        return linkedlist_pop_back(list);
+    }
+    
+    iter = list->first;
+
+    while (iter != NULL) {
+        if (iter->value == target_value) {
+            if (iter->next != NULL) {
+                iter->next->prev = iter->prev;
+            }
+
+            if (iter->prev != NULL) {
+                iter->prev->next = iter->next;
+            }
+
+            list->length--;
+
+            return iter;
+        }
+
+        iter = iter->next;
+    }
+
+    return NULL;
 }

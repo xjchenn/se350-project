@@ -10,9 +10,18 @@ typedef struct mem_blk {
     uint32_t padding;
 } mem_blk_t;
 
-void* k_request_memory_block(void);
-uint32_t k_release_memory_block(void*);
-uint32_t k_init_memory_blocks(void);
+typedef struct mem_table_entry {
+    int32_t owner_pid;
+    mem_blk_t* blk;
+} mem_table_entry_t;
+
+// used by k_init_processor() to assign stacks to individual processes
 uint32_t* k_alloc_stack(uint32_t size);
+
+// handles alloc/free dynamic memory
+uint32_t k_init_memory_blocks(void);
+void* k_request_memory_block(void);
+int32_t k_release_memory_block(void*);
+
 
 #endif

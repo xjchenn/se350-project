@@ -2,7 +2,6 @@
 #define _LINKEDLIST_H_
 
 #include "utils.h"
-#include "memory.h"
 
 typedef struct node {
     struct node* next;

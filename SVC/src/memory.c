@@ -87,6 +87,7 @@ uint32_t k_init_memory_blocks(void) {
 
     allocate_memory_to_queue(&ready_pqs);
     allocate_memory_to_queue(&mem_blocked_pqs);
+    allocate_memory_to_queue(&msg_blocked_pqs);
     allocate_memory_to_queue_nodes();
     allocate_memory_to_pcbs();
 
@@ -116,7 +117,7 @@ uint32_t k_init_memory_blocks(void) {
             // last block
             ((mem_blk_t*)i)->next = NULL;
         }
-        ((mem_blk_t*)i)->data = (void*)(i + MEM_BLOCK_HEADER_SIZE);
+        ((mem_blk_t*)i)->data = (void*)(i + MEM_BLOCK_HEADER_SIZE + KERNEL_MSG_HEADER_SIZE);
         ((mem_blk_t*)i)->padding = SWAP_UINT32(0xABAD1DEA);
 
         mem_table[j].owner_pid = FREE_MEM_BLOCK_PID;
@@ -160,7 +161,7 @@ void* k_request_memory_block(void) {
 
     // if we can't get free memory, block the current process
     while (ret_blk == NULL) {
-        current_pcb->state = BLOCKED;
+        current_pcb->state = MEM_BLOCKED;
         k_release_processor();
         ret_blk = free_mem;
     }
@@ -197,7 +198,7 @@ void* k_request_memory_block(void) {
  * @return                  returns a status code as to the success of release                
  */
 int32_t k_release_memory_block(void* p_mem_blk) {
-    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE);
+    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
 
     // verify non null block
     if (to_del == NULL) {

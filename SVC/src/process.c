@@ -7,6 +7,7 @@
 #include "uart_polling.h"
 #include "usr_proc.h"
 #include "k_proc.h"
+#include "memory.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
 
@@ -16,9 +17,20 @@ pcb_t** pcbs;
 node_t* current_pcb_node = NULL;
 linkedlist_t** ready_pqs;
 linkedlist_t** mem_blocked_pqs;
+linkedlist_t** msg_blocked_pqs;
 
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
+
+uint32_t k_pcb_msg_unblock(pcb_t* pcb) {
+    node_t* pcb_node;
+    
+    pcb->state = READY;
+    pcb_node = linkedlist_remove(msg_blocked_pqs[pcb->priority], pcb);
+    linkedlist_push_back(ready_pqs[pcb->priority], pcb_node);
+    
+    return 0;
+}
 
 /**
  * Checks to see if there is a higher priority process to preempt (with the exception) of the kernel process
@@ -85,6 +97,7 @@ uint32_t k_init_processor(void) {
 
         pcbs[i]->stack_ptr = stack_ptr;
         pcbs[i]->state = NEW;
+        linkedlist_init(&pcbs[i]->msg_queue);
         pcb_nodes[i]->value = (void*)pcbs[i];
         linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
     }
@@ -92,6 +105,10 @@ uint32_t k_init_processor(void) {
     current_pcb_node = NULL;
 
     return 0;
+}
+
+int is_blocked_state(PROCESS_STATE state) {
+    return (state == MEM_BLOCKED || state == MSG_BLOCKED);
 }
 
 /**
@@ -107,7 +124,7 @@ node_t* get_next_process(void) {
     node_t* ret_pcb_node;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     
-    int loop_max = current_pcb->state == BLOCKED ? NUM_PRIORITIES : (current_pcb->priority + 1);
+    int loop_max = (is_blocked_state(current_pcb->state) ? NUM_PRIORITIES : (current_pcb->priority + 1));
    
     for (i = 0; i < loop_max; i++) {
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
@@ -125,9 +142,11 @@ node_t* get_next_process(void) {
             }
 
             switch(current_pcb->state) {
-                case BLOCKED:
+                case MEM_BLOCKED:
                     linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
+                case MSG_BLOCKED:
+                    linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
                 case READY:
                     linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;
@@ -163,7 +182,7 @@ uint32_t switch_process(node_t* old_pcb_node) {
         __set_MSP((uint32_t)current_pcb->stack_ptr);
         __rte();
     } else if (current_pcb != old_pcb) {
-        if (current_state == READY || current_state == BLOCKED) {
+        if (current_state == READY || is_blocked_state(current_state)) {
             old_pcb->stack_ptr = (uint32_t*)__get_MSP();
             current_pcb->state = RUNNING;
             __set_MSP((uint32_t) current_pcb->stack_ptr);
@@ -246,10 +265,12 @@ int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
         to_change_pcb_node = (node_t*)linkedlist_remove(mem_blocked_pqs[old_priority], to_change_pcb);
 
         if (to_change_pcb_node == NULL) {
-            return -1;
+            to_change_pcb_node = (node_t*)linkedlist_remove(msg_blocked_pqs[old_priority], to_change_pcb);
+            
+            linkedlist_push_back(msg_blocked_pqs[new_priority], to_change_pcb_node);
+        } else {
+            linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
         }
-
-        linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
     } else {
         linkedlist_push_back(ready_pqs[new_priority], to_change_pcb_node);
 

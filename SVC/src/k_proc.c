@@ -9,8 +9,8 @@ void k_set_procs(void) {
     uint32_t i = 0;
     
     for (i = 0; i < NUM_K_PROCESSES; i++) {
-        k_proc_table[0].stack_size = STACK_SIZE;
-        k_proc_table[0].priority = LOWEST;
+        k_proc_table[i].stack_size = STACK_SIZE;
+        k_proc_table[i].priority = LOWEST;
     }
     
     k_proc_table[0].pid = 0;

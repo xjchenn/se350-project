@@ -5,13 +5,12 @@
 
 #define __SVC_0  __svc_indirect(0)
 
-typedef enum {
-    DEFAULT = 0,
-    KCD_REG = 1
-} MSG_TYPE;
+
+#define DEFAULT 0
+#define KCD_REG 1
 
 typedef struct {
-    MSG_TYPE msg_type;
+    uint32_t msg_type;
     char msg_data[1];
 } msg_buf_t;
 

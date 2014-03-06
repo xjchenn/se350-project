@@ -22,7 +22,7 @@ linkedlist_t** msg_blocked_pqs;
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
 extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 
-uint32_t k_move_pcb_from_msg_blocked_to_ready(pcb_t* pcb) {
+uint32_t k_pcb_msg_unblock(pcb_t* pcb) {
     node_t* pcb_node;
     
     pcb->state = READY;

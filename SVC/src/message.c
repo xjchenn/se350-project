@@ -5,9 +5,7 @@
 #define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
 #define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
 
-uint32_t k_init_message(void* message, uint32_t process_id) {
-    message_t* msg = (message_t *)message;
-    
+uint32_t k_init_message(message_t* msg, uint32_t process_id) {
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
     msg->msg_node.value = message;
@@ -25,7 +23,7 @@ uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
         return 1;
     }
     
-    k_init_message(message_envelope, process_id);
+    k_init_message(message, process_id);
     
     receiver = pcbs[process_id];
     

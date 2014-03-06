@@ -431,6 +431,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
             </File>
+            <File>
+              <FileName>string.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\string.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -465,6 +470,11 @@
               <FileName>k_proc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
+            </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -895,6 +905,11 @@
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
             </File>
+            <File>
+              <FileName>string.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\string.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -929,6 +944,11 @@
               <FileName>k_proc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
+            </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
             </File>
           </Files>
         </Group>

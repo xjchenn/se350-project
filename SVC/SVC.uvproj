@@ -431,11 +431,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
             </File>
-            <File>
-              <FileName>string.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\string.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -904,11 +899,6 @@
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
-            </File>
-            <File>
-              <FileName>string.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\string.c</FilePath>
             </File>
           </Files>
         </Group>

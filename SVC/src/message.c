@@ -1,6 +1,7 @@
 #include "k_message.h"
 #include "message.h"
 #include "k_process.h"
+#include "string.h"
 
 #define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
 #define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
@@ -34,7 +35,7 @@ uint32_t copy_message_to_history(const message_t* message, msg_hist_t* history) 
     history->sender = message->sender_pid;
     history->receiver = message->receiver_pid;
     history->msg_type = message->msg_type;
-    //strncpy here
+    strncpy(history->msg_preview, message->msg_data, MSG_PREVIEW_SIZE);
     
     return 0;
 }

@@ -17,10 +17,6 @@ uint32_t end_sent_msg_idx = 0;
 
 uint32_t front_received_msg_idx = 0;
 uint32_t end_received_msg_idx = 0;
-
-
-uint32_t k_init_message(void* message, uint32_t process_id) {
-    message_t* msg = (message_t *)message;
     
 uint32_t k_init_message(message_t* msg, uint32_t process_id) {
     msg->msg_node.next = NULL;

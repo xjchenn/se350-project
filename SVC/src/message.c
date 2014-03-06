@@ -8,10 +8,6 @@
 uint32_t k_init_message(void* message, uint32_t process_id) {
     message_t* msg = (message_t *)message;
     
-    if(process_id < 1 || process_id >= NUM_PROCESSES) {
-        return 1;
-    }
-    
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
     msg->msg_node.value = message;
@@ -24,6 +20,10 @@ uint32_t k_init_message(void* message, uint32_t process_id) {
 uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     pcb_t *receiver;
+    
+    if(process_id < 1 || process_id >= NUM_PROCESSES) {
+        return 1;
+    }
     
     k_init_message(message_envelope, process_id);
     

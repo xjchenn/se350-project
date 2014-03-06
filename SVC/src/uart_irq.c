@@ -231,8 +231,8 @@ void c_UART0_IRQHandler(void)
                 break;
 
             case KEY_BLOCKED_MSG_QUEUE:
-                println("KEY BLOCKED QUEUE:");
-                // TODO
+                println("MESSAGE BLOCKED QUEUE:");
+                k_print_queues(msg_blocked_pqs);
                 break;
 
             case KEY_MSG_LOG_BUFFER:

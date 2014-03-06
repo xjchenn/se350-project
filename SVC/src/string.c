@@ -16,3 +16,12 @@ char* strncpy(char* dest, const char* source, int n) {
     
     return ret;
 }
+
+int strlen(const char *str)
+{
+    const char *s;
+    int i;
+    for (s = str; *s; ++s);
+    i = (int)(s - str);
+    return i;
+}

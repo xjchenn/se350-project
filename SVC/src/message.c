@@ -8,7 +8,7 @@
 uint32_t k_init_message(message_t* msg, uint32_t process_id) {
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
-    msg->msg_node.value = message;
+    msg->msg_node.value = msg;
     msg->sender_pid = ((pcb_t *)(current_pcb_node->value))->pid;
     msg->receiver_pid = process_id;
     

@@ -59,8 +59,14 @@ void kcd_proc(void) {
 	
 	while(1) {
 		msg = receive_message(NULL);
-		msg->msg_type = CRT_DISPLAY;
-		send_message(PID_CRT, msg);
+        if(msg->msg_type == DEFAULT) {
+            msg->msg_type = CRT_DISPLAY;
+            send_message(PID_CRT, msg);
+        } else if(msg->msg_type == KCD_REG) {
+            //do stuff here
+        } else {
+            release_memory_block(msg);
+        }
 	}
 }
 

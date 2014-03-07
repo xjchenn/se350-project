@@ -4,6 +4,7 @@
 #include "process.h"
 #include "message.h"
 #include "memory.h"
+#include "string.h"
 
 typedef struct {
 	uint32_t pid;
@@ -11,6 +12,7 @@ typedef struct {
 } kcd_cmd_t;
 
 kcd_cmd_t commands[10];
+uint32_t num_of_cmds_reg = 0;
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
@@ -67,17 +69,27 @@ void crt_proc(void) {
 
 void kcd_proc(void) {
 	msg_buf_t* msg = NULL;
+	int32_t sender_id;
+	uint32_t msg_data_len;
 	
 	while(1) {
-		msg = receive_message(NULL);
+		msg = receive_message(&sender_id);
         if(msg->msg_type == DEFAULT) {
             msg->msg_type = CRT_DISPLAY;
             send_message(PID_CRT, msg);
         } else if(msg->msg_type == KCD_REG) {
-            
-        } else {
-            release_memory_block(msg);
+            if(num_of_cmds_reg == 10) {
+							goto cleanup;
+						}
+						
+						commands[num_of_cmds_reg].pid = sender_id;
+						msg_data_len = strlen(msg->msg_data);
+						strncpy(commands[num_of_cmds_reg].cmd, msg->msg_data, msg_data_len);
+						num_of_cmds_reg++;
         }
+				
+				cleanup:
+					release_memory_block(msg);
 	}
 }
 

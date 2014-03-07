@@ -73,9 +73,11 @@ void* k_receive_message_i(int32_t* sender_id) {
     
     message_node = linkedlist_pop_front(&current_pcb->msg_queue);
     message = (message_t *)message_node->value;
-    *sender_id = message->sender_pid;
+		if(sender_id != NULL) {
+			*sender_id = message->sender_pid;
+		}
     
-    return (void*)USER_MSG_ADDR(message);
+    return USER_MSG_ADDR(message);
 }
 
 uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {

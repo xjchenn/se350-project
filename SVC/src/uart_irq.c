@@ -150,8 +150,8 @@ int uart_irq_init(int n_uart) {
 	/* disable the Divisior Latch Access Bit DLAB=0 */
 	pUart->LCR &= ~(BIT(7));
 
-	//pUart->IER = IER_RBR | IER_THRE | IER_RLS;
-	pUart->IER = IER_RBR | IER_RLS;
+	pUart->IER = IER_RBR | IER_THRE | IER_RLS;
+	//pUart->IER = IER_RBR | IER_RLS;
 
 	/* Step 6b: enable the UART interrupt from the system level */
 
@@ -241,10 +241,14 @@ void irq_i_process(void) {
          */
 		if(buffer_index < buffer_size - 3 && g_char_in != '\r') {
             g_buffer[buffer_index++] = g_char_in;
+						pUart->THR = g_char_in;
         } else {
             g_buffer[buffer_index++] = '\r';
+						pUart->THR = '\r';
             g_buffer[buffer_index++] = '\n';
+						pUart->THR = '\n';
             g_buffer[buffer_index++] = '\0';
+						pUart->THR = '\0';
             
             read_msg = k_request_memory_block_i();
 		
@@ -351,5 +355,5 @@ void irq_i_process(void) {
 void read_interrupt() {
 		LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
 	
-		pUart->IER |= IER_THRE;
+		pUart->IER ^= IER_THRE;
 }

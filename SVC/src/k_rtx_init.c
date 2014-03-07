@@ -10,7 +10,7 @@ void k_rtx_init(void) {
     __disable_irq();
     init_printf(NULL, putc);
 		uart_irq_init(0);       // uart0, interrupt-driven 
-		uart1_init();           // uart1, polling
+		uart0_init();           // uart1, polling
     k_init_memory_blocks();
     k_init_processor();
     __enable_irq();

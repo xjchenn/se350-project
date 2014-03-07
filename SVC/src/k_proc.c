@@ -73,7 +73,7 @@ void kcd_proc(void) {
 	uint32_t msg_data_len;
 	
 	while(1) {
-		msg = receive_message(&sender_id);
+			msg = receive_message(&sender_id);
         if(msg->msg_type == DEFAULT) {
             msg->msg_type = CRT_DISPLAY;
             send_message(PID_CRT, msg);

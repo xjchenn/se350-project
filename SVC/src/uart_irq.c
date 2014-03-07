@@ -13,16 +13,19 @@
 #include "message.h"
 #include "k_memory.h"
 #include "utils.h"
+#include "string.h"
 
 #ifdef DEBUG_0
 #include "printf.h"
 #endif
 
-uint8_t g_buffer[]= "";
-uint8_t *gp_buffer = g_buffer;
+uint8_t g_buffer[36];
+uint8_t *gp_buffer = "\0";
+uint32_t buffer_index = 0;
 uint8_t g_send_char = 0;
 uint8_t g_char_in;
 uint8_t g_char_out;
+msg_buf_t* message = NULL;
 
 extern uint32_t g_switch_flag;
 
@@ -145,8 +148,8 @@ int uart_irq_init(int n_uart) {
 	/* disable the Divisior Latch Access Bit DLAB=0 */
 	pUart->LCR &= ~(BIT(7));
 
-	pUart->IER = IER_RBR | IER_THRE | IER_RLS;
-	//pUart->IER = IER_RBR | IER_RLS;
+	//pUart->IER = IER_RBR | IER_THRE | IER_RLS;
+	pUart->IER = IER_RBR | IER_RLS;
 
 	/* Step 6b: enable the UART interrupt from the system level */
 
@@ -194,7 +197,15 @@ void c_UART0_IRQHandler(void)
 	irq_i_process();
 }
 
-msg_buf_t* message = NULL;
+void reset_g_buffer() {
+    uint32_t i;
+    
+    buffer_index = 0;
+    
+    for(i = 0; i < 36; i++) {
+        g_buffer[i] = '\0';
+    }
+}
 
 void irq_i_process(void) {
 	uint8_t IIR_IntId;	    // Interrupt ID from IIR
@@ -226,22 +237,29 @@ void irq_i_process(void) {
 		/**
          * ------------------------------------------------ begin our code
          */
+		if(buffer_index < 34 && g_char_in != '\r') {
+            g_buffer[buffer_index++] = g_char_in;
+        } else {
+            g_buffer[buffer_index++] = '\r';
+            g_buffer[buffer_index++] = '\n';
+            
+            read_msg = k_request_memory_block_i();
 		
-		read_msg = k_request_memory_block_i();
-		
-		if(read_msg == NULL) {
-				return;
-		}
-		
-		read_msg->msg_type = DEFAULT;
-		read_msg->msg_data[0] = g_char_in;
-		
-		current_pcb_node = pcb_nodes[PID_UART_IPROC];
-		
-		k_send_message_i(PID_KCD, read_msg);
-		
-		current_pcb_node = curr_pcb_node;
-		g_switch_flag = 1;
+            if(read_msg == NULL) {
+                return;
+            }
+            
+            read_msg->msg_type = DEFAULT;
+            strncpy(read_msg->msg_data, (char*)g_buffer, buffer_index);
+            
+            current_pcb_node = pcb_nodes[PID_UART_IPROC];
+            
+            k_send_message_i(PID_KCD, read_msg);
+            
+            current_pcb_node = curr_pcb_node;
+            reset_g_buffer();
+            g_switch_flag = 1;
+        }
 		
 #ifdef DEBUG_HOTKEYS
         PRINT_HEADER;
@@ -302,7 +320,7 @@ void irq_i_process(void) {
 			uart1_put_string("Finish writing. Turning off IER_THRE\n\r");
 #endif // DEBUG_0
 			k_release_memory_block_i(message);
-			
+            
 			current_pcb_node = pcb_nodes[PID_UART_IPROC];
 			message = k_receive_message_i(NULL);
 			current_pcb_node = curr_pcb_node;
@@ -315,8 +333,7 @@ void irq_i_process(void) {
 			} else {
 					pUart->IER ^= IER_THRE; // toggle the IER_THRE bit
 					pUart->THR = '\0';
-					g_send_char = 0;
-					gp_buffer = g_buffer;
+					g_send_char = k_should_preempt_current_process();
 			}
 		}
 

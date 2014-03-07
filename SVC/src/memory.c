@@ -226,7 +226,6 @@ int32_t k_release_memory_block(void* p_mem_blk) {
 void* k_request_memory_block_i(void) {
     uint32_t i = 0;
     mem_blk_t* ret_blk = free_mem;
-    pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
 
     // if we can't get free memory, block the current process
     if (ret_blk == NULL) {

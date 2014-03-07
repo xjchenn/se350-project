@@ -9,18 +9,18 @@ int32_t test_results[NUM_PROCS];
 
 void usr_set_procs() {
     uint32_t i;
-    
+    /*
     for (i = 0; i < NUM_PROCS; i++) {
         usr_proc_table[i].pid        = i + 1;
         usr_proc_table[i].priority   = LOW;
         usr_proc_table[i].stack_size = STACK_SIZE;
-    }
+    }*/
 
     // a
     //usr_proc_table[0].priority = MEDIUM;
     //usr_proc_table[1].priority = MEDIUM;
 
-    // b
+    /* b
     usr_proc_table[0].priority = MEDIUM;
     usr_proc_table[1].priority = HIGH;
     
@@ -30,8 +30,8 @@ void usr_set_procs() {
     usr_proc_table[3].proc_start = &proc_b_4;
     usr_proc_table[4].proc_start = &proc_b_5;
     usr_proc_table[5].proc_start = &proc_b_6;
-
-    /*
+		*/
+    
     for (i = 0; i < NUM_PROCS; i++) {
         usr_proc_table[i].pid        = i + 1;
         usr_proc_table[i].priority   = LOW;
@@ -52,7 +52,7 @@ void usr_set_procs() {
     // Start the G005_test: test output required
     uart1_put_string("G005_test: START\r\n");
     uart1_put_string("G005_test: total 5 tests\r\n");
-    */
+    
     printf("G005_test: START\r\n");
     printf("G005_test: total 5 tests\r\n");
 }

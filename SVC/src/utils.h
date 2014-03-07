@@ -21,10 +21,10 @@ typedef void (*func_ptr_t)();
 #define STACK_SIZE              0x100
 #define NUM_PRIORITIES          5
 
-#define NUM_K_PROCESSES         1
+#define NUM_K_PROCESSES         5
 #define NUM_I_PROCESSES         2
 #define NUM_USR_PROCESSES       6
-#define NUM_PROCESSES           (uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES + NUM_I_PROCESSES)
+#define NUM_PROCESSES           16//(uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES + NUM_I_PROCESSES)
 
 #define MSG_LOG_BUFFER_SIZE     10
 

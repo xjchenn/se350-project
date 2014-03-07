@@ -24,9 +24,13 @@ void k_set_procs(void) {
     k_proc_table[2].pid = 15;
     k_proc_table[2].proc_start = &c_UART0_IRQHandler;
     
-    k_proc_table[3].pid = 13;
+		k_proc_table[3].pid = 12;
     k_proc_table[3].priority = HIGHEST;
-    k_proc_table[3].proc_start = &crt_proc;
+    k_proc_table[3].proc_start = &kcd_proc;
+		
+    k_proc_table[4].pid = 13;
+    k_proc_table[4].priority = HIGHEST;
+    k_proc_table[4].proc_start = &crt_proc;
 }
 
 void null_proc(void) {
@@ -48,6 +52,16 @@ void crt_proc(void) {
             release_memory_block(msg);
         }
     }
+}
+
+void kcd_proc(void) {
+	msg_buf_t* msg = NULL;
+	
+	while(1) {
+		msg = receive_message(NULL);
+		msg->msg_type = CRT_DISPLAY;
+		send_message(PID_CRT, msg);
+	}
 }
 
 // TODO move to own file with other message related functions

@@ -77,3 +77,24 @@ void* k_receive_message_i(int32_t* sender_id) {
     
     return (void*)USER_MSG_ADDR(message);
 }
+
+uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
+    message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
+    pcb_t *receiver;
+    
+    if(process_id < 1 || process_id >= NUM_PROCESSES) {
+        return 1;
+    }
+    
+    k_init_message(message, process_id);
+    
+    receiver = pcbs[process_id];
+    
+    linkedlist_push_back(&receiver->msg_queue, &message->msg_node);
+    
+    if(receiver->state == MSG_BLOCKED) {
+        k_pcb_msg_unblock(receiver);
+    }
+    
+    return 0;
+}

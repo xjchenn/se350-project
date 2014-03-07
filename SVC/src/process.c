@@ -67,7 +67,7 @@ uint32_t k_init_processor(void) {
     usr_set_procs();
     k_set_procs();
 
-    for (i = 0; i < NUM_USR_PROCESSES + 1; ++i) {
+    for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
 
@@ -90,7 +90,31 @@ uint32_t k_init_processor(void) {
                 pcbs[i]->pid = usr_proc_table[i - 1].pid;
                 pcbs[i]->priority = usr_proc_table[i - 1].priority;
                 break;
-            
+            case 7:
+						case 8:
+						case 9:
+						case 10:
+						case 11:
+								*(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
+								pcbs[i]->pid = k_proc_table[0].pid;;
+                pcbs[i]->priority = LOWEST;
+								break;
+						case 14:
+						case 15:
+							*(--stack_ptr);
+							pcbs[i]->pid = k_proc_table[2].pid;
+							pcbs[i]->priority = LOWEST;
+							break;
+						case 12:
+							*(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
+							pcbs[i]->pid = k_proc_table[3].pid;
+							pcbs[i]->priority = k_proc_table[3].priority;
+							break;
+						case 13:
+							*(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
+							pcbs[i]->pid = k_proc_table[4].pid;
+							pcbs[i]->priority = k_proc_table[4].priority;
+							break;
             default:
                 // TODO
                 break;
@@ -105,7 +129,10 @@ uint32_t k_init_processor(void) {
         pcbs[i]->state = NEW;
         linkedlist_init(&pcbs[i]->msg_queue);
         pcb_nodes[i]->value = (void*)pcbs[i];
-        linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
+				
+				if(i != 14 && i != 15 ) {
+						linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
+				}
     }
     
     current_pcb_node = NULL;
@@ -153,6 +180,7 @@ node_t* get_next_process(void) {
                     break;
                 case MSG_BLOCKED:
                     linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
+										break;
                 case READY:
                     linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;

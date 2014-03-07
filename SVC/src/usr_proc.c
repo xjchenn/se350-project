@@ -287,8 +287,9 @@ void usr_proc_p2_1(void)
             msg_envelope->msg_type = DEFAULT;
             strncpy(msg_envelope->msg_data, msg, 5);
 
-            printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
-            send_message(target_pid, msg_envelope);
+            //printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
+            //send_message(target_pid, msg_envelope);
+            k_delayed_send(target_pid, msg_envelope, 1);
         }
 				
         msg[i % 5] = 'A' + (i % 26);
@@ -308,7 +309,7 @@ void usr_proc_p2_2(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xFFFFFF; i++) {
+        for (i = 0; i < 0xFFFF; i++) {
             ; // nop to induce delay
         }
 
@@ -326,7 +327,7 @@ void usr_proc_p2_3(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p3\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xFFFFFF; i++) {
+        for (i = 0; i < 0xFFFF; i++) {
             ; // nop to induce delay
         }
 
@@ -344,7 +345,7 @@ void usr_proc_p2_4(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p4\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xFFFFFF; i++) {
+        for (i = 0; i < 0xFFFF; i++) {
             ; // nop to induce delay
         }
 
@@ -362,7 +363,7 @@ void usr_proc_p2_5(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p5\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xFFFFFF; i++) {
+        for (i = 0; i < 0xFFFF; i++) {
             ; // nop to induce delay
         }
 

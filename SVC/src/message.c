@@ -3,9 +3,6 @@
 #include "k_process.h"
 #include "timer.h"
 
-#define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
-#define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
-
 
 extern linkedlist_t timeout_queue;
 extern volatile uint32_t g_timer_count;
@@ -26,6 +23,7 @@ uint32_t k_init_message(void* message, uint32_t process_id) {
 uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     pcb_t *receiver;
+
     
     if(process_id < 1 || process_id >= NUM_PROCESSES) {
         return 1;
@@ -131,32 +129,40 @@ uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
 int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     node_t* iter;
+    node_t* new_node = NULL;
+    int i = 0;
 
     if(process_id < 1 || process_id >= NUM_PROCESSES || delay < 0) {
         return 1;
     }
     // If no delay, send message right away
     if (delay == 0) {
-        k_send_message(process_id, message_envelope);
-        return 0;
+        return k_send_message(process_id, message_envelope);
     }
 
+    // Initialize the message
+    k_init_message(message, process_id);
     // Add the timer_count to keep track of expiry without linear search
     message->expiry = delay + g_timer_count;
-    message->receiver_pid = process_id;
 
     iter = timeout_queue.first;
 
     while(iter != NULL) {
-        // We found a place to insert into the queue
+        // If this is true, we found a place to insert into the queue
         if (((message_t *)iter->value)->expiry > delay) {
-            node_t* new_node;
+            new_node = &message->msg_node;
             new_node->prev = iter->prev;
             new_node->next = iter;
-            new_node->value = (void*)message;
-            iter->prev->next = new_node;
+            if (iter->prev == NULL) {
+                timeout_queue.first = new_node;
+            } else {
+                iter->prev->next = new_node;
+            }
+            iter->prev = new_node;
+            timeout_queue.length++;
             return 0;
         }
+        iter = iter->next;
     }
     // If we get here, then the delay time is greater than all that are in the queue
     linkedlist_push_back(&timeout_queue, &message->msg_node);

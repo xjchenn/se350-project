@@ -71,7 +71,8 @@ uint32_t timer_init(uint8_t n_timer)
 	   see MR setting below 
 	*/
 	pTimer->PR = 12499;  
-
+	pTimer->PR *= 3;
+	
 	/* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
 	pTimer->MR0 = 1;
 
@@ -125,6 +126,8 @@ void c_TIMER0_IRQHandler(void)
 void timer_i_process(void) {
 	message_t *msg;
 	node_t* iter;
+	node_t* node;
+
 	int is_empty = 1;
 	// 1) Get any pending requests 
 	while (is_empty != 0) {
@@ -139,8 +142,9 @@ void timer_i_process(void) {
 	// 2) Go through the timeout_queue and find out any messages that are due
 	iter = timeout_queue.first;
 	while (iter != NULL && ((message_t *)iter)->expiry <= g_timer_count) {
-		node_t * node = (node_t *)linkedlist_pop_front(&timeout_queue);
-		k_send_message(((message_t *)node->value)->receiver_pid, &((message_t *)node->value)->msg_node);
+		node = (node_t *)linkedlist_pop_front(&timeout_queue);
+		//printf("%s\n\r", ((message_t*)&((message_t *)node->value)->msg_node)->msg_data);
+		k_send_message(((message_t *)node->value)->receiver_pid, USER_MSG_ADDR((message_t *)node->value));
 		iter = iter->next;
 	}
 }

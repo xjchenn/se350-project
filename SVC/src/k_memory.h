@@ -23,5 +23,8 @@ uint32_t k_init_memory_blocks(void);
 void* k_request_memory_block(void);
 int32_t k_release_memory_block(void*);
 
+void* k_request_memory_block_i(void);
+int32_t k_release_memory_block_i(void*);
+
 
 #endif

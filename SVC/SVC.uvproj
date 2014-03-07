@@ -348,7 +348,7 @@
             <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>DEBUG DEBUG_0 DEBUG_HOTKEYS</Define>
+              <Define></Define>
               <Undefine></Undefine>
               <IncludePath></IncludePath>
             </VariousControls>
@@ -475,6 +475,11 @@
               <FileName>k_proc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
+            </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -949,6 +954,11 @@
               <FileName>k_proc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\k_proc.c</FilePath>
+            </File>
+            <File>
+              <FileName>message.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\message.c</FilePath>
             </File>
           </Files>
         </Group>

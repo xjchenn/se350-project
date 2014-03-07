@@ -222,3 +222,64 @@ int32_t k_release_memory_block(void* p_mem_blk) {
 
     return 0;
 }
+
+void* k_request_memory_block_i(void) {
+    uint32_t i = 0;
+    mem_blk_t* ret_blk = free_mem;
+
+    // if we can't get free memory, block the current process
+    if (ret_blk == NULL) {
+        return NULL;
+    }
+
+    // otherwise increment global memory pointer
+    free_mem = free_mem->next;
+    if (free_mem != NULL) {
+        free_mem->prev = NULL;
+    }
+    ret_blk->next = alloc_mem;
+    if (alloc_mem != NULL) {
+        alloc_mem->prev = ret_blk;
+    }
+
+    alloc_mem = ret_blk;
+
+    for (i = (uint32_t)ret_blk->data; i < ((uint32_t)ret_blk + MEM_BLOCK_SIZE - 1); i += 4) {
+        *((uint32_t*)i) = 0;
+    }
+    // assigns the current process to the memory blocks given
+            blocks_allocated++;
+            return (void*)ret_blk->data;
+}
+
+int32_t k_release_memory_block_i(void* p_mem_blk) {
+    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
+
+    // verify non null block
+    if (to_del == NULL) {
+        return -1;
+    }
+
+    // verify the range of the memory block
+    if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
+        return -1;
+    }
+
+    if (to_del->prev != NULL) {
+        to_del->prev->next = to_del->next;
+    }
+
+    if (to_del->next != NULL) {
+        to_del->next->prev = to_del->prev;
+    }
+
+    to_del->next = free_mem;
+    to_del->prev = NULL;
+
+    //mem_table[i].owner_pid = FREE_MEM_BLOCK_PID;
+    blocks_allocated--;
+    free_mem = to_del;
+
+    return 0;
+}
+

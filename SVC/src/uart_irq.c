@@ -9,20 +9,31 @@
 #include "uart.h"
 #include "uart_polling.h"
 #include "k_process.h"
+#include "k_message.h"
+#include "message.h"
+#include "k_memory.h"
+#include "utils.h"
+#include "string.h"
 
 #ifdef DEBUG_0
 #include "printf.h"
 #endif
 
-uint8_t g_buffer[]= "You Typed a Q\n\r";
-uint8_t *gp_buffer = g_buffer;
+
+uint32_t buffer_size = USER_DATA_BLOCK_SIZE - 4;
+uint8_t g_buffer[USER_DATA_BLOCK_SIZE - 4];
+uint8_t *gp_buffer = "\0";
+uint32_t buffer_index = 0;
 uint8_t g_send_char = 0;
 uint8_t g_char_in;
 uint8_t g_char_out;
+msg_buf_t* message = NULL;
 
 extern uint32_t g_switch_flag;
 
 extern uint32_t k_release_processor(void);
+
+void irq_i_process(void);
 
 /**
  * @brief: initialize the n_uart
@@ -185,11 +196,27 @@ RESTORE
 
 void c_UART0_IRQHandler(void)
 {
+	irq_i_process();
+}
+
+void reset_g_buffer() {
+    uint32_t i;
+    
+    buffer_index = 0;
+    
+    for(i = 0; i < 36; i++) {
+        g_buffer[i] = '\0';
+    }
+}
+
+void irq_i_process(void) {
 	uint8_t IIR_IntId;	    // Interrupt ID from IIR
 	LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
-	
+	node_t* curr_pcb_node = current_pcb_node;
 	pcb_t* current_pcb;
+	msg_buf_t* read_msg;
 
+	g_switch_flag = 0;
 #ifdef DEBUG_0
 	uart1_put_string("Entering c_UART0_IRQHandler\n\r");
 #endif // DEBUG_0
@@ -205,13 +232,42 @@ void c_UART0_IRQHandler(void)
 		uart1_put_char(g_char_in);
 		uart1_put_string("\n\r");
 #endif // DEBUG_0
-
-		g_buffer[12] = g_char_in; // nasty hack
+		
+		//g_buffer[12] = g_char_in; // nasty hack
 		g_send_char = 1;
 
 		/**
          * ------------------------------------------------ begin our code
          */
+		if(buffer_index < buffer_size - 3 && g_char_in != '\r') {
+            g_buffer[buffer_index++] = g_char_in;
+						pUart->THR = g_char_in;
+        } else {
+            g_buffer[buffer_index++] = '\r';
+						pUart->THR = '\r';
+            g_buffer[buffer_index++] = '\n';
+						pUart->THR = '\n';
+            g_buffer[buffer_index++] = '\0';
+						pUart->THR = '\0';
+            
+            read_msg = k_request_memory_block_i();
+		
+            if(read_msg == NULL) {
+                return;
+            }
+            
+            read_msg->msg_type = DEFAULT;
+            strncpy(read_msg->msg_data, (char*)g_buffer, buffer_index);
+            
+            current_pcb_node = pcb_nodes[PID_UART_IPROC];
+            
+            k_send_message_i(PID_KCD, read_msg);
+            
+            current_pcb_node = curr_pcb_node;
+            reset_g_buffer();
+            g_switch_flag = 1;
+        }
+		
 #ifdef DEBUG_HOTKEYS
         PRINT_HEADER;
 				current_pcb = (pcb_t*)current_pcb_node->value;
@@ -253,7 +309,7 @@ void c_UART0_IRQHandler(void)
 
 	} else if (IIR_IntId & IIR_THRE) {
 	/* THRE Interrupt, transmit holding register becomes empty */
-
+		
 		if (*gp_buffer != '\0' ) {
 			g_char_out = *gp_buffer;
 #ifdef DEBUG_0
@@ -270,10 +326,22 @@ void c_UART0_IRQHandler(void)
 #ifdef DEBUG_0
 			uart1_put_string("Finish writing. Turning off IER_THRE\n\r");
 #endif // DEBUG_0
-			pUart->IER ^= IER_THRE; // toggle the IER_THRE bit
-			pUart->THR = '\0';
-			g_send_char = 0;
-			gp_buffer = g_buffer;
+			k_release_memory_block_i(message);
+            
+			current_pcb_node = pcb_nodes[PID_UART_IPROC];
+			message = k_receive_message_i(NULL);
+			current_pcb_node = curr_pcb_node;
+			
+			if(message != NULL) {
+					gp_buffer = (uint8_t *)message->msg_data;
+					g_char_out = *gp_buffer;
+					pUart->THR = g_char_out;
+					gp_buffer++;
+			} else {
+					pUart->IER ^= IER_THRE; // toggle the IER_THRE bit
+					pUart->THR = '\0';
+					g_send_char = k_should_preempt_current_process();
+			}
 		}
 
 	} else {  /* not implemented yet */
@@ -282,4 +350,10 @@ void c_UART0_IRQHandler(void)
 #endif // DEBUG_0
 		return;
 	}
+}
+
+void read_interrupt() {
+		LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
+	
+		pUart->IER ^= IER_THRE;
 }

@@ -50,8 +50,8 @@ void usr_set_procs() {
     usr_proc_table[5].proc_start = &usr_proc_6;
 
     // Start the G005_test: test output required
-    uart0_put_string("G005_test: START\r\n");
-    uart0_put_string("G005_test: total 5 tests\r\n");
+    uart1_put_string("G005_test: START\r\n");
+    uart1_put_string("G005_test: total 5 tests\r\n");
     */
     printf("G005_test: START\r\n");
     printf("G005_test: total 5 tests\r\n");
@@ -264,13 +264,13 @@ void proc_b_1(void) {
     void *p_mem_blk;
     while ( 1 ) {
         if ( i != 0 && i%5 == 0 ) {
-            uart0_put_string("\n\r");
+            uart1_put_string("\n\r");
             p_mem_blk = request_memory_block();
 #ifdef DEBUG_0
             printf("proc1: p_mem_blk=0x%x\n", p_mem_blk);
 #endif /* DEBUG_0 */
         }
-        uart0_put_char('A' + i%26);
+        uart1_put_char('A' + i%26);
         i++;
     }
 }
@@ -287,7 +287,7 @@ void proc_b_2(void) {
     set_process_priority(PID_P2, MEDIUM);
     while ( 1) {
         if ( i != 0 && i%5 == 0 ) {
-            uart0_put_string("\n\r");
+            uart1_put_string("\n\r");
             ret_val = release_memory_block(p_mem_blk);
 
             #ifdef DEBUG_0
@@ -298,10 +298,10 @@ void proc_b_2(void) {
                 break;
             }
         }
-        uart0_put_char('0' + i%10);
+        uart1_put_char('0' + i%10);
         i++;
     }
-    uart0_put_string("proc2: end of testing\n\r");
+    uart1_put_string("proc2: end of testing\n\r");
     set_process_priority(PID_P2, LOWEST);
     
     while ( 1 ) {
@@ -314,7 +314,7 @@ void proc_b_3(void) {
 
     while(1) {
         if ( i < 2 ) {
-            uart0_put_string("proc3: \n\r");
+            uart1_put_string("proc3: \n\r");
         }
         release_processor();
         i++;
@@ -326,7 +326,7 @@ void proc_b_4(void) {
 
     while(1) {
         if ( i < 2 ) {
-            uart0_put_string("proc4: \n\r");
+            uart1_put_string("proc4: \n\r");
         }
         release_processor();
         i++;
@@ -338,7 +338,7 @@ void proc_b_5(void) {
 
     while(1) {
         if ( i < 2 )  {
-            uart0_put_string("proc5: \n\r");
+            uart1_put_string("proc5: \n\r");
         }
         release_processor();
         i++;
@@ -350,7 +350,7 @@ void proc_b_6(void) {
 
     while(1) {
         if ( i < 2 )  {
-            uart0_put_string("proc6: \n\r");
+            uart1_put_string("proc6: \n\r");
         }
         release_processor();
         i++;
@@ -369,7 +369,7 @@ void proc_a_1(void)
   while ( 1 ) {
     
     if ( i != 0 && i%5 == 0 ) {
-      uart0_put_string("\n\r");
+      uart1_put_string("\n\r");
       counter++;
       if ( counter == 2 ) {
         ret_val = set_process_priority(PID_P2, HIGH);
@@ -381,10 +381,10 @@ void proc_a_1(void)
       printf("proc1: ret_val = %d \n", ret_val);
 #endif /* DEBUG_0 */
     }
-    uart0_put_char('a' + i%10);
+    uart1_put_char('a' + i%10);
     i++;
   }
-  uart0_put_string("proc1 end of testing\n\r");
+  uart1_put_string("proc1 end of testing\n\r");
   while ( 1 ) {
     release_processor();
   }
@@ -401,7 +401,7 @@ void proc_a_2(void)
   
   while ( 1) {
     if ( i != 0 && i%5 == 0 ) {
-      uart0_put_string("\n\r");
+      uart1_put_string("\n\r");
       counter++;
       if ( counter == 4 ) {
         ret_val = set_process_priority(PID_P1, HIGH);
@@ -413,10 +413,10 @@ void proc_a_2(void)
       printf("proc2: ret_val=%d\n", ret_val);
 #endif /* DEBUG_0 */
     }
-    uart0_put_char('0' + i%10);
+    uart1_put_char('0' + i%10);
     i++;
   }
-  uart0_put_string("proc2 end of testing\n\r");
+  uart1_put_string("proc2 end of testing\n\r");
   while ( 1 ) {
     release_processor();
   }
@@ -426,7 +426,7 @@ void proc_a_3(void)
 {
   
   while(1) {
-    uart0_put_string("proc3: \n\r");
+    uart1_put_string("proc3: \n\r");
     release_processor();
   }
 }
@@ -434,7 +434,7 @@ void proc_a_3(void)
 void proc_a_4(void)
 {
   while(1) {
-    uart0_put_string("proc4: \n\r");
+    uart1_put_string("proc4: \n\r");
     release_processor();
   }
 }
@@ -442,7 +442,7 @@ void proc_a_4(void)
 void proc_a_5(void)
 {
   while(1) {
-    uart0_put_string("proc5: \n\r");
+    uart1_put_string("proc5: \n\r");
     release_processor();
   }
 }
@@ -450,7 +450,7 @@ void proc_a_5(void)
 void proc_a_6(void)
 {
   while(1) {
-    uart0_put_string("proc6: \n\r");
+    uart1_put_string("proc6: \n\r");
     release_processor();
   }
 }

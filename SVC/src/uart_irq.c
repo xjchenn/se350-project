@@ -9,6 +9,9 @@
 #include "uart.h"
 #include "uart_polling.h"
 #include "k_process.h"
+#include "k_message.h"
+#include "message.h"
+#include "k_memory.h"
 
 #ifdef DEBUG_0
 #include "printf.h"
@@ -23,6 +26,8 @@ uint8_t g_char_out;
 extern uint32_t g_switch_flag;
 
 extern uint32_t k_release_processor(void);
+
+void irq_i_process(void);
 
 /**
  * @brief: initialize the n_uart
@@ -139,8 +144,8 @@ int uart_irq_init(int n_uart) {
 	/* disable the Divisior Latch Access Bit DLAB=0 */
 	pUart->LCR &= ~(BIT(7));
 
-	//pUart->IER = IER_RBR | IER_THRE | IER_RLS;
-	pUart->IER = IER_RBR | IER_RLS;
+	pUart->IER = IER_RBR | IER_THRE | IER_RLS;
+	//pUart->IER = IER_RBR | IER_RLS;
 
 	/* Step 6b: enable the UART interrupt from the system level */
 
@@ -185,9 +190,14 @@ RESTORE
 
 void c_UART0_IRQHandler(void)
 {
+	irq_i_process();
+}
+
+msg_buf_t* message = NULL;
+
+void irq_i_process(void) {
 	uint8_t IIR_IntId;	    // Interrupt ID from IIR
 	LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
-	
 	pcb_t* current_pcb;
 
 #ifdef DEBUG_0
@@ -253,7 +263,7 @@ void c_UART0_IRQHandler(void)
 
 	} else if (IIR_IntId & IIR_THRE) {
 	/* THRE Interrupt, transmit holding register becomes empty */
-
+		
 		if (*gp_buffer != '\0' ) {
 			g_char_out = *gp_buffer;
 #ifdef DEBUG_0
@@ -270,10 +280,16 @@ void c_UART0_IRQHandler(void)
 #ifdef DEBUG_0
 			uart1_put_string("Finish writing. Turning off IER_THRE\n\r");
 #endif // DEBUG_0
-			pUart->IER ^= IER_THRE; // toggle the IER_THRE bit
-			pUart->THR = '\0';
-			g_send_char = 0;
-			gp_buffer = g_buffer;
+			k_release_memory_block_i(message);
+			message = k_receive_message_i(NULL);
+			if(message != NULL) {
+					gp_buffer = (uint8_t *)message->msg_data;
+			} else {
+					pUart->IER ^= IER_THRE; // toggle the IER_THRE bit
+					pUart->THR = '\0';
+					g_send_char = 0;
+					gp_buffer = g_buffer;
+			}
 		}
 
 	} else {  /* not implemented yet */

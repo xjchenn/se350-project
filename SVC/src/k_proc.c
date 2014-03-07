@@ -77,6 +77,7 @@ void kcd_proc(void) {
         if(msg->msg_type == DEFAULT) {
             msg->msg_type = CRT_DISPLAY;
             send_message(PID_CRT, msg);
+						continue;
         } else if(msg->msg_type == KCD_REG) {
             if(num_of_cmds_reg == 10) {
 							goto cleanup;

@@ -5,6 +5,13 @@
 #include "message.h"
 #include "memory.h"
 
+typedef struct {
+	uint32_t pid;
+	char* cmd;
+} kcd_cmd_t;
+
+kcd_cmd_t commands[10];
+
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
 void k_set_procs(void) {
@@ -31,6 +38,10 @@ void k_set_procs(void) {
     k_proc_table[4].pid = 13;
     k_proc_table[4].priority = HIGHEST;
     k_proc_table[4].proc_start = &crt_proc;
+		
+		for(i = 0; i < 10; i++) {
+				commands[i].cmd = NULL;
+		}
 }
 
 void null_proc(void) {
@@ -63,7 +74,7 @@ void kcd_proc(void) {
             msg->msg_type = CRT_DISPLAY;
             send_message(PID_CRT, msg);
         } else if(msg->msg_type == KCD_REG) {
-            //do stuff here
+            
         } else {
             release_memory_block(msg);
         }

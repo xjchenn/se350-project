@@ -19,7 +19,9 @@
 #include "printf.h"
 #endif
 
-uint8_t g_buffer[36];
+
+uint32_t buffer_size = USER_DATA_BLOCK_SIZE - 4;
+uint8_t g_buffer[USER_DATA_BLOCK_SIZE - 4];
 uint8_t *gp_buffer = "\0";
 uint32_t buffer_index = 0;
 uint8_t g_send_char = 0;
@@ -237,7 +239,7 @@ void irq_i_process(void) {
 		/**
          * ------------------------------------------------ begin our code
          */
-		if(buffer_index < 33 && g_char_in != '\r') {
+		if(buffer_index < buffer_size - 3 && g_char_in != '\r') {
             g_buffer[buffer_index++] = g_char_in;
         } else {
             g_buffer[buffer_index++] = '\r';

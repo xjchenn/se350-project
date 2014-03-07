@@ -17,4 +17,6 @@ uint32_t k_send_message(uint32_t process_id, void* message_envelope);
 void* k_receive_message(int32_t* sender_id);
 uint32_t delayed_send(uint32_t process_id, void* message_envelope, uint32_t delay);
 
+void* k_receive_message_i(int32_t* sender_id);
+
 #endif

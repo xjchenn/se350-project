@@ -237,11 +237,12 @@ void irq_i_process(void) {
 		/**
          * ------------------------------------------------ begin our code
          */
-		if(buffer_index < 34 && g_char_in != '\r') {
+		if(buffer_index < 33 && g_char_in != '\r') {
             g_buffer[buffer_index++] = g_char_in;
         } else {
             g_buffer[buffer_index++] = '\r';
             g_buffer[buffer_index++] = '\n';
+            g_buffer[buffer_index++] = '\0';
             
             read_msg = k_request_memory_block_i();
 		

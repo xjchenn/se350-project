@@ -62,4 +62,6 @@
 int uart_irq_init(int n_uart);
 void c_UART0_IRQHandler(void);
 
+void read_interrupt(void);
+
 #endif /* ! UART_IRQ_H_ */

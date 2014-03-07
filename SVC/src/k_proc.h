@@ -4,5 +4,6 @@
 void k_set_procs(void);
 void null_proc(void);
 void timer_i_process(void); // TODO remove later
+void crt_proc(void);
 
 #endif

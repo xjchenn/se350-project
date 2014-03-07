@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "process.h"
 #include "message.h"
+#include "memory.h"
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
@@ -42,6 +43,7 @@ void crt_proc(void) {
         
         if(msg->msg_type == CRT_DISPLAY) {
             send_message(PID_UART_IPROC, msg);
+						read_interrupt();
         } else {
             release_memory_block(msg);
         }

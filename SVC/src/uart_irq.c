@@ -283,3 +283,9 @@ void c_UART0_IRQHandler(void)
 		return;
 	}
 }
+
+void read_interrupt() {
+		LPC_UART_TypeDef *pUart = (LPC_UART_TypeDef *)LPC_UART0;
+	
+		pUart->IER |= IER_THRE;
+}

@@ -79,7 +79,7 @@ void* k_receive_message_i(int32_t* sender_id) {
     
     current_pcb = (pcb_t *)current_pcb_node->value;
     
-    while(current_pcb->msg_queue.length == 0) {
+    if (current_pcb->msg_queue.length == 0) {
         return NULL;
     }
     
@@ -129,7 +129,6 @@ uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
     }
 
 int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay) {
-    // possibly need a pcb type mailbox... TODO impl?
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     node_t* iter;
 

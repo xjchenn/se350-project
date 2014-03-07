@@ -5,6 +5,7 @@
 #include "message.h"
 #include "memory.h"
 #include "string.h"
+#include "timer.h"
 
 typedef struct {
 	uint32_t pid;
@@ -24,10 +25,10 @@ void k_set_procs(void) {
         k_proc_table[i].priority = LOWEST;
     }
     
-    k_proc_table[0].pid = 0;
+    k_proc_table[0].pid = PID_NULL;
     k_proc_table[0].proc_start = &null_proc;
     
-    k_proc_table[1].pid = 14;
+    k_proc_table[1].pid = PID_TIMER_IPROC;
     k_proc_table[1].proc_start = &timer_i_process;
     
     k_proc_table[2].pid = 15;
@@ -41,9 +42,9 @@ void k_set_procs(void) {
     k_proc_table[4].priority = HIGHEST;
     k_proc_table[4].proc_start = &crt_proc;
 		
-		for(i = 0; i < 10; i++) {
-				commands[i].cmd = NULL;
-		}
+	for(i = 0; i < 10; i++) {
+			commands[i].cmd = NULL;
+	}
 }
 
 void null_proc(void) {
@@ -92,9 +93,4 @@ void kcd_proc(void) {
 				cleanup:
 					release_memory_block(msg);
 	}
-}
-
-// TODO move to own file with other message related functions
-void timer_i_process(void) {
-    return;
 }

@@ -289,7 +289,7 @@ void usr_proc_p2_1(void)
 
             //printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
             //send_message(target_pid, msg_envelope);
-            k_delayed_send(target_pid, msg_envelope, 1);
+            delayed_send(target_pid, msg_envelope, 1);
         }
 				
         msg[i % 5] = 'A' + (i % 26);
@@ -309,7 +309,7 @@ void usr_proc_p2_2(void)
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
         printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
         
-        for (i = 0; i < 0xFFFF; i++) {
+        for (i = 0; i < 0xF; i++) {
             ; // nop to induce delay
         }
 
@@ -480,13 +480,13 @@ void usr_proc_p1_b_1(void) {
     void *p_mem_blk;
     while ( 1 ) {
         if ( i != 0 && i%5 == 0 ) {
-            uart0_put_string("\n\r");
+            uart1_put_string("\n\r");
             p_mem_blk = request_memory_block();
 #ifdef DEBUG_0
             printf("proc1: p_mem_blk=0x%x\n", p_mem_blk);
 #endif /* DEBUG_0 */
         }
-        uart0_put_char('A' + i%26);
+        uart1_put_char('A' + i%26);
         i++;
     }
 }
@@ -503,7 +503,7 @@ void usr_proc_p1_b_2(void) {
     set_process_priority(PID_P2, MEDIUM);
     while ( 1) {
         if ( i != 0 && i%5 == 0 ) {
-            uart0_put_string("\n\r");
+            uart1_put_string("\n\r");
             ret_val = release_memory_block(p_mem_blk);
 
             #ifdef DEBUG_0
@@ -514,10 +514,10 @@ void usr_proc_p1_b_2(void) {
                 break;
             }
         }
-        uart0_put_char('0' + i%10);
+        uart1_put_char('0' + i%10);
         i++;
     }
-    uart0_put_string("proc2: end of testing\n\r");
+    uart1_put_string("proc2: end of testing\n\r");
     set_process_priority(PID_P2, LOWEST);
     
     while ( 1 ) {
@@ -530,7 +530,7 @@ void usr_proc_p1_b_3(void) {
 
     while(1) {
         if ( i < 2 ) {
-            uart0_put_string("proc3: \n\r");
+            uart1_put_string("proc3: \n\r");
         }
         release_processor();
         i++;
@@ -542,7 +542,7 @@ void usr_proc_p1_b_4(void) {
 
     while(1) {
         if ( i < 2 ) {
-            uart0_put_string("proc4: \n\r");
+            uart1_put_string("proc4: \n\r");
         }
         release_processor();
         i++;
@@ -554,7 +554,7 @@ void usr_proc_p1_b_5(void) {
 
     while(1) {
         if ( i < 2 )  {
-            uart0_put_string("proc5: \n\r");
+            uart1_put_string("proc5: \n\r");
         }
         release_processor();
         i++;
@@ -566,7 +566,7 @@ void usr_proc_p1_b_6(void) {
 
     while(1) {
         if ( i < 2 )  {
-            uart0_put_string("proc6: \n\r");
+            uart1_put_string("proc6: \n\r");
         }
         release_processor();
         i++;

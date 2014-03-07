@@ -71,7 +71,6 @@ uint32_t timer_init(uint8_t n_timer)
 	   see MR setting below 
 	*/
 	pTimer->PR = 12499;  
-	pTimer->PR *= 3;
 	
 	/* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
 	pTimer->MR0 = 1;
@@ -112,15 +111,18 @@ __asm void TIMER0_IRQHandler(void)
 	BL c_TIMER0_IRQHandler
 	POP{r4-r11, pc}
 } 
+
 /**
  * @brief: c TIMER0 IRQ Handler
  */
 void c_TIMER0_IRQHandler(void)
 {
 	/* ack inttrupt, see section  21.6.1 on pg 493 of LPC17XX_UM */
-	LPC_TIM0->IR = BIT(0);  
+	LPC_TIM0->IR = BIT(0);
 	g_timer_count++;
+    __disable_irq();
 	timer_i_process();
+    __enable_irq();
 }
 
 void timer_i_process(void) {
@@ -144,7 +146,7 @@ void timer_i_process(void) {
 	while (iter != NULL && ((message_t *)iter)->expiry <= g_timer_count) {
 		node = (node_t *)linkedlist_pop_front(&timeout_queue);
 		//printf("%s\n\r", ((message_t*)&((message_t *)node->value)->msg_node)->msg_data);
-		k_send_message(((message_t *)node->value)->receiver_pid, USER_MSG_ADDR((message_t *)node->value));
+		k_send_full_message(((message_t *)node->value)->receiver_pid, USER_MSG_ADDR((message_t *)node->value));
 		iter = iter->next;
 	}
 }

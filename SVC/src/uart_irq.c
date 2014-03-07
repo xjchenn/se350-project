@@ -150,8 +150,8 @@ int uart_irq_init(int n_uart) {
 	/* disable the Divisior Latch Access Bit DLAB=0 */
 	pUart->LCR &= ~(BIT(7));
 
-	pUart->IER = IER_RBR | IER_THRE | IER_RLS;
-	//pUart->IER = IER_RBR | IER_RLS;
+	//pUart->IER = IER_RBR | IER_THRE | IER_RLS;
+	pUart->IER = IER_RBR | IER_RLS;
 
 	/* Step 6b: enable the UART interrupt from the system level */
 

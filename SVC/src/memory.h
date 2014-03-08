@@ -7,9 +7,9 @@
 
 extern uint32_t blocks_allocated;
 
-extern void *k_request_memory_block(void);
+extern void* k_request_memory_block(void);
 #define request_memory_block() _request_memory_block((void*)k_request_memory_block)
-extern void __SVC_0 *_request_memory_block(void* p_func);
+extern void __SVC_0* _request_memory_block(void* p_func);
 
 extern int32_t k_release_memory_block(void*);
 #define release_memory_block(p_mem_blk) _release_memory_block((int32_t)k_release_memory_block, p_mem_blk)

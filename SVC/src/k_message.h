@@ -9,7 +9,7 @@ typedef struct {
     uint32_t sender_pid;
     uint32_t receiver_pid;
     uint32_t expiry;
-    
+
     uint32_t msg_type;
     char msg_data[1];
 } message_t;

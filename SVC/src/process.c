@@ -30,11 +30,11 @@ uint32_t g_switch_flag = 0;
 
 uint32_t k_pcb_msg_unblock(pcb_t* pcb) {
     node_t* pcb_node;
-    
+
     pcb->state = READY;
     pcb_node = linkedlist_remove(msg_blocked_pqs[pcb->priority], pcb);
     linkedlist_push_back(ready_pqs[pcb->priority], pcb_node);
-    
+
     return 0;
 }
 
@@ -90,31 +90,36 @@ uint32_t k_init_processor(void) {
                 pcbs[i]->pid = usr_proc_table[i - 1].pid;
                 pcbs[i]->priority = usr_proc_table[i - 1].priority;
                 break;
+
             case 7:
-						case 8:
-						case 9:
-						case 10:
-						case 11:
-								*(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-								pcbs[i]->pid = k_proc_table[0].pid;;
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid = k_proc_table[0].pid;
                 pcbs[i]->priority = LOWEST;
-								break;
-						case 14:
-						case 15:
-							*(--stack_ptr);
-							pcbs[i]->pid = k_proc_table[2].pid;
-							pcbs[i]->priority = LOWEST;
-							break;
-						case 12:
-							*(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
-							pcbs[i]->pid = k_proc_table[3].pid;
-							pcbs[i]->priority = k_proc_table[3].priority;
-							break;
-						case 13:
-							*(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
-							pcbs[i]->pid = k_proc_table[4].pid;
-							pcbs[i]->priority = k_proc_table[4].priority;
-							break;
+                break;
+
+            case 14:
+            case 15:
+                *(--stack_ptr);
+                pcbs[i]->pid = k_proc_table[2].pid;
+                pcbs[i]->priority = LOWEST;
+                break;
+
+            case 12:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
+                pcbs[i]->pid = k_proc_table[3].pid;
+                pcbs[i]->priority = k_proc_table[3].priority;
+                break;
+
+            case 13:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
+                pcbs[i]->pid = k_proc_table[4].pid;
+                pcbs[i]->priority = k_proc_table[4].priority;
+                break;
+                
             default:
                 // TODO
                 break;
@@ -129,12 +134,12 @@ uint32_t k_init_processor(void) {
         pcbs[i]->state = NEW;
         linkedlist_init(&pcbs[i]->msg_queue);
         pcb_nodes[i]->value = (void*)pcbs[i];
-				
-				if(i != 14 && i != 15 ) {
-						linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
-				}
+
+        if (i != 14 && i != 15 ) {
+            linkedlist_push_back(ready_pqs[pcbs[i]->priority], pcb_nodes[i]);
+        }
     }
-    
+
     current_pcb_node = NULL;
 
     return 0;
@@ -150,15 +155,15 @@ int is_blocked_state(PROCESS_STATE state) {
  */
 node_t* get_next_process(void) {
     uint32_t i;
-    
+
     node_t* unblocked_pcb_node;
     pcb_t* unblocked_pcb;
 
     node_t* ret_pcb_node;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
-    
+
     int loop_max = (is_blocked_state(current_pcb->state) ? NUM_PRIORITIES : (current_pcb->priority + 1));
-   
+
     for (i = 0; i < loop_max; i++) {
         if (blocks_allocated < MAX_MEM_BLOCKS && mem_blocked_pqs[i]->first != NULL) {
             unblocked_pcb_node = linkedlist_pop_front(mem_blocked_pqs[i]);
@@ -169,25 +174,25 @@ node_t* get_next_process(void) {
 
         if (ready_pqs[i]->first != NULL) {
             ret_pcb_node = linkedlist_pop_front(ready_pqs[i]);
-            
+
             if (current_pcb->state == RUNNING) {
                 current_pcb->state = READY;
             }
 
-            switch(current_pcb->state) {
+            switch (current_pcb->state) {
                 case MEM_BLOCKED:
                     linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
                 case MSG_BLOCKED:
                     linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
-										break;
+                    break;
                 case READY:
                     linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;
                 default:
                     break;
             }
-                  
+
             return ret_pcb_node;
         }
     }
@@ -197,7 +202,7 @@ node_t* get_next_process(void) {
 
 /**
  * Scheduler (assume current_pcb_node has already been changed)
- * @param  old_pcb_node     node for old pcb to switch from 
+ * @param  old_pcb_node     node for old pcb to switch from
  * @return                  0 if successful
  */
 uint32_t switch_process(node_t* old_pcb_node) {
@@ -206,12 +211,12 @@ uint32_t switch_process(node_t* old_pcb_node) {
     PROCESS_STATE current_state = current_pcb->state;
     // If the current state is new, then we put the process given into the ready queue
     // If the process's state is not READY, we push it on to the memory blocked queue
-    
+
     if (current_state == NEW) {
         if (current_pcb != old_pcb && old_pcb->state != NEW) {
             old_pcb->stack_ptr = (uint32_t*)__get_MSP();
         }
-        
+
         current_pcb->state = RUNNING;
         __set_MSP((uint32_t)current_pcb->stack_ptr);
         __rte();
@@ -238,7 +243,7 @@ uint32_t k_release_processor(void) {
 
     current_pcb_node = get_next_process();
 
-    // if the process received from get_next_process() is NULL, 
+    // if the process received from get_next_process() is NULL,
     // keep current_pcb to what was currently running
     if (current_pcb_node == NULL) {
         current_pcb_node = old_pcb_node;
@@ -262,7 +267,7 @@ uint32_t k_release_processor(void) {
  */
 int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
     uint32_t i;
-    
+
     pcb_t* to_change_pcb;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
     node_t* to_change_pcb_node = NULL;
@@ -291,8 +296,8 @@ int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
             }
         }
         return 0;
-    } 
-        // just changed another's priority
+    }
+    // just changed another's priority
     to_change_pcb_node = (node_t*)linkedlist_remove(ready_pqs[old_priority], to_change_pcb);
 
     if (to_change_pcb_node == NULL) {
@@ -300,7 +305,7 @@ int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
 
         if (to_change_pcb_node == NULL) {
             to_change_pcb_node = (node_t*)linkedlist_remove(msg_blocked_pqs[old_priority], to_change_pcb);
-            
+
             linkedlist_push_back(msg_blocked_pqs[new_priority], to_change_pcb_node);
         } else {
             linkedlist_push_back(mem_blocked_pqs[new_priority], to_change_pcb_node);
@@ -312,7 +317,7 @@ int32_t k_set_process_priority(int32_t process_id, int32_t new_priority) {
             k_release_processor();
         }
     }
-    
+
     return 0;
 }
 

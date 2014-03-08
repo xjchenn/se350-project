@@ -45,7 +45,7 @@ void allocate_memory_to_queue_nodes(void) {
 
     pcb_nodes = (node_t**)start_of_heap;
     start_of_heap += NUM_PROCESSES * sizeof(node_t*);
-    
+
     for (i = 0; i < NUM_PROCESSES; i++) {
         pcb_nodes[i] = (node_t*)start_of_heap;
         pcb_nodes[i]->next = pcb_nodes[i]->prev = pcb_nodes[i]->value = NULL;
@@ -255,8 +255,8 @@ void* k_request_memory_block_i(void) {
         *((uint32_t*)i) = 0;
     }
     // assigns the current process to the memory blocks given
-            blocks_allocated++;
-            return (void*)ret_blk->data;
+    blocks_allocated++;
+    return (void*)ret_blk->data;
 }
 
 int32_t k_release_memory_block_i(void* p_mem_blk) {

@@ -3,6 +3,7 @@
 
 typedef unsigned int uint32_t;
 typedef int int32_t;
+typedef unsigned char uint8_t;
 typedef void (*func_ptr_t)();
 
 #define NULL                    0
@@ -11,7 +12,8 @@ typedef void (*func_ptr_t)();
 #define MEM_BLOCK_SIZE          0x100   // 0x100 bytes / sizeof(mem_blk_t)
 #define MAX_MEM_BLOCKS          0x30    // 48 blocks uses 0x3000 bytes of memory
 #define MEM_BLOCK_HEADER_SIZE   0x10
-#define KERNEL_MSG_HEADER_SIZE  20
+
+#define KERNEL_MSG_HEADER_SIZE  24
 #define USER_DATA_BLOCK_SIZE    MEM_BLOCK_SIZE - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE
 
 #define INVALID_MEMORY          0xDEADBEEF
@@ -31,7 +33,7 @@ typedef void (*func_ptr_t)();
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
-#ifdef DEBUG
+#ifdef DEBUG_0
 #define DEBUG_PRINT(msg)        printf(msg)
 #else
 #define DEBUG_PRINT(msg)        /* nop */

@@ -30,6 +30,7 @@
  */
 
 #include "printf.h"
+#include "uart_polling.h"
 
 typedef void (*putcf) (void*, char);
 static putcf stdout_putf;
@@ -130,90 +131,72 @@ static void putchw(void* putp, putcf putf, int n, char z, char* bf) {
     while (n-- > 0) {
         putf(putp, fc);
     }
-    while ((ch = *bf++) != '\0') { /* This line is modified by Y. Huang to avoid assignment in condition warning */
+    while ((ch = *(bf++)) != '\0') { /* This line is modified by Y. Huang to avoid assignment in condition warning */
         putf(putp, ch);
     }
 }
 
 void tfp_format(void* putp, putcf putf, char* fmt, va_list va) {
     char bf[12];
-
     char ch;
-
 
     while ((ch = *(fmt++)) != '\0') { /* This line is modified by Y. Huang to avoid assignment in condition warning */
         if (ch != '%') {
             putf(putp, ch);
         } else {
             char lz = 0;
-#ifdef  PRINTF_LONG_SUPPORT
-            char lng = 0;
-#endif
             int w = 0;
+
             ch = *(fmt++);
+
             if (ch == '0') {
                 ch = *(fmt++);
                 lz = 1;
             }
+
             if (ch >= '0' && ch <= '9') {
                 ch = a2i(ch, &fmt, 10, &w);
             }
-#ifdef  PRINTF_LONG_SUPPORT
-            if (ch == 'l') {
-                ch = *(fmt++);
-                lng = 1;
-            }
-#endif
+
             switch (ch) {
-            case 0:
-                goto abort;
-            case 'u' : {
-#ifdef  PRINTF_LONG_SUPPORT
-                if (lng) {
-                    uli2a(va_arg(va, unsigned long int), 10, 0, bf);
-                } else
-#endif
+                case 0:
+                    goto abort;
+
+                case 'u' :
                     ui2a(va_arg(va, unsigned int), 10, 0, bf);
-                putchw(putp, putf, w, lz, bf);
-                break;
-            }
-            case 'd' :  {
-#ifdef  PRINTF_LONG_SUPPORT
-                if (lng) {
-                    li2a(va_arg(va, unsigned long int), bf);
-                } else
-#endif
+                    putchw(putp, putf, w, lz, bf);
+                    break;
+
+                case 'd' :
                     i2a(va_arg(va, int), bf);
-                putchw(putp, putf, w, lz, bf);
-                break;
-            }
-            case 'x':
-            case 'X' :
-#ifdef  PRINTF_LONG_SUPPORT
-                if (lng) {
-                    uli2a(va_arg(va, unsigned long int), 16, (ch == 'X'), bf);
-                } else
-#endif
+                    putchw(putp, putf, w, lz, bf);
+                    break;
+
+                case 'x':
+                case 'X' :
                     ui2a(va_arg(va, unsigned int), 16, (ch == 'X'), bf);
-                putchw(putp, putf, w, lz, bf);
-                break;
-            case 'c' :
-                putf(putp, (char)(va_arg(va, int)));
-                break;
-            case 's' :
-                putchw(putp, putf, w, 0, va_arg(va, char*));
-                break;
-            case '%' :
-                putf(putp, ch);
-            default:
-                break;
+                    putchw(putp, putf, w, lz, bf);
+                    break;
+
+                case 'c' :
+                    putf(putp, (char)(va_arg(va, int)));
+                    break;
+
+                case 's' :
+                    putchw(putp, putf, w, 0, va_arg(va, char*));
+                    break;
+
+                case '%' :
+                    putf(putp, ch);
+
+                default:
+                    break;
             }
         }
     }
 abort:
     ;
 }
-
 
 void init_printf(void* putp, void (*putf) (void*, char)) {
     stdout_putf = putf;
@@ -222,29 +205,33 @@ void init_printf(void* putp, void (*putf) (void*, char)) {
 
 void tfp_printf(char* fmt, ...) {
     va_list va;
+    __disable_irq();
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
+    __enable_irq();
 }
 
 void tfp_println(char* fmt, ...) {
     va_list va;
+    __disable_irq();
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
     tfp_printf("\r\n");
+    __enable_irq();
 }
 
 static void putcp(void* p, char c) {
     *(*((char**)p))++ = c;
 }
 
-
-
 void tfp_sprintf(char* s, char* fmt, ...) {
     va_list va;
+    __disable_irq();
     va_start(va, fmt);
     tfp_format(&s, putcp, fmt, va);
     putcp(&s, 0);
     va_end(va);
+    __enable_irq();
 }

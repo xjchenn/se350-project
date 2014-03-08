@@ -192,7 +192,6 @@ RESTORE
     POP {r4 - r11, pc}
 }
 
-
 void c_UART0_IRQHandler(void) {
     irq_i_process();
 }

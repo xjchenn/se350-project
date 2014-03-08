@@ -7,17 +7,14 @@
  */
 
 #include <LPC17xx.h>
+#include "uart_def.h"
 #include "timer.h"
 #include "k_message.h"
 #include "printf.h"
 
-#define BIT(X) (1<<X)
-
-#define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
-#define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
-
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
 linkedlist_t timeout_queue; // queue of messages
+
 /**
  * @brief: initialize timer. Only timer 0 is supported
  */
@@ -106,46 +103,46 @@ uint32_t timer_init(uint8_t n_timer) {
  *       The actual c_TIMER0_IRQHandler does the rest of irq handling
  */
 __asm void TIMER0_IRQHandler(void) {
+    CPSID i                         ;// disable interrupts
     PRESERVE8
     IMPORT c_TIMER0_IRQHandler
     PUSH {r4 - r11, lr}
     BL c_TIMER0_IRQHandler
+    CPSIE i                         ;// enable interrupts
     POP {r4 - r11, pc}
 }
 
-/**
- * @brief: c TIMER0 IRQ Handler
- */
 void c_TIMER0_IRQHandler(void) {
     /* ack inttrupt, see section  21.6.1 on pg 493 of LPC17XX_UM */
     LPC_TIM0->IR = BIT(0);
     g_timer_count++;
-    __disable_irq();
     timer_i_process();
-    __enable_irq();
 }
 
 void timer_i_process(void) {
-    message_t* msg;
+    msg_buf_t* envelope;
+    message_t* message;
     node_t* iter;
     node_t* node;
+    uint32_t is_empty = 1;
 
-    int is_empty = 1;
     // 1) Get any pending requests
     while (is_empty != 0) {
         // Non-Blocking receive_message
-        msg = (message_t*)k_receive_message_i((int32_t*)PID_TIMER_IPROC);
-        if (msg != NULL) {
-            k_delayed_send(msg->receiver_pid, &msg->msg_node, msg->expiry);
+        envelope = (msg_buf_t*)k_receive_message_i((int32_t*)PID_TIMER_IPROC);
+
+        if (envelope != NULL) {
+            message = KERNEL_MSG_ADDR(envelope);
+            k_delayed_send(message->receiver_pid, &message->msg_node, message->expiry);
         } else {
             is_empty = 0;
         }
     }
+
     // 2) Go through the timeout_queue and find out any messages that are due
     iter = timeout_queue.first;
     while (iter != NULL && ((message_t*)iter)->expiry <= g_timer_count) {
         node = (node_t*)linkedlist_pop_front(&timeout_queue);
-        //printf("%s\n\r", ((message_t*)&((message_t *)node->value)->msg_node)->msg_data);
         k_send_message_i(((message_t*)node->value)->receiver_pid, USER_MSG_ADDR((message_t*)node->value));
         iter = iter->next;
     }

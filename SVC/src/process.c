@@ -90,31 +90,36 @@ uint32_t k_init_processor(void) {
                 pcbs[i]->pid = usr_proc_table[i - 1].pid;
                 pcbs[i]->priority = usr_proc_table[i - 1].priority;
                 break;
+
             case 7:
             case 8:
             case 9:
             case 10:
             case 11:
                 *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-                pcbs[i]->pid = k_proc_table[0].pid;;
+                pcbs[i]->pid = k_proc_table[0].pid;
                 pcbs[i]->priority = LOWEST;
                 break;
+
             case 14:
             case 15:
                 *(--stack_ptr);
                 pcbs[i]->pid = k_proc_table[2].pid;
                 pcbs[i]->priority = LOWEST;
                 break;
+
             case 12:
                 *(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
                 pcbs[i]->pid = k_proc_table[3].pid;
                 pcbs[i]->priority = k_proc_table[3].priority;
                 break;
+
             case 13:
                 *(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
                 pcbs[i]->pid = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;
+                
             default:
                 // TODO
                 break;

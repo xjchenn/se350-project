@@ -120,16 +120,18 @@ void c_TIMER0_IRQHandler(void) {
 }
 
 void timer_i_process(void) {
+    node_t* queue_iter;
+    message_t* current_message;
+
+    /*
     msg_buf_t* envelope;
     message_t* message;
-    node_t* iter;
-    node_t* node;
     uint32_t is_empty = 1;
 
     // 1) Get any pending requests
     while (is_empty != 0) {
         // Non-Blocking receive_message
-        envelope = (msg_buf_t*)k_receive_message_i((int32_t*)PID_TIMER_IPROC);
+        envelope = (msg_buf_t*)k_receive_message_i(NULL);
 
         if (envelope != NULL) {
             message = KERNEL_MSG_ADDR(envelope);
@@ -138,12 +140,12 @@ void timer_i_process(void) {
             is_empty = 0;
         }
     }
+    */
 
-    // 2) Go through the timeout_queue and find out any messages that are due
-    iter = timeout_queue.first;
-    while (iter != NULL && ((message_t*)iter)->expiry <= g_timer_count) {
-        node = (node_t*)linkedlist_pop_front(&timeout_queue);
-        k_send_message_i(((message_t*)node->value)->receiver_pid, USER_MSG_ADDR((message_t*)node->value));
-        iter = iter->next;
+    queue_iter = timeout_queue.first;
+    while (queue_iter != NULL && ((message_t*)queue_iter)->expiry <= g_timer_count) {
+        current_message = (message_t*)linkedlist_pop_front(&timeout_queue);
+        k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
+        queue_iter = queue_iter->next;
     }
 }

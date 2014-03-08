@@ -3,6 +3,8 @@
 #include "k_process.h"
 #include "timer.h"
 
+#define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
+#define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
 
 extern linkedlist_t timeout_queue;
 extern volatile uint32_t g_timer_count;
@@ -77,24 +79,6 @@ void* k_receive_message_i(int32_t* sender_id) {
     
     current_pcb = (pcb_t *)current_pcb_node->value;
     
-    if (current_pcb->msg_queue.length == 0) {
-        return NULL;
-    }
-    
-    message_node = linkedlist_pop_front(&current_pcb->msg_queue);
-    message = (message_t *)message_node->value;
-    *sender_id = message->sender_pid;
-    
-    return (void*)USER_MSG_ADDR(message);
-}
-
-void* k_receive_message_i(int32_t* sender_id) {
-    node_t* message_node;
-    message_t* message;
-    pcb_t* current_pcb;
-    
-    current_pcb = (pcb_t *)current_pcb_node->value;
-    
     if(current_pcb->msg_queue.length == 0) {
         return NULL;
     }
@@ -105,7 +89,7 @@ void* k_receive_message_i(int32_t* sender_id) {
 			*sender_id = message->sender_pid;
 		}
     
-    return USER_MSG_ADDR(message);
+    return (void*)USER_MSG_ADDR(message);
 }
 
 uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
@@ -125,7 +109,8 @@ uint32_t k_send_message_i(uint32_t process_id, void* message_envelope) {
     if(receiver->state == MSG_BLOCKED) {
         k_pcb_msg_unblock(receiver);
     }
-
+	return 0;
+}
 int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     node_t* iter;

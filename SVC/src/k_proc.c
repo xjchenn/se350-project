@@ -34,7 +34,7 @@ void k_set_procs(void) {
     k_proc_table[2].pid = 15;
     k_proc_table[2].proc_start = &c_UART0_IRQHandler;
     
-		k_proc_table[3].pid = 12;
+	k_proc_table[3].pid = 12;
     k_proc_table[3].priority = HIGHEST;
     k_proc_table[3].proc_start = &kcd_proc;
 		

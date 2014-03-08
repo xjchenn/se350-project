@@ -256,13 +256,13 @@ void usr_proc_p1_6() {
                     passed++;
                 }
             }
-            printf("G005_test: ");
-            printf("%d", passed);
-            printf("/5 OK\r\n");
-            printf("G005_test: ");
-            printf("%d", (5 - passed));
-            printf("/5 FAIL\r\n");
-            printf("G005_test: END\r\n");
+            // printf("G005_test: ");
+            // printf("%d", passed);
+            // printf("/5 OK\r\n");
+            // printf("G005_test: ");
+            // printf("%d", (5 - passed));
+            // printf("/5 FAIL\r\n");
+            // printf("G005_test: END\r\n");
             ranOnce = 1;
         }
         release_processor();
@@ -287,9 +287,9 @@ void usr_proc_p2_1(void)
             msg_envelope->msg_type = DEFAULT;
             strncpy(msg_envelope->msg_data, msg, 5);
 
-            //printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
+            // printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
             //send_message(target_pid, msg_envelope);
-            delayed_send(target_pid, msg_envelope, 1);
+            delayed_send(target_pid, msg_envelope, 100);
         }
 				
         msg[i % 5] = 'A' + (i % 26);
@@ -307,9 +307,15 @@ void usr_proc_p2_2(void)
 
     while (1) {
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+					printf("proc2\r\n");
+			//printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+        // uart1_put_string("Received : ");
+        // uart1_put_string((char*)msg_envelope->msg_data);
+        // uart1_put_string(" from ");
+        // uart1_put_char('0' + (sender_id+1));
+        // uart1_put_string("\r\n");
         
-        for (i = 0; i < 0xF; i++) {
+        for (i = 0; i < 0x0000; i++) {
             ; // nop to induce delay
         }
 
@@ -325,9 +331,15 @@ void usr_proc_p2_3(void)
 
     while (1) {
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        printf("Received \"%s\" from p%d in p3\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+					printf("proc3\r\n");
+        //printf("Received \"%s\" from p%d in p3\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+        // uart1_put_string("Received : ");
+        // uart1_put_string((char*)msg_envelope->msg_data);
+        // uart1_put_string(" from ");
+        // uart1_put_char('0' + (sender_id+1));
+        // uart1_put_string("\r\n");
         
-        for (i = 0; i < 0xFFFF; i++) {
+        for (i = 0; i < 0x0000; i++) {
             ; // nop to induce delay
         }
 
@@ -343,9 +355,15 @@ void usr_proc_p2_4(void)
 
     while (1) {
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        printf("Received \"%s\" from p%d in p4\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+					printf("proc4\r\n");
+        //printf("Received \"%s\" from p%d in p4\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+        // uart1_put_string("Received : ");
+        // uart1_put_string((char*)msg_envelope->msg_data);
+        // uart1_put_string(" from ");
+        // uart1_put_char('0' + (sender_id+1));
+        // uart1_put_string("\r\n");
         
-        for (i = 0; i < 0xFFFF; i++) {
+        for (i = 0; i < 0x0000; i++) {
             ; // nop to induce delay
         }
 
@@ -361,9 +379,15 @@ void usr_proc_p2_5(void)
 
     while (1) {
         msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        printf("Received \"%s\" from p%d in p5\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+					printf("proc5\r\n");
+        //printf("Received \"%s\" from p%d in p5\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
+        // uart1_put_string("Received : ");
+        // uart1_put_string((char*)msg_envelope->msg_data);
+        // uart1_put_string(" from ");
+        // uart1_put_char('0' + (sender_id+1));
+        // uart1_put_string("\r\n");
         
-        for (i = 0; i < 0xFFFF; i++) {
+        for (i = 0; i < 0x0000; i++) {
             ; // nop to induce delay
         }
 

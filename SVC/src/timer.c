@@ -13,6 +13,9 @@
 
 #define BIT(X) (1<<X)
 
+ #define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
+#define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
+
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
 linkedlist_t timeout_queue; // queue of messages
 /**
@@ -146,7 +149,7 @@ void timer_i_process(void) {
 	while (iter != NULL && ((message_t *)iter)->expiry <= g_timer_count) {
 		node = (node_t *)linkedlist_pop_front(&timeout_queue);
 		//printf("%s\n\r", ((message_t*)&((message_t *)node->value)->msg_node)->msg_data);
-		k_send_full_message(((message_t *)node->value)->receiver_pid, USER_MSG_ADDR((message_t *)node->value));
+		k_send_message_i(((message_t *)node->value)->receiver_pid, USER_MSG_ADDR((message_t *)node->value));
 		iter = iter->next;
 	}
 }

@@ -6,6 +6,8 @@
 #include "memory.h"
 #include "string.h"
 #include "timer.h"
+#include "wall_clock.h"
+#include "printf.h"
 
 typedef struct {
     uint32_t pid;
@@ -42,6 +44,10 @@ void k_set_procs(void) {
     k_proc_table[4].pid = 13;
     k_proc_table[4].priority = HIGHEST;
     k_proc_table[4].proc_start = &crt_proc;
+
+    k_proc_table[5].pid = 11;
+    k_proc_table[5].priority = HIGHEST;
+    k_proc_table[5].proc_start = &wall_clock_proc;
 
     for (i = 0; i < 10; i++) {
         commands[i].cmd = NULL;
@@ -92,7 +98,7 @@ void kcd_proc(void) {
             strncpy(msg_data, msg->msg_data, msg_data_len);
         
             msg->msg_type = CRT_DISPLAY;
-            send_message(PID_CRT, msg);
+            send_message(PID_CRT, msg); // -> crt_proc -> uart_i_proc -> frees msg
             itr = msg_data;
                         
             if(msg_data[0] == '%') {
@@ -102,7 +108,7 @@ void kcd_proc(void) {
                 
                 for(i = 0; i < num_of_cmds_reg; i++) {
                     if(strcmp(commands[i].cmd, buffer)) {
-                        msg = request_memory_block();
+                        msg = (msg_buf_t*)request_memory_block();
                         msg->msg_type = DEFAULT;
                         strncpy(msg->msg_data, msg_data, msg_data_len);
                         send_message(commands[i].pid, msg);
@@ -130,3 +136,99 @@ void kcd_proc(void) {
     }
 }
 
+void wall_clock_proc(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+    char* cmd = "%W";
+    char buffer[12];            // enough to store longest command "WS hh:mm:ss\0"
+    char time_buffer[2];        // for parsing the input
+    int time_value;
+
+
+    uint8_t running = 0;
+    uint32_t currentTime = 0;   // in sec
+
+    // register the command with kcd
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+
+    // run clock
+    while (1) {
+        // even if clock is not running, we need to take back the block that we freed in the previous iteration so
+        // we're guaranteed that we always have a block available
+        envelope = (msg_buf_t*)request_memory_block(); 
+        envelope->msg_type = DEFAULT;
+        delayed_send(PID_CLOCK, envelope, 1000); // clock don't need a message
+
+        envelope = receive_message(&sender_id);
+        strncpy(buffer, envelope->msg_data, strlen(buffer));
+        release_memory_block(envelope); // since we already copied out the data into our buffer
+
+        // guaranteed that there's at least 1 free memory block
+        if (sender_id == PID_CLOCK && running == 1) {
+            // received a wall clock update
+            currentTime++;
+
+            // print time to crt
+            envelope = (msg_buf_t*)request_memory_block();
+            envelope->msg_type = CRT_DISPLAY;
+            sprintf(buffer, "%02d:%02d:%02d\r\n", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
+            strncpy(envelope->msg_data, buffer, strlen(buffer));
+            send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
+        } else if (sender_id == PID_KCD) {
+            if (buffer[0] != '%' || buffer[1] != 'W') {
+                DEBUG_PRINT("wall_clock_proc received invalid message from kcd");
+            }
+
+            switch (buffer[2]) {
+                case 'R': {
+                    running = 1;
+                    currentTime = 0;
+
+                    envelope = (msg_buf_t*)request_memory_block();
+                    envelope->msg_type = DEFAULT;
+                    send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+
+                    break;
+                }
+
+                case 'S': {
+                    running = 1;
+                    currentTime = 0;
+
+                    // 0 1 2 3 4 5 6 7 8 9 A B
+                    // % W S _ H H : M M : S S
+
+                    // get hour
+                    strncpy(time_buffer, (buffer + 4), 2);
+                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    currentTime += time_value * 3600;
+
+                    // get minutes
+                    strncpy(time_buffer, (buffer + 7), 2);
+                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    currentTime += time_value * 60;
+
+                    // get seconds
+                    strncpy(time_buffer, (buffer + 10), 2);
+                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    currentTime += time_value;
+
+                    break;
+                }
+
+                case 'T': {
+                    running = 0;
+                    break;
+                }
+
+                default: {
+                    DEBUG_PRINT("wall_clock_proc received invalid command");
+                    break;
+                }
+            }
+        }
+    }
+}

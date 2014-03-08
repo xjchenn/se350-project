@@ -28,7 +28,7 @@ int32_t k_init_message(void* message, int32_t process_id) {
 /**
  * preempting send
  */
-uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
+int32_t k_send_message(int32_t process_id, void* message_envelope) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     pcb_t *receiver;
 	

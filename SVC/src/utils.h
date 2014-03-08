@@ -23,7 +23,7 @@ typedef void (*func_ptr_t)();
 #define STACK_SIZE              0x100
 #define NUM_PRIORITIES          5
 
-#define NUM_K_PROCESSES         5
+#define NUM_K_PROCESSES         6
 #define NUM_I_PROCESSES         2
 #define NUM_USR_PROCESSES       6
 #define NUM_PROCESSES           16//(uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES + NUM_I_PROCESSES)
@@ -32,6 +32,8 @@ typedef void (*func_ptr_t)();
 
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
+
+#define MIN(X, Y)               ((X) < (Y) ? (X) : (Y));
 
 #ifdef DEBUG_0
 #define DEBUG_PRINT(msg)        printf(msg)

@@ -18,8 +18,11 @@ uint32_t k_init_message(message_t* msg, uint32_t process_id) {
 uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
     message_t* message = (message_t *)KERNEL_MSG_ADDR(message_envelope);
     pcb_t *receiver;
+	
+		__disable_irq();
     
     if(process_id < 1 || process_id >= NUM_PROCESSES) {
+				__enable_irq();
         return 1;
     }
     
@@ -32,10 +35,13 @@ uint32_t k_send_message(uint32_t process_id, void* message_envelope) {
     if(receiver->state == MSG_BLOCKED) {
         k_pcb_msg_unblock(receiver);
         if(receiver->priority <= ((pcb_t *)current_pcb_node->value)->priority) {
+						__enable_irq();
             k_release_processor();
-        }
+						__disable_irq();
+        }	
     }
     
+		__enable_irq();
     return 0;
 }
 
@@ -43,12 +49,16 @@ void* k_receive_message(int32_t* sender_id) {
     node_t* message_node;
     message_t* message;
     pcb_t* current_pcb;
-    
+		
+		__disable_irq();
+	
     current_pcb = (pcb_t *)current_pcb_node->value;
     
     while(current_pcb->msg_queue.length == 0) {
         current_pcb->state = MSG_BLOCKED;
+				__enable_irq();
         k_release_processor();
+				__disable_irq();
     }
     
     message_node = linkedlist_pop_front(&current_pcb->msg_queue);
@@ -57,6 +67,8 @@ void* k_receive_message(int32_t* sender_id) {
         *sender_id = message->sender_pid;
     }
     
+		__enable_irq();
+		
     return (void*)USER_MSG_ADDR(message);
 }
 

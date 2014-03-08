@@ -13,6 +13,7 @@ typedef struct {
 
 kcd_cmd_t commands[10];
 uint32_t num_of_cmds_reg = 0;
+char msg_data[USER_DATA_BLOCK_SIZE - 4];
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
@@ -67,16 +68,54 @@ void crt_proc(void) {
     }
 }
 
+void reset_msg_data() {
+	int i;
+	
+	for(i = 0; i < USER_DATA_BLOCK_SIZE - 4; i++) {
+		msg_data[i] = '\0';
+	}
+}
+
 void kcd_proc(void) {
 	msg_buf_t* msg = NULL;
 	int32_t sender_id;
 	uint32_t msg_data_len;
+	char* itr;
+	uint32_t i = 0;
+	char buffer[10];
 	
 	while(1) {
 			msg = receive_message(&sender_id);
         if(msg->msg_type == DEFAULT) {
+						msg_data_len = strlen(msg->msg_data);
+						strncpy(msg_data, msg->msg_data, msg_data_len);
+					
             msg->msg_type = CRT_DISPLAY;
             send_message(PID_CRT, msg);
+						itr = msg_data;
+						
+						if(msg_data[0] == '%') {
+								while(*itr != ' ' && *itr != '\0') {
+										buffer[i++] = *itr++;
+								}
+								
+								for(i = 0; i < num_of_cmds_reg; i++) {
+									if(strcmp(commands[i].cmd, buffer)) {
+											msg = request_memory_block();
+											msg->msg_type = DEFAULT;
+											strncpy(msg->msg_data, msg_data, msg_data_len);
+											send_message(commands[i].pid, msg);
+											break;
+									}
+								}
+						}
+	
+						for(i = 0; i < strlen(buffer); i++) {
+							buffer[i] = '\0';
+						}
+						
+						reset_msg_data();
+						
 						continue;
         } else if(msg->msg_type == KCD_REG) {
             if(num_of_cmds_reg == 10) {

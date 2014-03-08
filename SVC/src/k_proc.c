@@ -119,17 +119,17 @@ void kcd_proc(void) {
 						continue;
         } else if(msg->msg_type == KCD_REG) {
             if(num_of_cmds_reg == 10) {
-							goto cleanup;
-						}
+                release_memory_block(msg);
+                continue;
+			}
 						
 						commands[num_of_cmds_reg].pid = sender_id;
 						msg_data_len = strlen(msg->msg_data);
 						strncpy(commands[num_of_cmds_reg].cmd, msg->msg_data, msg_data_len);
 						num_of_cmds_reg++;
+        } else {
+            release_memory_block(msg);
         }
-				
-				cleanup:
-					release_memory_block(msg);
 	}
 }
 

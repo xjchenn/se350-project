@@ -178,9 +178,9 @@ __asm void UART0_IRQHandler(void) {
     PRESERVE8
     IMPORT c_UART0_IRQHandler
     IMPORT k_release_processor
-    PUSH{r4-r11, lr}
+    PUSH {r4 - r11, lr}
     BL c_UART0_IRQHandler
-    LDR R4, =__cpp(&g_switch_flag)  ;// check switch_flag set by handler
+    LDR R4, = __cpp(&g_switch_flag)  ; // check switch_flag set by handler
     LDR R4, [R4]
     MOV R5, #0
     CMP R4, R5
@@ -189,7 +189,7 @@ __asm void UART0_IRQHandler(void) {
     BL k_release_processor          ;// otherwise (i.e g_switch_flag == 1, then switch to the other process)
 
 RESTORE
-    POP{r4-r11, pc}
+    POP {r4 - r11, pc}
 }
 
 
@@ -211,7 +211,6 @@ void irq_i_process(void) {
     uint8_t IIR_IntId;      // Interrupt ID from IIR
     LPC_UART_TypeDef* pUart = (LPC_UART_TypeDef*)LPC_UART0;
     node_t* curr_pcb_node = current_pcb_node;
-    pcb_t* current_pcb;
     msg_buf_t* read_msg;
 
     g_switch_flag = 0;
@@ -274,28 +273,28 @@ void irq_i_process(void) {
         PRINT_NEWLINE;
 
         switch (g_char_in) {
-        case KEY_READY_QUEUE:
-            println("READY QUEUE:");
-            k_print_queues(ready_pqs);
-            break;
+            case KEY_READY_QUEUE:
+                println("READY QUEUE:");
+                k_print_queues(ready_pqs);
+                break;
 
-        case KEY_BLOCKED_MEM_QUEUE:
-            println("MEM BLOCKED QUEUE:");
-            k_print_queues(mem_blocked_pqs);
-            break;
+            case KEY_BLOCKED_MEM_QUEUE:
+                println("MEM BLOCKED QUEUE:");
+                k_print_queues(mem_blocked_pqs);
+                break;
 
-        case KEY_BLOCKED_MSG_QUEUE:
-            println("MESSAGE BLOCKED QUEUE:");
-            k_print_queues(msg_blocked_pqs);
-            break;
+            case KEY_BLOCKED_MSG_QUEUE:
+                println("MESSAGE BLOCKED QUEUE:");
+                k_print_queues(msg_blocked_pqs);
+                break;
 
-        case KEY_MSG_LOG_BUFFER:
-            println("KEY MSG LOG BUFFER:");
-            // TODO
-            break;
+            case KEY_MSG_LOG_BUFFER:
+                println("KEY MSG LOG BUFFER:");
+                // TODO
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
 
         PRINT_HEADER;

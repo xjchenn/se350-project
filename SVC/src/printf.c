@@ -140,19 +140,6 @@ void tfp_format(void* putp, putcf putf, char* fmt, va_list va) {
     char bf[12];
     char ch;
 
-    bf[0] = '0';
-    bf[1] = '1';
-    bf[2] = '2';
-    bf[3] = '3';
-    bf[4] = '4';
-    bf[5] = '5';
-    bf[6] = '6';
-    bf[7] = '7';
-    bf[8] = '8';
-    bf[9] = '9';
-    bf[10] = 'A';
-    bf[11] = '\0';
-
     while ((ch = *(fmt++)) != '\0') { /* This line is modified by Y. Huang to avoid assignment in condition warning */
         if (ch != '%') {
             putf(putp, ch);
@@ -175,16 +162,16 @@ void tfp_format(void* putp, putcf putf, char* fmt, va_list va) {
                 case 0:
                     goto abort;
 
-                case 'u' : 
+                case 'u' :
                     ui2a(va_arg(va, unsigned int), 10, 0, bf);
                     putchw(putp, putf, w, lz, bf);
                     break;
-                
-                case 'd' :  
+
+                case 'd' :
                     i2a(va_arg(va, int), bf);
                     putchw(putp, putf, w, lz, bf);
                     break;
-                
+
                 case 'x':
                 case 'X' :
                     ui2a(va_arg(va, unsigned int), 16, (ch == 'X'), bf);
@@ -211,7 +198,6 @@ abort:
     ;
 }
 
-
 void init_printf(void* putp, void (*putf) (void*, char)) {
     stdout_putf = putf;
     stdout_putp = putp;
@@ -228,22 +214,24 @@ void tfp_printf(char* fmt, ...) {
 
 void tfp_println(char* fmt, ...) {
     va_list va;
+    __disable_irq();
     va_start(va, fmt);
     tfp_format(stdout_putp, stdout_putf, fmt, va);
     va_end(va);
     tfp_printf("\r\n");
+    __enable_irq();
 }
 
 static void putcp(void* p, char c) {
     *(*((char**)p))++ = c;
 }
 
-
-
 void tfp_sprintf(char* s, char* fmt, ...) {
     va_list va;
+    __disable_irq();
     va_start(va, fmt);
     tfp_format(&s, putcp, fmt, va);
     putcp(&s, 0);
     va_end(va);
+    __enable_irq();
 }

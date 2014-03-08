@@ -9,6 +9,7 @@
     --align-pointer=type \
     --align-reference=name \
     --convert-tabs \
+    --indent-switches \
     --recursive \
     ./*.c \
     ./*.h \

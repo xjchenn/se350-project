@@ -72,52 +72,52 @@ uint32_t k_init_processor(void) {
         *(--stack_ptr) = XPSR;
 
         switch (i) {
-        case 0:
-            // null process
-            *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-            pcbs[i]->pid = k_proc_table[0].pid;
-            pcbs[i]->priority = k_proc_table[0].priority;
-            break;
+            case 0:
+                // null process
+                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid = k_proc_table[0].pid;
+                pcbs[i]->priority = k_proc_table[0].priority;
+                break;
 
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-            // user process
-            *(--stack_ptr) = (uint32_t)(usr_proc_table[i - 1].proc_start);
-            pcbs[i]->pid = usr_proc_table[i - 1].pid;
-            pcbs[i]->priority = usr_proc_table[i - 1].priority;
-            break;
-        case 7:
-        case 8:
-        case 9:
-        case 10:
-        case 11:
-            *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-            pcbs[i]->pid = k_proc_table[0].pid;;
-            pcbs[i]->priority = LOWEST;
-            break;
-        case 14:
-        case 15:
-            *(--stack_ptr);
-            pcbs[i]->pid = k_proc_table[2].pid;
-            pcbs[i]->priority = LOWEST;
-            break;
-        case 12:
-            *(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
-            pcbs[i]->pid = k_proc_table[3].pid;
-            pcbs[i]->priority = k_proc_table[3].priority;
-            break;
-        case 13:
-            *(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
-            pcbs[i]->pid = k_proc_table[4].pid;
-            pcbs[i]->priority = k_proc_table[4].priority;
-            break;
-        default:
-            // TODO
-            break;
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                // user process
+                *(--stack_ptr) = (uint32_t)(usr_proc_table[i - 1].proc_start);
+                pcbs[i]->pid = usr_proc_table[i - 1].pid;
+                pcbs[i]->priority = usr_proc_table[i - 1].priority;
+                break;
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid = k_proc_table[0].pid;;
+                pcbs[i]->priority = LOWEST;
+                break;
+            case 14:
+            case 15:
+                *(--stack_ptr);
+                pcbs[i]->pid = k_proc_table[2].pid;
+                pcbs[i]->priority = LOWEST;
+                break;
+            case 12:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
+                pcbs[i]->pid = k_proc_table[3].pid;
+                pcbs[i]->priority = k_proc_table[3].priority;
+                break;
+            case 13:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
+                pcbs[i]->pid = k_proc_table[4].pid;
+                pcbs[i]->priority = k_proc_table[4].priority;
+                break;
+            default:
+                // TODO
+                break;
         }
 
         // add padding to stack?
@@ -175,17 +175,17 @@ node_t* get_next_process(void) {
             }
 
             switch (current_pcb->state) {
-            case MEM_BLOCKED:
-                linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
-                break;
-            case MSG_BLOCKED:
-                linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
-                break;
-            case READY:
-                linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
-                break;
-            default:
-                break;
+                case MEM_BLOCKED:
+                    linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
+                    break;
+                case MSG_BLOCKED:
+                    linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
+                    break;
+                case READY:
+                    linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
+                    break;
+                default:
+                    break;
             }
 
             return ret_pcb_node;

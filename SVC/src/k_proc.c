@@ -153,7 +153,6 @@ void wall_clock_proc(void) {
     msg_buf_t* envelope;
     char* cmd;
     char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
-    char time_buffer[2];        // for parsing the input
     int32_t time_value;
 
     uint32_t running = 0;
@@ -181,7 +180,7 @@ void wall_clock_proc(void) {
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 100, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
 
@@ -216,20 +215,24 @@ void wall_clock_proc(void) {
                     // % W S _ H H : M M : S S
 
                     // get hour
-                    strncpy(time_buffer, (buffer + 4), 2);
-                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    time_value = 0;
+                    time_value += (buffer[4] - '0') * 10;
+                    time_value += (buffer[5] - '0');
                     currentTime += time_value * 3600;
 
                     // get minutes
-                    strncpy(time_buffer, (buffer + 7), 2);
-                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    time_value = 0;
+                    time_value += (buffer[7] - '0') * 10;
+                    time_value += (buffer[8] - '0');
                     currentTime += time_value * 60;
 
                     // get seconds
-                    strncpy(time_buffer, (buffer + 10), 2);
-                    a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
+                    time_value = 0;
+                    time_value += (buffer[10] - '0') * 10;
+                    time_value += (buffer[11] - '0');
                     currentTime += time_value;
 
+                    envelope = (msg_buf_t*)request_memory_block();
                     envelope->msg_type = DEFAULT;
                     send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
 

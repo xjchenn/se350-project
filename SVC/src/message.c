@@ -217,10 +217,11 @@ int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay
 
     // insert new message into sorted queue (in desc. order of expiry time)
     queue_iter = timeout_queue.first;
+    
     while (queue_iter != NULL) {
         current_message = (message_t*)queue_iter->value;
 
-        if (current_message->expiry > delay) {
+        if (message->expiry < current_message->expiry) {
             // insert new_node before queue_iter
             new_node = &message->msg_node;
             new_node->prev = queue_iter->prev;

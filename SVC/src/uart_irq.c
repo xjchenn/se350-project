@@ -355,5 +355,5 @@ void irq_i_process(void) {
 void read_interrupt() {
     LPC_UART_TypeDef* pUart = (LPC_UART_TypeDef*)LPC_UART0;
 
-    pUart->IER ^= IER_THRE;
+    pUart->IER |= IER_THRE;
 }

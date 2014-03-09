@@ -11,7 +11,7 @@
 
 typedef struct {
     uint32_t pid;
-    char* cmd;
+    char cmd[10];
 } kcd_cmd_t;
 
 kcd_cmd_t commands[10];
@@ -22,6 +22,7 @@ proc_image_t k_proc_table[NUM_K_PROCESSES];
 
 void k_set_procs(void) {
     uint32_t i = 0;
+    uint32_t j;
 
     for (i = 0; i < NUM_K_PROCESSES; i++) {
         k_proc_table[i].stack_size = STACK_SIZE;
@@ -50,7 +51,9 @@ void k_set_procs(void) {
     k_proc_table[5].proc_start = &wall_clock_proc;
 
     for (i = 0; i < 10; i++) {
-        commands[i].cmd = NULL;
+        for(j = 0; j < 10; j++) {
+            commands[i].cmd[j] = '\0';
+        }
     }
 }
 
@@ -102,8 +105,12 @@ void kcd_proc(void) {
             itr = msg_data;
                         
             if(msg_data[0] == '%') {
-                while(*itr != ' ' && *itr != '\0') {
-                    buffer[i++] = *itr++;
+                while(*itr != ' ' && *itr != '\r') {
+                    if(*itr == '\0') {
+                        *itr++;
+                    } else {
+                        buffer[i++] = *itr++;
+                    }
                 }
                 
                 for(i = 0; i < num_of_cmds_reg; i++) {
@@ -117,9 +124,11 @@ void kcd_proc(void) {
                 }
             }
 
-            for(i = 0; i < strlen(buffer); i++) {
+            for(i = 0; i < 10; i++) {
                 buffer[i] = '\0';
             }
+            
+            i = 0;
             
             reset_msg_data();
             
@@ -139,7 +148,7 @@ void kcd_proc(void) {
 void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
-    char* cmd = "%W";
+    char* cmd = "%WR";
     char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
     char time_buffer[2];        // for parsing the input
     int32_t time_value;
@@ -153,6 +162,18 @@ void wall_clock_proc(void) {
     envelope->msg_type = KCD_REG;
     strncpy(envelope->msg_data, cmd, strlen(cmd));
     send_message(PID_KCD, envelope); // envelope is now considered freed memory
+    
+    cmd = "%WS";
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope);
+    
+    cmd = "%WT";
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope);
 
     // run clock
     while (1) {
@@ -160,7 +181,7 @@ void wall_clock_proc(void) {
         // we're guaranteed that we always have a block available
         envelope = (msg_buf_t*)request_memory_block(); 
         envelope->msg_type = DEFAULT;
-        delayed_send(PID_CLOCK, envelope, 1000); // clock don't need a message
+        delayed_send(PID_CLOCK, envelope, 1); // clock don't need a message
 
         envelope = receive_message(&sender_id);
         strncpy(buffer, envelope->msg_data, 15);
@@ -172,7 +193,7 @@ void wall_clock_proc(void) {
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r\n\0", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "%02d:%02d:%02d\r\n", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
             

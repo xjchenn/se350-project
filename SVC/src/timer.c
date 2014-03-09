@@ -146,6 +146,6 @@ void timer_i_process(void) {
     while (queue_iter != NULL && ((message_t*)queue_iter)->expiry <= g_timer_count) {
         current_message = (message_t*)linkedlist_pop_front(&timeout_queue);
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
-        queue_iter = queue_iter->next;
+        queue_iter = timeout_queue.first;
     }
 }

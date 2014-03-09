@@ -3,6 +3,7 @@
 #include "k_process.h"
 #include "timer.h"
 #include "string.h"
+#include "printf.h"
 
 extern linkedlist_t timeout_queue;
 extern volatile uint32_t g_timer_count;
@@ -248,4 +249,12 @@ int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay
     // If we get here, then the delay time is greater than all that are in the queue
     linkedlist_push_back(&timeout_queue, &message->msg_node);
     return 0;
+}
+
+void k_print_logs(msg_hist_t* log_buffer, uint32_t buffer_size) {
+    uint32_t i;
+
+    for (i = 0; i < buffer_size; i++, log_buffer++) {
+        println("[%d] Sender:%02d Receiver:%02d Type:%02d Msg:\"%s\"", i, log_buffer->sender, log_buffer->receiver, log_buffer->msg_type, log_buffer->msg_preview);
+    }
 }

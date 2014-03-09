@@ -289,8 +289,11 @@ void irq_i_process(void) {
                 break;
 
             case KEY_MSG_LOG_BUFFER:
-                println("KEY MSG LOG BUFFER:");
-                // TODO
+                println("SENT MSG LOG BUFFER:");
+                k_print_logs(sent_msg_buffer, sent_msg_buffer_size);
+                PRINT_NEWLINE;
+                println("RECEIVED MSG LOG BUFFER:");
+                k_print_logs(received_msg_buffer, received_msg_buffer_size);
                 break;
 
             default:

@@ -145,7 +145,7 @@ void wall_clock_proc(void) {
     int32_t time_value;
 
 
-    uint8_t running = 0;
+    uint32_t running = 0;
     uint32_t currentTime = 0;   // in sec
 
     // register the command with kcd

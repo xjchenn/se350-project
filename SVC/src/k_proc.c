@@ -20,8 +20,6 @@ char msg_data[USER_DATA_BLOCK_SIZE - 4];
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
-mem_blk_t* irq_message_block = NULL;
-
 void k_set_procs(void) {
     uint32_t i = 0;
 
@@ -135,7 +133,6 @@ void kcd_proc(void) {
             }
         }
         k_release_memory_block_i(msg);
-        irq_message_block = request_memory_block();
     }
 }
 
@@ -175,7 +172,7 @@ void wall_clock_proc(void) {
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r\n", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "%02d:%02d:%02d\r\n\0", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
             

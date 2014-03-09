@@ -247,7 +247,7 @@ void irq_i_process(void) {
             g_buffer[buffer_index++] = '\0';
             pUart->THR = '\0';
 
-            read_msg = (msg_buf_t*)irq_message_block;
+            read_msg = (msg_buf_t*)k_request_memory_block();
 
             if (read_msg == NULL) {
                 return;

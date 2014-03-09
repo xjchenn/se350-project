@@ -3,8 +3,6 @@
 
 #include "k_memory.h"
 
-extern mem_blk_t* irq_message_block;
-
 void k_set_procs(void);
 void null_proc(void);
 void crt_proc(void);

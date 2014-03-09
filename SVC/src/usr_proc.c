@@ -10,6 +10,12 @@ proc_image_t usr_proc_table[NUM_PROCS];
 int32_t test_results[NUM_PROCS];
 
 void usr_set_procs() {
+    uint32_t i;
+
+    for (i = 0; i < NUM_PROCS; ++i) {
+        usr_proc_table[i].pid = (i + 1);
+    }
+
     /*
     // Testing p1
 
@@ -275,15 +281,15 @@ void usr_proc_p2_1(void) {
     char msg[5];
     while (1) {
         if (i != 0 && i % 5 == 0) {
-            target_pid = 2 + (i * 5 % 4); // send msg to p2 to p5 in round robin
+            target_pid = 2 + ((i * 5) % 4); // send msg to p2 to p5 in round robin
 
-            msg_envelope = (msg_buf_t*)request_memory_block();
-            msg_envelope->msg_type = DEFAULT;
-            strncpy(msg_envelope->msg_data, msg, 5);
-
-            // printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
-            //send_message(target_pid, msg_envelope);
-            delayed_send(target_pid, msg_envelope, 100);
+            //msg_envelope = (msg_buf_t*)request_memory_block();
+            //msg_envelope->msg_type = DEFAULT;
+            //strncpy(msg_envelope->msg_data, msg, 5);
+            
+            //// printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
+            ////send_message(target_pid, msg_envelope);
+            //delayed_send(target_pid, msg_envelope, 100);
         }
 
         msg[i % 5] = 'A' + (i % 26);

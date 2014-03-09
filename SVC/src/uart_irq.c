@@ -14,10 +14,8 @@
 #include "k_memory.h"
 #include "utils.h"
 #include "string.h"
-
-#ifdef DEBUG_0
+#include "k_proc.h"
 #include "printf.h"
-#endif
 
 
 uint32_t buffer_size = USER_DATA_BLOCK_SIZE - 4;
@@ -211,8 +209,11 @@ void irq_i_process(void) {
     LPC_UART_TypeDef* pUart = (LPC_UART_TypeDef*)LPC_UART0;
     node_t* curr_pcb_node = current_pcb_node;
     msg_buf_t* read_msg;
+    pcb_t* current_pcb;
 
     g_switch_flag = 0;
+
+
 #ifdef DEBUG_0
     uart1_put_string("Entering c_UART0_IRQHandler\n\r");
 #endif // DEBUG_0
@@ -246,7 +247,7 @@ void irq_i_process(void) {
             g_buffer[buffer_index++] = '\0';
             pUart->THR = '\0';
 
-            read_msg = k_request_memory_block_i();
+            read_msg = (msg_buf_t*)irq_message_block;
 
             if (read_msg == NULL) {
                 return;

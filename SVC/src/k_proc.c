@@ -20,6 +20,8 @@ char msg_data[USER_DATA_BLOCK_SIZE - 4];
 
 proc_image_t k_proc_table[NUM_K_PROCESSES];
 
+mem_blk_t* irq_message_block = NULL;
+
 void k_set_procs(void) {
     uint32_t i = 0;
 
@@ -132,7 +134,8 @@ void kcd_proc(void) {
                 num_of_cmds_reg++;
             }
         }
-        release_memory_block(msg);
+        k_release_memory_block_i(msg);
+        irq_message_block = request_memory_block();
     }
 }
 
@@ -140,9 +143,9 @@ void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
     char* cmd = "%W";
-    char buffer[12];            // enough to store longest command "WS hh:mm:ss\0"
+    char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
     char time_buffer[2];        // for parsing the input
-    int time_value;
+    int32_t time_value;
 
 
     uint8_t running = 0;
@@ -163,13 +166,11 @@ void wall_clock_proc(void) {
         delayed_send(PID_CLOCK, envelope, 1000); // clock don't need a message
 
         envelope = receive_message(&sender_id);
-        strncpy(buffer, envelope->msg_data, strlen(buffer));
+        strncpy(buffer, envelope->msg_data, 15);
         release_memory_block(envelope); // since we already copied out the data into our buffer
 
         // guaranteed that there's at least 1 free memory block
         if (sender_id == PID_CLOCK && running == 1) {
-            // received a wall clock update
-            currentTime++;
 
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
@@ -177,6 +178,10 @@ void wall_clock_proc(void) {
             sprintf(buffer, "%02d:%02d:%02d\r\n", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
+            
+            // received a wall clock update
+            currentTime++;
+            
         } else if (sender_id == PID_KCD) {
             if (buffer[0] != '%' || buffer[1] != 'W') {
                 DEBUG_PRINT("wall_clock_proc received invalid message from kcd");

@@ -481,11 +481,14 @@
               <FileType>1</FileType>
               <FilePath>.\src\message.c</FilePath>
             </File>
+<<<<<<< HEAD
             <File>
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\timer.c</FilePath>
             </File>
+=======
+>>>>>>> origin/message_buffers
           </Files>
         </Group>
       </Groups>
@@ -965,11 +968,14 @@
               <FileType>1</FileType>
               <FilePath>.\src\message.c</FilePath>
             </File>
+<<<<<<< HEAD
             <File>
               <FileName>timer.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\timer.c</FilePath>
             </File>
+=======
+>>>>>>> origin/message_buffers
           </Files>
         </Group>
       </Groups>

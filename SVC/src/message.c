@@ -2,9 +2,22 @@
 #include "message.h"
 #include "k_process.h"
 #include "timer.h"
+#include "string.h"
 
 extern linkedlist_t timeout_queue;
 extern volatile uint32_t g_timer_count;
+
+msg_hist_t sent_msg_buffer[MSG_BUFFER_SIZE];
+msg_hist_t received_msg_buffer[MSG_BUFFER_SIZE];
+
+uint32_t sent_msg_buffer_size = 0;
+uint32_t received_msg_buffer_size = 0;
+
+uint32_t front_sent_msg_idx = 0;
+uint32_t end_sent_msg_idx = 0;
+
+uint32_t front_received_msg_idx = 0;
+uint32_t end_received_msg_idx = 0;
 
 /**
  * assumes input params are correct
@@ -14,7 +27,6 @@ extern volatile uint32_t g_timer_count;
  */
 int32_t k_init_message(void* message, int32_t process_id) {
     message_t* msg = (message_t*)message;
-
     msg->msg_node.next = NULL;
     msg->msg_node.prev = NULL;
     msg->msg_node.value = msg;
@@ -23,6 +35,51 @@ int32_t k_init_message(void* message, int32_t process_id) {
     msg->expiry = 0;
 
     return 0;
+}
+
+uint32_t copy_message_to_history(const message_t* message, msg_hist_t* history) {
+    history->sender = message->sender_pid;
+    history->receiver = message->receiver_pid;
+    history->msg_type = message->msg_type;
+    strncpy(history->msg_preview, message->msg_data, MSG_PREVIEW_SIZE);
+    
+    return 0;
+}
+
+void buffer_increment(uint32_t* ptr, uint32_t max_size) {
+    if(*ptr == (max_size - 1)) {
+        ptr = 0;
+    } else {
+        ptr++;
+    }
+}
+
+uint32_t track_msg(msg_hist_t* buffer, uint32_t* front, uint32_t* end, uint32_t* size, const message_t* msg) {
+    if(size == 0) {
+        copy_message_to_history(msg, &buffer[*end++]);
+        buffer_increment(end, MSG_BUFFER_SIZE);
+        *size++;
+        return 0;
+    }
+    
+    buffer_increment(end, MSG_BUFFER_SIZE);
+    copy_message_to_history(msg, &buffer[*end++]);
+    
+    if(*size < 10) {
+        *size++;
+    } else {
+        buffer_increment(front, MSG_BUFFER_SIZE);
+    }
+    
+    return 0;
+}
+
+uint32_t track_sent_msg(const message_t* msg) {
+    return track_msg(sent_msg_buffer, &front_sent_msg_idx, &end_sent_msg_idx, &sent_msg_buffer_size, msg);
+}
+
+uint32_t track_received_msg(const message_t* msg) {
+    return track_msg(received_msg_buffer, &front_received_msg_idx, &end_received_msg_idx, &received_msg_buffer_size, msg);
 }
 
 /**
@@ -46,6 +103,9 @@ int32_t k_send_message(int32_t process_id, void* message_envelope) {
     linkedlist_push_back(&receiver->msg_queue, &message->msg_node);
 
     if (receiver->state == MSG_BLOCKED) {
+    
+        track_sent_msg(message);
+    
         k_pcb_msg_unblock(receiver);
         if(receiver->priority <= ((pcb_t *)current_pcb_node->value)->priority) {
 						__enable_irq();
@@ -108,6 +168,8 @@ void* k_receive_message(int32_t* sender_id) {
         *sender_id = message->sender_pid;
     }
 		__enable_irq();
+
+    track_received_msg(message);
     return (void*)USER_MSG_ADDR(message);
 }
 
@@ -129,7 +191,8 @@ void* k_receive_message_i(int32_t* sender_id) {
     if (sender_id != NULL) {
         *sender_id = message->sender_pid;
     }
-
+    
+    track_received_msg(message);
     return (void*)USER_MSG_ADDR(message);
 }
 

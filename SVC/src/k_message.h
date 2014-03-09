@@ -7,6 +7,9 @@
 #define KERNEL_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE - KERNEL_MSG_HEADER_SIZE)
 #define USER_MSG_ADDR(MESSAGE) (void *)((uint32_t)MESSAGE + KERNEL_MSG_HEADER_SIZE)
 
+#define MSG_PREVIEW_SIZE 16
+#define MSG_BUFFER_SIZE 10
+
 typedef struct {
     node_t msg_node;
     uint32_t sender_pid;
@@ -16,6 +19,14 @@ typedef struct {
     uint32_t msg_type;
     char msg_data[1];
 } message_t;
+
+typedef struct {
+    uint32_t sender;
+    uint32_t receiver;
+    uint32_t msg_type;
+    //Add timestamp here
+    char msg_preview[16];
+} msg_hist_t;
 
 void* k_receive_message(int32_t* sender_id);
 void* k_receive_message_i(int32_t* sender_id);

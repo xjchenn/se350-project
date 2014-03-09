@@ -68,7 +68,6 @@ void crt_proc(void) {
 
     while (1) {
         msg = receive_message(NULL);
-
         if (msg->msg_type == CRT_DISPLAY) {
             send_message(PID_UART_IPROC, msg);
             read_interrupt();
@@ -94,27 +93,28 @@ void kcd_proc(void) {
     uint32_t i = 0;
     char buffer[10];
     
-    while(1) {
+    while (1) {
         msg = receive_message(&sender_id);
-        if(msg->msg_type == DEFAULT) {
+
+        if (msg->msg_type == DEFAULT) {
             msg_data_len = strlen(msg->msg_data);
             strncpy(msg_data, msg->msg_data, msg_data_len);
-        
-            msg->msg_type = CRT_DISPLAY;
-            send_message(PID_CRT, msg); // -> crt_proc -> uart_i_proc -> frees msg
+            
+            //msg->msg_type = CRT_DISPLAY;
+            //send_message(PID_CRT, msg); // -> crt_proc -> uart_i_proc -> frees msg
+            
             itr = msg_data;
-                        
-            if(msg_data[0] == '%') {
-                while(*itr != ' ' && *itr != '\r') {
-                    if(*itr == '\0') {
+            if (msg_data[0] == '%') {
+                while (*itr != ' ' && *itr != '\r') {
+                    if (*itr == '\0') {
                         *itr++;
                     } else {
                         buffer[i++] = *itr++;
                     }
                 }
                 
-                for(i = 0; i < num_of_cmds_reg; i++) {
-                    if(strcmp(commands[i].cmd, buffer)) {
+                for (i = 0; i < num_of_cmds_reg; i++) {
+                    if (strcmp(commands[i].cmd, buffer)) {
                         msg = (msg_buf_t*)request_memory_block();
                         msg->msg_type = DEFAULT;
                         strncpy(msg->msg_data, msg_data, msg_data_len);
@@ -131,8 +131,10 @@ void kcd_proc(void) {
             i = 0;
             
             reset_msg_data();
-            
             continue;
+
+            // since we're forwarding the msg, we should not free it in this case
+
         } else if(msg->msg_type == KCD_REG) {
             if(num_of_cmds_reg != 10) {
                 commands[num_of_cmds_reg].pid = sender_id;
@@ -140,67 +142,56 @@ void kcd_proc(void) {
                 strncpy(commands[num_of_cmds_reg].cmd, msg->msg_data, msg_data_len);
                 num_of_cmds_reg++;
             }
+
+            k_release_memory_block_i(msg); // done reading msg, can now free it
         }
-        k_release_memory_block_i(msg);
     }
 }
 
 void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
-    char* cmd = "%WR";
+    char* cmd;
     char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
     char time_buffer[2];        // for parsing the input
     int32_t time_value;
-
 
     uint32_t running = 0;
     uint32_t currentTime = 0;   // in sec
 
     // register the command with kcd
+    cmd = "%W";
     envelope = (msg_buf_t*)request_memory_block();
     envelope->msg_type = KCD_REG;
     strncpy(envelope->msg_data, cmd, strlen(cmd));
     send_message(PID_KCD, envelope); // envelope is now considered freed memory
-    
-    cmd = "%WS";
-    envelope = (msg_buf_t*)request_memory_block();
-    envelope->msg_type = KCD_REG;
-    strncpy(envelope->msg_data, cmd, strlen(cmd));
-    send_message(PID_KCD, envelope);
-    
-    cmd = "%WT";
-    envelope = (msg_buf_t*)request_memory_block();
-    envelope->msg_type = KCD_REG;
-    strncpy(envelope->msg_data, cmd, strlen(cmd));
-    send_message(PID_KCD, envelope);
 
     // run clock
     while (1) {
-        // even if clock is not running, we need to take back the block that we freed in the previous iteration so
-        // we're guaranteed that we always have a block available
-        envelope = (msg_buf_t*)request_memory_block(); 
-        envelope->msg_type = DEFAULT;
-        delayed_send(PID_CLOCK, envelope, 1); // clock don't need a message
-
         envelope = receive_message(&sender_id);
-        strncpy(buffer, envelope->msg_data, 15);
-        release_memory_block(envelope); // since we already copied out the data into our buffer
 
         // guaranteed that there's at least 1 free memory block
         if (sender_id == PID_CLOCK && running == 1) {
 
+            // even if clock is not running, we need to take back the block that we freed in the previous iteration so
+            // we're guaranteed that we always have a block available
+            envelope->msg_type = DEFAULT;
+            delayed_send(PID_CLOCK, envelope, CLOCK_INTERVAL); // clock don't need a message
+
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r\n", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 99, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
-            
+
             // received a wall clock update
             currentTime++;
             
         } else if (sender_id == PID_KCD) {
+            strncpy(buffer, envelope->msg_data, 15);
+            release_memory_block(envelope); // since we already copied out the data into our buffer
+
             if (buffer[0] != '%' || buffer[1] != 'W') {
                 DEBUG_PRINT("wall_clock_proc received invalid message from kcd");
             }
@@ -239,6 +230,9 @@ void wall_clock_proc(void) {
                     a2i(time_buffer[0], (char**) &time_buffer, 10, &time_value);
                     currentTime += time_value;
 
+                    envelope->msg_type = DEFAULT;
+                    send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+
                     break;
                 }
 
@@ -252,6 +246,9 @@ void wall_clock_proc(void) {
                     break;
                 }
             }
+
+        } else {
+            release_memory_block(envelope); // clock got turned off
         }
     }
 }

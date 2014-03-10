@@ -159,7 +159,19 @@ void wall_clock_proc(void) {
     uint32_t currentTime = 0;   // in sec
 
     // register the command with kcd
-    cmd = "%W";
+    cmd = "%WR";
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+    
+    cmd = "%WS";
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+    
+    cmd = "%WT";
     envelope = (msg_buf_t*)request_memory_block();
     envelope->msg_type = KCD_REG;
     strncpy(envelope->msg_data, cmd, strlen(cmd));

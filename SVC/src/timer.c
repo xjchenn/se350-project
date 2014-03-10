@@ -11,6 +11,7 @@
 #include "timer.h"
 #include "k_message.h"
 #include "printf.h"
+#include "k_process.h"
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
 linkedlist_t timeout_queue; // queue of messages
@@ -120,32 +121,18 @@ void c_TIMER0_IRQHandler(void) {
 }
 
 void timer_i_process(void) {
+    node_t* previous_pcb_node = current_pcb_node;
     node_t* queue_iter;
     message_t* current_message;
-
-    /*
-    msg_buf_t* envelope;
-    message_t* message;
-    uint32_t is_empty = 1;
-
-    // 1) Get any pending requests
-    while (is_empty != 0) {
-        // Non-Blocking receive_message
-        envelope = (msg_buf_t*)k_receive_message_i(NULL);
-
-        if (envelope != NULL) {
-            message = KERNEL_MSG_ADDR(envelope);
-            k_delayed_send(message->receiver_pid, &message->msg_node, message->expiry);
-        } else {
-            is_empty = 0;
-        }
-    }
-    */
 
     queue_iter = timeout_queue.first;
     while (queue_iter != NULL && ((message_t*)queue_iter)->expiry <= g_timer_count) {
         current_message = (message_t*)linkedlist_pop_front(&timeout_queue);
+
+        current_pcb_node = pcb_nodes[current_message->sender_pid];
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
-        queue_iter = queue_iter->next;
+        current_pcb_node = previous_pcb_node;
+
+        queue_iter = timeout_queue.first;
     }
 }

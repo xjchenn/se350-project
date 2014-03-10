@@ -195,12 +195,14 @@ void* k_request_memory_block(void) {
  * @return                  returns a status code as to the success of release
  */
 int32_t k_release_memory_block(void* p_mem_blk) {
-    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
+    mem_blk_t* to_del;
 
     // verify non null block
     if (to_del == NULL) {
         return -1;
     }
+
+    to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
 
     // verify the range of the memory block
     if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {
@@ -260,12 +262,14 @@ void* k_request_memory_block_i(void) {
 }
 
 int32_t k_release_memory_block_i(void* p_mem_blk) {
-    mem_blk_t* to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
+    mem_blk_t* to_del;
 
     // verify non null block
     if (to_del == NULL) {
         return -1;
     }
+
+    to_del = (mem_blk_t*)((uint32_t)p_mem_blk - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE);
 
     // verify the range of the memory block
     if ((uint32_t)to_del < start_of_heap || (uint32_t)to_del > END_OF_MEM) {

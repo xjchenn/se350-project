@@ -8,6 +8,7 @@
 # Build files
 *.d
 SVC/flash/SVC.*
+SVC/flash/SVC_sct.*
 
 # Log output files
 SVC/SVC*

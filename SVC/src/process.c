@@ -95,17 +95,16 @@ uint32_t k_init_processor(void) {
             case 8:
             case 9:
             case 10:
-            case 11:
+                // TODO unimplemented
                 *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-                pcbs[i]->pid = k_proc_table[0].pid;
+                pcbs[i]->pid = i;//k_proc_table[0].pid;
                 pcbs[i]->priority = LOWEST;
                 break;
 
-            case 14:
-            case 15:
-                *(--stack_ptr);
-                pcbs[i]->pid = k_proc_table[2].pid;
-                pcbs[i]->priority = LOWEST;
+            case 11:
+                *(--stack_ptr) = (uint32_t)(k_proc_table[5].proc_start);
+                pcbs[i]->pid = k_proc_table[5].pid;
+                pcbs[i]->priority = k_proc_table[5].priority;
                 break;
 
             case 12:
@@ -119,9 +118,16 @@ uint32_t k_init_processor(void) {
                 pcbs[i]->pid = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;
+
+            case 14:
+            case 15:
+                *(--stack_ptr);
+                pcbs[i]->pid = k_proc_table[2].pid;
+                pcbs[i]->priority = LOWEST;
+                break;
                 
             default:
-                // TODO
+                DEBUG_PRINT("Trying to init process higher than 16");
                 break;
         }
 
@@ -183,12 +189,15 @@ node_t* get_next_process(void) {
                 case MEM_BLOCKED:
                     linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
+                    
                 case MSG_BLOCKED:
                     linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
+
                 case READY:
                     linkedlist_push_back(ready_pqs[current_pcb->priority], current_pcb_node);
                     break;
+
                 default:
                     break;
             }

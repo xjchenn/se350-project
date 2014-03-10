@@ -253,7 +253,7 @@ void irq_i_process(void) {
             g_switch_flag = 1;
         }
 
-#ifdef DEBUG_HOTKEYS
+#ifdef _DEBUG_HOTKEYS
         PRINT_HEADER;
         println("CURRENT PROCESS:");
         println("PID:%d Priority:%d SP:%x", ((pcb_t*)current_pcb_node->value)->pid, ((pcb_t*)current_pcb_node->value)->priority, ((pcb_t*)current_pcb_node->value)->stack_ptr);

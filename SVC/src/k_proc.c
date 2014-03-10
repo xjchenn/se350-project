@@ -114,7 +114,7 @@ void kcd_proc(void) {
                 }
                 
                 for (i = 0; i < num_of_cmds_reg; i++) {
-                    if (strcmp(commands[i].cmd, buffer)) {
+                    if (!strcmp(commands[i].cmd, buffer)) {
                         msg = (msg_buf_t*)request_memory_block();
                         msg->msg_type = DEFAULT;
                         strncpy(msg->msg_data, msg_data, msg_data_len);

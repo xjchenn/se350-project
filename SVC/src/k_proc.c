@@ -114,7 +114,7 @@ void kcd_proc(void) {
                 }
                 
                 for (i = 0; i < num_of_cmds_reg; i++) {
-                    if (!strcmp(commands[i].cmd, buffer)) {
+                    if (strcmp(commands[i].cmd, buffer) > 0) {
                         msg = (msg_buf_t*)request_memory_block();
                         msg->msg_type = DEFAULT;
                         strncpy(msg->msg_data, msg_data, msg_data_len);
@@ -148,6 +148,8 @@ void kcd_proc(void) {
     }
 }
 
+extern uint32_t g_timer_count;
+
 void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
@@ -159,19 +161,7 @@ void wall_clock_proc(void) {
     uint32_t currentTime = 0;   // in sec
 
     // register the command with kcd
-    cmd = "%WR";
-    envelope = (msg_buf_t*)request_memory_block();
-    envelope->msg_type = KCD_REG;
-    strncpy(envelope->msg_data, cmd, strlen(cmd));
-    send_message(PID_KCD, envelope); // envelope is now considered freed memory
-    
-    cmd = "%WS";
-    envelope = (msg_buf_t*)request_memory_block();
-    envelope->msg_type = KCD_REG;
-    strncpy(envelope->msg_data, cmd, strlen(cmd));
-    send_message(PID_KCD, envelope); // envelope is now considered freed memory
-    
-    cmd = "%WT";
+    cmd = "%W";
     envelope = (msg_buf_t*)request_memory_block();
     envelope->msg_type = KCD_REG;
     strncpy(envelope->msg_data, cmd, strlen(cmd));
@@ -208,19 +198,20 @@ void wall_clock_proc(void) {
             }
 
             switch (buffer[2]) {
-                case 'R': {
-                    running = 1;
+                case 'R': {                    
                     currentTime = 0;
 
-                    envelope = (msg_buf_t*)request_memory_block();
-                    envelope->msg_type = DEFAULT;
-                    send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                    if (running == 0) {
+                        envelope = (msg_buf_t*)request_memory_block();
+                        envelope->msg_type = DEFAULT;
+                        send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                    }
 
+                    running = 1;
                     break;
                 }
 
                 case 'S': {
-                    running = 1;
                     currentTime = 0;
 
                     // 0 1 2 3 4 5 6 7 8 9 A B
@@ -244,10 +235,12 @@ void wall_clock_proc(void) {
                     time_value += (buffer[11] - '0');
                     currentTime += time_value;
 
-                    envelope = (msg_buf_t*)request_memory_block();
-                    envelope->msg_type = DEFAULT;
-                    send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
-
+                    if (running == 0) {
+                        envelope = (msg_buf_t*)request_memory_block();
+                        envelope->msg_type = DEFAULT;
+                        send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                    }
+                    running = 1;
                     break;
                 }
 

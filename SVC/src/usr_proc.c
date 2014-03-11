@@ -5,8 +5,6 @@
 #include "string.h"
 #include "rtx.h"
 
-static const int NUM_USR_PROCESSES = 7;
-static const int DELAY_TIME = 1;
 proc_image_t usr_proc_table[NUM_USR_PROCESSES];
 int32_t test_results[NUM_USR_PROCESSES];
 int32_t test_ran[NUM_USR_PROCESSES];

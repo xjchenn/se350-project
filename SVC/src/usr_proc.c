@@ -284,8 +284,10 @@ void usr_proc_p1_6() {
 *   2) Send message to user process 3
 *   3) Send message to user process 2
 *   4) Hogs all memory and then releases it all
-*   5) 
-*   6)
+*   4) Swap priorities with process 5
+*   5) Swap priorities with process 4
+*
+*   For process 4 and process 5, process 4 should finish first.
 */
 
 /* Delayed Send Test */

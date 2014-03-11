@@ -212,8 +212,9 @@ void irq_i_process(void) {
     node_t* previous_pcb_node = current_pcb_node;
 
     g_switch_flag = 0;
+		#ifdef DEBUG_0
     DEBUG_PRINT("Entering c_UART0_IRQHandler\n\r");
-
+		#endif // DEBUG_0
     // Reading IIR automatically acknowledges the interrupt
     IIR_IntId = (pUart->IIR) >> 1 ; // skip pending bit in IIR
 

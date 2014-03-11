@@ -102,9 +102,9 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 11:
-                *(--stack_ptr) = (uint32_t)(k_proc_table[5].proc_start);
-                pcbs[i]->pid = k_proc_table[5].pid;
-                pcbs[i]->priority = k_proc_table[5].priority;
+                *(--stack_ptr) = (uint32_t)(usr_proc_table[6].proc_start);
+                pcbs[i]->pid = usr_proc_table[6].pid;
+                pcbs[i]->priority = usr_proc_table[6].priority;
                 break;
 
             case 12:

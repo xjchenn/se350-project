@@ -5,16 +5,19 @@
 #include "string.h"
 #include "rtx.h"
 
-static const int NUM_PROCS = 6;
-proc_image_t usr_proc_table[NUM_PROCS];
-int32_t test_results[NUM_PROCS];
+proc_image_t usr_proc_table[NUM_USR_PROCESSES];
+int32_t test_results[NUM_USR_PROCESSES];
+int32_t test_ran[NUM_USR_PROCESSES];
 
 void usr_set_procs() {
     uint32_t i;
 
-    for (i = 0; i < NUM_PROCS; ++i) {
+    for (i = 0; i < NUM_USR_PROCESSES; ++i) {
         usr_proc_table[i].pid = (i + 1);
+        test_results[i] = 1;
+        test_ran[i] = 0;
     }
+    test_ran[6] = 1;
 
     /*
     // Testing p1
@@ -39,22 +42,26 @@ void usr_set_procs() {
     usr_proc_table[0].priority = MEDIUM;
 
     usr_proc_table[1].proc_start = &usr_proc_p2_2;
-    usr_proc_table[1].priority = HIGH;
+    usr_proc_table[1].priority = MEDIUM;
 
     usr_proc_table[2].proc_start = &usr_proc_p2_3;
-    usr_proc_table[2].priority = LOW;
+    usr_proc_table[2].priority = MEDIUM;
 
     usr_proc_table[3].proc_start = &usr_proc_p2_4;
-    usr_proc_table[3].priority = LOW;
+    usr_proc_table[3].priority = MEDIUM;
 
     usr_proc_table[4].proc_start = &usr_proc_p2_5;
-    usr_proc_table[4].priority = LOW;
+    usr_proc_table[4].priority = MEDIUM;
 
     usr_proc_table[5].proc_start = &usr_proc_p1_6; // always use p1 usr_proc for printing our test results
     usr_proc_table[5].priority = LOW;
 
-    //printf("G005_test: START\r\n");
-    //printf("G005_test: total 5 tests\r\n");
+    usr_proc_table[6].pid = 11;
+    usr_proc_table[6].proc_start = &wall_clock_proc;
+    usr_proc_table[6].priority = HIGHEST;
+
+    printf("G005_test: START\r\n");
+    printf("G005_test: total 5 tests\r\n");
 }
 
 /******************************************************************************
@@ -256,15 +263,19 @@ void usr_proc_p1_6() {
                 if (test_results[i] == 1) {
                     passed++;
                 }
+                while (test_ran[i] == 0){
+                    release_processor();
+                }
             }
-            // printf("G005_test: ");
-            // printf("%d", passed);
-            // printf("/5 OK\r\n");
-            // printf("G005_test: ");
-            // printf("%d", (5 - passed));
-            // printf("/5 FAIL\r\n");
-            // printf("G005_test: END\r\n");
+            printf("G005_test: ");
+            printf("%d", passed);
+            printf("/5 OK\r\n");
+            printf("G005_test: ");
+            printf("%d", (5 - passed));
+            printf("/5 FAIL\r\n");
+            printf("G005_test: END\r\n");
             ranOnce = 1;
+            usr_proc_table[5].priority = LOW;
         }
         release_processor();
     }
@@ -273,121 +284,160 @@ void usr_proc_p1_6() {
  * Part 2 : Our user procs
  ******************************************************************************/
 
+/*
+*   1) Delayed send to itself
+*   2) Send message to user process 3
+*   3) Send message to user process 2
+*   4) Hogs all memory and then releases it all
+*   4) Swap priorities with process 5
+*   5) Swap priorities with process 4
+*
+*   For process 4 and process 5, process 4 should finish first.
+*/
 
+/* Delayed Send Test */
 void usr_proc_p2_1(void) {
-    uint32_t target_pid = 0;
-    uint32_t i = 0;
+    int result_pid = 0;
     msg_buf_t* msg_envelope = NULL;
-    char msg[5];
+    char* msg = "Hello";
+
+    msg_envelope = (msg_buf_t*)request_memory_block();
+
+    strncpy(msg_envelope->msg_data, msg, 5);
+    delayed_send(PID_P1, msg_envelope, CLOCK_INTERVAL);
+    msg_envelope = (msg_buf_t*)receive_message(NULL);
+
+    if (strcmp(msg_envelope->msg_data, msg) == 5){
+        printf("G005_test: test 1 OK\r\n");
+    } else {
+        printf("G005_test: test 1 FAIL\r\n");
+        test_results[result_pid] = 0;
+    }
+    
+    release_memory_block(msg_envelope);
+    test_ran[result_pid] = 1;
+    set_process_priority(usr_proc_table[result_pid].pid, 3);
+
     while (1) {
-        if (i != 0 && i % 5 == 0) {
-            target_pid = 2 + ((i * 5) % 4); // send msg to p2 to p5 in round robin
+        release_processor();
+    }
+}
+/* Send message to user process 3 */
+void usr_proc_p2_2(void) {
+    int result_pid = 1;
+    msg_buf_t* msg_envelope = 0;
+    char* sent_msg = "SE350";
+    char* received_msg = "OS";
 
-            //msg_envelope = (msg_buf_t*)request_memory_block();
-            //msg_envelope->msg_type = DEFAULT;
-            //strncpy(msg_envelope->msg_data, msg, 5);
-            
-            //// printf("Sending  \"%s\" to p%d\r\n", msg, target_pid);
-            ////send_message(target_pid, msg_envelope);
-            //delayed_send(target_pid, msg_envelope, 100);
-        }
+    msg_envelope = (msg_buf_t*)request_memory_block();
 
-        msg[i % 5] = 'A' + (i % 26);
-        i++;
+    strncpy(msg_envelope->msg_data, sent_msg, 5);
+    send_message(PID_P3, msg_envelope);
+    
+    // Blocking until P3 sends
+    msg_envelope = (msg_buf_t*)receive_message(NULL);
 
+    if (strcmp(msg_envelope->msg_data, received_msg) == 2) {
+        printf("G005_test: test 2 OK\r\n");
+    } else {
+        printf("G005_test: test 2 FAIL\r\n");
+        test_results[result_pid] = 0;
+    }
+
+    release_memory_block(msg_envelope);
+    test_ran[result_pid] = 1;
+    set_process_priority(usr_proc_table[result_pid].pid, 3);
+
+    while (1) {
         release_processor();
     }
 }
 
-void usr_proc_p2_2(void) {
-    uint32_t i = 0;
-    int32_t sender_id = 0;
-    msg_buf_t* msg_envelope = 0;
-
-    while (1) {
-        msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        // printf("proc%s\r\n", "2");
-        printf("Received \"%s\" from p%d in p2\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
-        // uart1_put_string("Received : ");
-        // uart1_put_string((char*)msg_envelope->msg_data);
-        // uart1_put_string(" from ");
-        // uart1_put_char('0' + (sender_id+1));
-        // uart1_put_string("\r\n");
-
-        for (i = 0; i < 0x0001; i++) {
-            ; // nop to induce delay
-        }
-
-        release_memory_block(msg_envelope);
-    }
-}
-
+/* Sends message to user process 2 */
 void usr_proc_p2_3(void) {
-    uint32_t i = 0;
-    int32_t sender_id = 0;
+    int result_pid = 2;
     msg_buf_t* msg_envelope = 0;
+    char* sent_msg = "OS";
+    char* received_msg = "SE350";
 
+    msg_envelope = (msg_buf_t*)request_memory_block();
+
+    strncpy(msg_envelope->msg_data, sent_msg, 2);
+    send_message(PID_P2, msg_envelope);
+    
+    msg_envelope = (msg_buf_t*)receive_message(NULL);
+
+    if (strcmp(msg_envelope->msg_data, received_msg) == 5) {
+        printf("G005_test: test 3 OK\r\n");
+    } else {
+        printf("G005_test: test 3 FAIL\r\n");
+        test_results[result_pid] = 0;
+    }
+
+    release_memory_block(msg_envelope);
+    test_ran[result_pid] = 1;
+    set_process_priority(usr_proc_table[result_pid].pid, 3);
+    
     while (1) {
-        msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        // printf("proc3\r\n");
-        printf("Received \"%s\" from p%d in p3\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
-        // uart1_put_string("Received : ");
-        // uart1_put_string((char*)msg_envelope->msg_data);
-        // uart1_put_string(" from ");
-        // uart1_put_char('0' + (sender_id+1));
-        // uart1_put_string("\r\n");
-
-        for (i = 0; i < 0x0001; i++) {
-            ; // nop to induce delay
-        }
-
-        release_memory_block(msg_envelope);
+        release_processor();
     }
 }
 
 void usr_proc_p2_4(void) {
-    uint32_t i = 0;
-    int32_t sender_id = 0;
-    msg_buf_t* msg_envelope = 0;
+    int i = 1;
+    int counter = 0;
+    int result_pid = 3;
 
     while (1) {
-        msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        // printf("proc4\r\n");
-        printf("Received \"%s\" from p%d in p4\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
-        // uart1_put_string("Received : ");
-        // uart1_put_string((char*)msg_envelope->msg_data);
-        // uart1_put_string(" from ");
-        // uart1_put_char('0' + (sender_id+1));
-        // uart1_put_string("\r\n");
-
-        for (i = 0; i < 0x0001; i++) {
-            ; // nop to induce delay
+        if (i % 2 == 0) {
+            if (++counter == 5) {
+                set_process_priority(PID_P5, HIGH);
+                break;
+            } else {
+                release_processor();
+            }
         }
-
-        release_memory_block(msg_envelope);
+        i++;
+    }
+    test_ran[result_pid] = 1;
+    if (test_ran[PID_P5-1] == 1) {
+        printf("G005_test: test 4 FAIL\r\n");
+        test_results[result_pid] = 0;
+    } else {
+        printf("G005_test: test 4 OK\r\n");
+    }
+    set_process_priority(PID_P4, LOW);
+    while (1) {
+        release_processor();
     }
 }
 
 void usr_proc_p2_5(void) {
-    uint32_t i = 0;
-    int32_t sender_id = 0;
-    msg_buf_t* msg_envelope = 0;
+    int i = 1;
+    int counter = 0;
+    int result_pid = 4;
 
     while (1) {
-        msg_envelope = (msg_buf_t*)receive_message(&sender_id);
-        // printf("proc5\r\n");
-        printf("Received \"%s\" from p%d in p5\r\n", (char*)msg_envelope->msg_data, (sender_id + 1));
-        // uart1_put_string("Received : ");
-        // uart1_put_string((char*)msg_envelope->msg_data);
-        // uart1_put_string(" from ");
-        // uart1_put_char('0' + (sender_id+1));
-        // uart1_put_string("\r\n");
-
-        for (i = 0; i < 0x0001; i++) {
-            ; // nop to induce delay
+        if (i % 2 == 0){
+            if (++counter == 10){
+                set_process_priority(PID_P4, HIGH);
+                break;
+            } else {
+                release_processor();
+            }
         }
-
-        release_memory_block(msg_envelope);
+        i++;
+    }
+    test_ran[result_pid] = 1;
+    if (test_ran[PID_P4-1] == 0) {
+        printf("G005_test: test 5 FAIL\r\n");
+        test_results[result_pid] = 0;
+    } else {
+        printf("G005_test: test 5 OK\r\n");
+    }
+    set_process_priority(PID_P5, LOW);
+    while (1) {
+        release_processor();
     }
 }
 
@@ -586,3 +636,115 @@ void usr_proc_p1_b_6(void) {
         i++;
     }
 }
+
+void wall_clock_proc(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+    char* cmd;
+    char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
+    int32_t time_value;
+
+    uint32_t running = 0;
+    uint32_t currentTime = 0;   // in sec
+
+    // register the command with kcd
+    cmd = "%W";
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+
+    // run clock
+    while (1) {
+        envelope = receive_message(&sender_id);
+
+        // guaranteed that there's at least 1 free memory block
+        if (sender_id == PID_CLOCK && running == 1) {
+
+            // even if clock is not running, we need to take back the block that we freed in the previous iteration so
+            // we're guaranteed that we always have a block available
+            envelope->msg_type = DEFAULT;
+            delayed_send(PID_CLOCK, envelope, CLOCK_INTERVAL); // clock don't need a message
+
+            // print time to crt
+            envelope = (msg_buf_t*)request_memory_block();
+            envelope->msg_type = CRT_DISPLAY;
+            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 100, (currentTime / 60) % 60, (currentTime % 60));
+            strncpy(envelope->msg_data, buffer, strlen(buffer));
+            send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
+
+            // received a wall clock update
+            currentTime++;
+            
+        } else if (sender_id == PID_KCD) {
+            strncpy(buffer, envelope->msg_data, 15);
+            release_memory_block(envelope); // since we already copied out the data into our buffer
+
+            if (buffer[0] != '%' || buffer[1] != 'W') {
+                DEBUG_PRINT("wall_clock_proc received invalid message from kcd");
+            }
+
+            switch (buffer[2]) {
+                case 'R': {                    
+                    currentTime = 0;
+
+                    if (running == 0) {
+                        envelope = (msg_buf_t*)request_memory_block();
+                        envelope->msg_type = DEFAULT;
+                        send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                    }
+
+                    running = 1;
+                    break;
+                }
+
+                case 'S': {
+                    currentTime = 0;
+
+                    // 0 1 2 3 4 5 6 7 8 9 A B
+                    // % W S _ H H : M M : S S
+
+                    // get hour
+                    time_value = 0;
+                    time_value += (buffer[4] - '0') * 10;
+                    time_value += (buffer[5] - '0');
+                    currentTime += time_value * 3600;
+
+                    // get minutes
+                    time_value = 0;
+                    time_value += (buffer[7] - '0') * 10;
+                    time_value += (buffer[8] - '0');
+                    currentTime += time_value * 60;
+
+                    // get seconds
+                    time_value = 0;
+                    time_value += (buffer[10] - '0') * 10;
+                    time_value += (buffer[11] - '0');
+                    currentTime += time_value;
+
+                    if (running == 0) {
+                        envelope = (msg_buf_t*)request_memory_block();
+                        envelope->msg_type = DEFAULT;
+                        send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                    }
+                    running = 1;
+                    break;
+                }
+
+                case 'T': {
+                    running = 0;
+                    break;
+                }
+
+                default: {
+                    DEBUG_PRINT("wall_clock_proc received invalid command");
+                    break;
+                }
+            }
+
+        } else {
+            release_memory_block(envelope); // clock got turned off
+        }
+    }
+}
+

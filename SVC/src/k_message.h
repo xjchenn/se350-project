@@ -28,11 +28,6 @@ typedef struct {
     char msg_preview[16];
 } msg_hist_t;
 
-extern msg_hist_t sent_msg_buffer[MSG_BUFFER_SIZE];
-extern msg_hist_t received_msg_buffer[MSG_BUFFER_SIZE];
-extern uint32_t sent_msg_buffer_size;
-extern uint32_t received_msg_buffer_size;
-
 void* k_receive_message(int32_t* sender_id);
 void* k_receive_message_i(int32_t* sender_id);
 
@@ -41,6 +36,6 @@ int32_t k_send_message_i(int32_t process_id, void* message_envelope);
 
 int32_t k_delayed_send(int32_t process_id, void* message_envelope, int32_t delay);
 
-void k_print_logs(msg_hist_t*, uint32_t);
+void k_print_msg_logs(void);
 
 #endif

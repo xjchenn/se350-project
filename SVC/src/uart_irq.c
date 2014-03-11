@@ -253,7 +253,7 @@ void irq_i_process(void) {
             g_switch_flag = 1;
         }
 
-#ifdef DEBUG_HOTKEYS
+#ifdef _DEBUG_HOTKEYS
         PRINT_HEADER;
         println("CURRENT PROCESS:");
         println("PID:%d Priority:%d SP:%x", ((pcb_t*)current_pcb_node->value)->pid, ((pcb_t*)current_pcb_node->value)->priority, ((pcb_t*)current_pcb_node->value)->stack_ptr);
@@ -276,11 +276,7 @@ void irq_i_process(void) {
                 break;
 
             case KEY_MSG_LOG_BUFFER:
-                println("SENT MSG LOG BUFFER:");
-                k_print_logs(sent_msg_buffer, sent_msg_buffer_size);
-                PRINT_NEWLINE;
-                println("RECEIVED MSG LOG BUFFER:");
-                k_print_logs(received_msg_buffer, received_msg_buffer_size);
+                k_print_msg_logs();
                 break;
 
             default:

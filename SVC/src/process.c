@@ -1,12 +1,12 @@
 #include "k_process.h"
-#include "process.h"
 #include "k_memory.h"
+#include "k_proc.h"
+#include "process.h"
 #include "printf.h"
 #include "utils.h"
 #include "linkedlist.h"
 #include "uart_polling.h"
 #include "usr_proc.h"
-#include "k_proc.h"
 #include "memory.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
@@ -20,7 +20,7 @@ linkedlist_t** mem_blocked_pqs;
 linkedlist_t** msg_blocked_pqs;
 
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
-extern proc_image_t usr_proc_table[NUM_USR_PROCESSES];
+extern proc_image_t g_test_procs[NUM_USR_PROCESSES];
 
 // whether to continue running the process after UART interrupt
 // the UART handler is responsbile for setting this var
@@ -64,7 +64,7 @@ uint32_t k_init_processor(void) {
     uint32_t j;
     uint32_t* stack_ptr;
 
-    usr_set_procs();
+    set_test_procs();
     k_set_procs();
 
     for (i = 0; i < NUM_PROCESSES; ++i) {
@@ -86,9 +86,9 @@ uint32_t k_init_processor(void) {
             case 5:
             case 6:
                 // user process
-                *(--stack_ptr) = (uint32_t)(usr_proc_table[i - 1].proc_start);
-                pcbs[i]->pid = usr_proc_table[i - 1].pid;
-                pcbs[i]->priority = usr_proc_table[i - 1].priority;
+                *(--stack_ptr) = (uint32_t)(g_test_procs[i - 1].proc_start);
+                pcbs[i]->pid = g_test_procs[i - 1].pid;
+                pcbs[i]->priority = g_test_procs[i - 1].priority;
                 break;
 
             case 7:
@@ -102,9 +102,9 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 11:
-                *(--stack_ptr) = (uint32_t)(usr_proc_table[6].proc_start);
-                pcbs[i]->pid = usr_proc_table[6].pid;
-                pcbs[i]->priority = usr_proc_table[6].priority;
+                *(--stack_ptr) = (uint32_t)(g_test_procs[6].proc_start);
+                pcbs[i]->pid = g_test_procs[6].pid;
+                pcbs[i]->priority = g_test_procs[6].priority;
                 break;
 
             case 12:

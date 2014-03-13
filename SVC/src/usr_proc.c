@@ -14,7 +14,7 @@ void set_test_procs() {
     uint32_t i;
 
     for (i = 0; i < NUM_USR_PROCESSES; ++i) {
-        usr_proc_table[i].pid = (i + 1);
+        g_test_procs[i].pid = (i + 1);
         test_results[i] = 1;
         test_ran[i] = 0;
     }
@@ -24,42 +24,42 @@ void set_test_procs() {
     // Testing p1
 
     // a
-    //usr_proc_table[0].priority = MEDIUM;
-    //usr_proc_table[1].priority = MEDIUM;
+    //g_test_procs[0].priority = MEDIUM;
+    //g_test_procs[1].priority = MEDIUM;
 
     // b
-    //usr_proc_table[0].priority = MEDIUM;
-    //usr_proc_table[1].priority = HIGH;
+    //g_test_procs[0].priority = MEDIUM;
+    //g_test_procs[1].priority = HIGH;
 
-    usr_proc_table[0].proc_start = &usr_proc_p1_b_1;
-    usr_proc_table[1].proc_start = &usr_proc_p1_b_2;
-    usr_proc_table[2].proc_start = &usr_proc_p1_b_3;
-    usr_proc_table[3].proc_start = &usr_proc_p1_b_4;
-    usr_proc_table[4].proc_start = &usr_proc_p1_b_5;
-    usr_proc_table[5].proc_start = &usr_proc_p1_b_6;
+    g_test_procs[0].proc_start = &usr_proc_p1_b_1;
+    g_test_procs[1].proc_start = &usr_proc_p1_b_2;
+    g_test_procs[2].proc_start = &usr_proc_p1_b_3;
+    g_test_procs[3].proc_start = &usr_proc_p1_b_4;
+    g_test_procs[4].proc_start = &usr_proc_p1_b_5;
+    g_test_procs[5].proc_start = &usr_proc_p1_b_6;
     */
 
-    usr_proc_table[0].proc_start = &usr_proc_p2_1;
-    usr_proc_table[0].priority = MEDIUM;
+    g_test_procs[0].proc_start = &usr_proc_p2_1;
+    g_test_procs[0].priority = MEDIUM;
 
-    usr_proc_table[1].proc_start = &usr_proc_p2_2;
-    usr_proc_table[1].priority = MEDIUM;
+    g_test_procs[1].proc_start = &usr_proc_p2_2;
+    g_test_procs[1].priority = MEDIUM;
 
-    usr_proc_table[2].proc_start = &usr_proc_p2_3;
-    usr_proc_table[2].priority = MEDIUM;
+    g_test_procs[2].proc_start = &usr_proc_p2_3;
+    g_test_procs[2].priority = MEDIUM;
 
-    usr_proc_table[3].proc_start = &usr_proc_p2_4;
-    usr_proc_table[3].priority = MEDIUM;
+    g_test_procs[3].proc_start = &usr_proc_p2_4;
+    g_test_procs[3].priority = MEDIUM;
 
-    usr_proc_table[4].proc_start = &usr_proc_p2_5;
-    usr_proc_table[4].priority = MEDIUM;
+    g_test_procs[4].proc_start = &usr_proc_p2_5;
+    g_test_procs[4].priority = MEDIUM;
 
-    usr_proc_table[5].proc_start = &usr_proc_p1_6; // always use p1 usr_proc for printing our test results
-    usr_proc_table[5].priority = LOW;
+    g_test_procs[5].proc_start = &usr_proc_p1_6; // always use p1 usr_proc for printing our test results
+    g_test_procs[5].priority = LOW;
 
-    usr_proc_table[6].pid = 11;
-    usr_proc_table[6].proc_start = &wall_clock_proc;
-    usr_proc_table[6].priority = HIGHEST;
+    g_test_procs[6].pid = 11;
+    g_test_procs[6].proc_start = &wall_clock_proc;
+    g_test_procs[6].priority = HIGHEST;
 
     printf("G005_test: START\r\n");
     printf("G005_test: total 5 tests\r\n");
@@ -109,19 +109,19 @@ void usr_proc_p1_2() {
         *((int*)memory2) = 0xDEADC0DE;
 
         if (*((int*)memory1) != 0xDEAD10CC) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         ret = release_memory_block(memory1);
         if (ret != 0 && i == 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
 
         if (*((int*)memory2) != 0xDEADC0DE) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         ret = release_memory_block(memory2);
         if (ret != 0 && i == 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
@@ -150,7 +150,7 @@ void usr_proc_p1_3() {
 
         ret = release_memory_block(memory);
         if (ret == 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
@@ -174,22 +174,22 @@ void usr_proc_p1_4() {
 
     while (1) {
         //printf("Process 4\r\n");
-        ret = get_process_priority(usr_proc_table[proc].pid);
+        ret = get_process_priority(g_test_procs[proc].pid);
         if (ret != LOW) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
-        ret = set_process_priority(usr_proc_table[proc].pid, HIGH);
+        ret = set_process_priority(g_test_procs[proc].pid, HIGH);
         if (ret != 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
-        ret = get_process_priority(usr_proc_table[proc].pid);
+        ret = get_process_priority(g_test_procs[proc].pid);
         if (ret != HIGH) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
 
-        ret = set_process_priority(usr_proc_table[proc].pid, LOW);
+        ret = set_process_priority(g_test_procs[proc].pid, LOW);
         if (ret != 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         if (i == 0) {
             if (test_results[proc] == 1) {
@@ -213,30 +213,30 @@ void usr_proc_p1_5() {
 
     while (1) {
         //printf("Process 5\r\n");
-        ret = get_process_priority(usr_proc_table[proc].pid);
+        ret = get_process_priority(g_test_procs[proc].pid);
         if (ret != LOW) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
-        ret = set_process_priority(usr_proc_table[proc].pid, 10);
+        ret = set_process_priority(g_test_procs[proc].pid, 10);
 
         if (ret == 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
 
-        ret = set_process_priority(usr_proc_table[proc].pid, HIGH);
+        ret = set_process_priority(g_test_procs[proc].pid, HIGH);
 
         if (ret != 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
 
-        ret = get_process_priority(usr_proc_table[proc].pid);
+        ret = get_process_priority(g_test_procs[proc].pid);
 
         if (ret != HIGH) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
-        ret = set_process_priority(usr_proc_table[proc].pid, LOW);
+        ret = set_process_priority(g_test_procs[proc].pid, LOW);
         if (ret != 0) {
-            test_results[usr_proc_table[proc].pid] = 0;
+            test_results[g_test_procs[proc].pid] = 0;
         }
         if (i == 0) {
 
@@ -276,7 +276,7 @@ void usr_proc_p1_6() {
             printf("/5 FAIL\r\n");
             printf("G005_test: END\r\n");
             ranOnce = 1;
-            usr_proc_table[5].priority = LOW;
+            g_test_procs[5].priority = LOW;
         }
         release_processor();
     }
@@ -317,7 +317,7 @@ void usr_proc_p2_1(void) {
     
     release_memory_block(msg_envelope);
     test_ran[result_pid] = 1;
-    set_process_priority(usr_proc_table[result_pid].pid, 3);
+    set_process_priority(g_test_procs[result_pid].pid, 3);
 
     while (1) {
         release_processor();
@@ -347,7 +347,7 @@ void usr_proc_p2_2(void) {
 
     release_memory_block(msg_envelope);
     test_ran[result_pid] = 1;
-    set_process_priority(usr_proc_table[result_pid].pid, 3);
+    set_process_priority(g_test_procs[result_pid].pid, 3);
 
     while (1) {
         release_processor();
@@ -377,7 +377,7 @@ void usr_proc_p2_3(void) {
 
     release_memory_block(msg_envelope);
     test_ran[result_pid] = 1;
-    set_process_priority(usr_proc_table[result_pid].pid, 3);
+    set_process_priority(g_test_procs[result_pid].pid, 3);
     
     while (1) {
         release_processor();

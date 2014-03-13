@@ -669,7 +669,7 @@ void wall_clock_proc(void) {
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 100, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 24, (currentTime / 60) % 60, (currentTime % 60));
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
 

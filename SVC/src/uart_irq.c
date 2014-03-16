@@ -238,7 +238,7 @@ void irq_i_process(void) {
             pUart->THR = '\0';
 
             // prepare message to kcd to decode
-            read_msg = (msg_buf_t*)k_request_memory_block();
+            read_msg = (msg_buf_t*)k_request_memory_block_i();
             if (read_msg == NULL) {
                 return;
             }

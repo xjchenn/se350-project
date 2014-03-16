@@ -15,6 +15,7 @@
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
 linkedlist_t timeout_queue; // queue of messages
+int32_t switch_flag = 0;
 
 /**
  * @brief: initialize timer. Only timer 0 is supported
@@ -107,9 +108,18 @@ __asm void TIMER0_IRQHandler(void) {
     CPSID i                         ;// disable interrupts
     PRESERVE8
     IMPORT c_TIMER0_IRQHandler
+    IMPORT k_release_processor
     PUSH {r4 - r11, lr}
     BL c_TIMER0_IRQHandler
+    LDR R4, = __cpp(&switch_flag)
+    LDR R4, [R4]
+    MOV R5, #0
+    CMP R4, R5
     CPSIE i                         ;// enable interrupts
+    BEQ RESTORE
+    BL k_release_processor
+
+RESTORE
     POP {r4 - r11, pc}
 }
 
@@ -124,6 +134,7 @@ void timer_i_process(void) {
     node_t* previous_pcb_node = current_pcb_node;
     node_t* queue_iter;
     message_t* current_message;
+    switch_flag = 0;
 
     queue_iter = timeout_queue.first;
     while (queue_iter != NULL && ((message_t*)queue_iter)->expiry <= g_timer_count) {
@@ -132,6 +143,10 @@ void timer_i_process(void) {
         current_pcb_node = pcb_nodes[current_message->sender_pid];
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
         current_pcb_node = previous_pcb_node;
+        
+        if(pcbs[current_message->receiver_pid]->priority <= ((pcb_t *)previous_pcb_node->value)->priority) {
+            switch_flag = 1;
+        }
 
         queue_iter = timeout_queue.first;
     }

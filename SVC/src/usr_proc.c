@@ -264,7 +264,7 @@ void usr_proc_p1_6() {
                 if (test_results[i] == 1) {
                     passed++;
                 }
-                while (test_ran[i] == 0){
+                while (test_ran[i] == 0) {
                     release_processor();
                 }
             }
@@ -308,13 +308,13 @@ void usr_proc_p2_1(void) {
     delayed_send(PID_P1, msg_envelope, CLOCK_INTERVAL);
     msg_envelope = (msg_buf_t*)receive_message(NULL);
 
-    if (strcmp(msg_envelope->msg_data, msg) == 5){
+    if (strcmp(msg_envelope->msg_data, msg) == 5) {
         printf("G005_test: test 1 OK\r\n");
     } else {
         printf("G005_test: test 1 FAIL\r\n");
         test_results[result_pid] = 0;
     }
-    
+
     release_memory_block(msg_envelope);
     test_ran[result_pid] = 1;
     set_process_priority(g_test_procs[result_pid].pid, 3);
@@ -334,7 +334,7 @@ void usr_proc_p2_2(void) {
 
     strncpy(msg_envelope->msg_data, sent_msg, 5);
     send_message(PID_P3, msg_envelope);
-    
+
     // Blocking until P3 sends
     msg_envelope = (msg_buf_t*)receive_message(NULL);
 
@@ -365,7 +365,7 @@ void usr_proc_p2_3(void) {
 
     strncpy(msg_envelope->msg_data, sent_msg, 2);
     send_message(PID_P2, msg_envelope);
-    
+
     msg_envelope = (msg_buf_t*)receive_message(NULL);
 
     if (strcmp(msg_envelope->msg_data, received_msg) == 5) {
@@ -378,7 +378,7 @@ void usr_proc_p2_3(void) {
     release_memory_block(msg_envelope);
     test_ran[result_pid] = 1;
     set_process_priority(g_test_procs[result_pid].pid, 3);
-    
+
     while (1) {
         release_processor();
     }
@@ -401,7 +401,7 @@ void usr_proc_p2_4(void) {
         i++;
     }
     test_ran[result_pid] = 1;
-    if (test_ran[PID_P5-1] == 1) {
+    if (test_ran[PID_P5 - 1] == 1) {
         printf("G005_test: test 4 FAIL\r\n");
         test_results[result_pid] = 0;
     } else {
@@ -419,8 +419,8 @@ void usr_proc_p2_5(void) {
     int result_pid = 4;
 
     while (1) {
-        if (i % 2 == 0){
-            if (++counter == 10){
+        if (i % 2 == 0) {
+            if (++counter == 10) {
                 set_process_priority(PID_P4, HIGH);
                 break;
             } else {
@@ -430,7 +430,7 @@ void usr_proc_p2_5(void) {
         i++;
     }
     test_ran[result_pid] = 1;
-    if (test_ran[PID_P4-1] == 0) {
+    if (test_ran[PID_P4 - 1] == 0) {
         printf("G005_test: test 5 FAIL\r\n");
         test_results[result_pid] = 0;
     } else {

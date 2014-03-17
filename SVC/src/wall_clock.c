@@ -43,7 +43,7 @@ void wall_clock_proc(void) {
 
             // received a wall clock update
             currentTime++;
-            
+
         } else if (sender_id == PID_KCD) {
             strncpy(buffer, envelope->msg_data, 15);
             release_memory_block(envelope); // since we already copied out the data into our buffer
@@ -53,7 +53,7 @@ void wall_clock_proc(void) {
             }
 
             switch (buffer[2]) {
-                case 'R': {                    
+                case 'R': {
                     currentTime = 0;
 
                     if (running == 0) {
@@ -95,6 +95,7 @@ void wall_clock_proc(void) {
                         envelope->msg_type = DEFAULT;
                         send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
                     }
+
                     running = 1;
                     break;
                 }

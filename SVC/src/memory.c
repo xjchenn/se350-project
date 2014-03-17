@@ -155,9 +155,9 @@ void* k_request_memory_block(void) {
     uint32_t i = 0;
     mem_blk_t* ret_blk = free_mem;
     pcb_t* current_pcb = (pcb_t*)current_pcb_node->value;
-    
+
     __disable_irq();
-    
+
     // if we can't get free memory, block the current process
     while (ret_blk == NULL) {
         current_pcb->state = MEM_BLOCKED;
@@ -184,7 +184,7 @@ void* k_request_memory_block(void) {
     }
     // assigns the current process to the memory blocks given
     blocks_allocated++;
-    
+
     __enable_irq();
     return (void*)ret_blk->data;
 }

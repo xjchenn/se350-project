@@ -13,4 +13,5 @@
     --recursive \
     ./*.c \
     ./*.h \
-    --exclude=SVC/src/HAL.c
+    --exclude=SVC/src/HAL.c \
+    --exclude=SVC/src/memory.h

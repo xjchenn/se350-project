@@ -125,7 +125,7 @@ uint32_t k_init_processor(void) {
                 pcbs[i]->pid = k_proc_table[2].pid;
                 pcbs[i]->priority = LOWEST;
                 break;
-                
+
             default:
                 DEBUG_PRINT("Trying to init process higher than 16");
                 break;
@@ -189,7 +189,7 @@ node_t* get_next_process(void) {
                 case MEM_BLOCKED:
                     linkedlist_push_back(mem_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;
-                    
+
                 case MSG_BLOCKED:
                     linkedlist_push_back(msg_blocked_pqs[current_pcb->priority], current_pcb_node);
                     break;

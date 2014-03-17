@@ -212,9 +212,9 @@ void irq_i_process(void) {
     node_t* previous_pcb_node = current_pcb_node;
 
     g_switch_flag = 0;
-		#ifdef DEBUG_0
+#ifdef DEBUG_0
     DEBUG_PRINT("Entering c_UART0_IRQHandler\n\r");
-		#endif // DEBUG_0
+#endif // DEBUG_0
     // Reading IIR automatically acknowledges the interrupt
     IIR_IntId = (pUart->IIR) >> 1 ; // skip pending bit in IIR
 
@@ -290,12 +290,12 @@ void irq_i_process(void) {
 
     } else if (IIR_IntId & IIR_THRE) {
         /**************************************************************************
-        * Interrupt came from empty Transmit Holding Register 
+        * Interrupt came from empty Transmit Holding Register
         * (i.e. we want to print something)
         **************************************************************************/
 
         if (*gp_buffer != '\0' ) {
-            PRINT:
+PRINT:
             g_char_out = *gp_buffer;
             pUart->THR = g_char_out;
             gp_buffer++;
@@ -330,5 +330,5 @@ void irq_i_process(void) {
  */
 void read_interrupt() {
     LPC_UART_TypeDef* pUart = (LPC_UART_TypeDef*)LPC_UART0;
-    pUart->IER |= IER_THRE; // 
+    pUart->IER |= IER_THRE; //
 }

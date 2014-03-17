@@ -1,7 +1,7 @@
 #ifndef _USR_PROC_H_
 #define _USR_PROC_H_
 
-void usr_set_procs(void);
+void set_test_procs(void);
 
 void usr_proc_p1_1(void);
 void usr_proc_p1_2(void);

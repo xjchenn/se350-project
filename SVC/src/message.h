@@ -6,8 +6,8 @@
 #define __SVC_0  __svc_indirect(0)
 
 
-#define DEFAULT 0
-#define KCD_REG 1
+#define DEFAULT     0
+#define KCD_REG     1
 #define CRT_DISPLAY 2
 
 typedef struct {

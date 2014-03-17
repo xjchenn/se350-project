@@ -23,12 +23,15 @@ int strlen(const char* str) {
     i = (s - str);
     return i;
 }
-
+// returns the index that the strings last matched or the length if they're identical
 int strcmp(const char* s1, const char* s2) {
-    while (*s1 == *s2++) {
-        if (*s1++ == 0) {
-            return (0);
+    int i = 0;
+    while (*s1++ != '\0' && *s2++ != '\0') {
+        if (*s1 != *s2) {
+            return i;
         }
+        i++;
     }
-    return (*(const unsigned char*)s1 - * (const unsigned char*)(s2 - 1));
+    return i;
 }
+

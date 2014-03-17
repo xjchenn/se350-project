@@ -6,10 +6,12 @@
 #include "memory.h"
 #include "string.h"
 #include "timer.h"
+#include "wall_clock.h"
+#include "printf.h"
 
 typedef struct {
     uint32_t pid;
-    char* cmd;
+    char cmd[10];
 } kcd_cmd_t;
 
 kcd_cmd_t commands[10];
@@ -20,6 +22,7 @@ proc_image_t k_proc_table[NUM_K_PROCESSES];
 
 void k_set_procs(void) {
     uint32_t i = 0;
+    uint32_t j;
 
     for (i = 0; i < NUM_K_PROCESSES; i++) {
         k_proc_table[i].stack_size = STACK_SIZE;
@@ -44,7 +47,9 @@ void k_set_procs(void) {
     k_proc_table[4].proc_start = &crt_proc;
 
     for (i = 0; i < 10; i++) {
-        commands[i].cmd = NULL;
+        for(j = 0; j < 10; j++) {
+            commands[i].cmd[j] = '\0';
+        }
     }
 }
 
@@ -59,7 +64,6 @@ void crt_proc(void) {
 
     while (1) {
         msg = receive_message(NULL);
-
         if (msg->msg_type == CRT_DISPLAY) {
             send_message(PID_UART_IPROC, msg);
             read_interrupt();
@@ -85,24 +89,29 @@ void kcd_proc(void) {
     uint32_t i = 0;
     char buffer[10];
     
-    while(1) {
+    while (1) {
         msg = receive_message(&sender_id);
-        if(msg->msg_type == DEFAULT) {
+
+        if (msg->msg_type == DEFAULT) {
             msg_data_len = strlen(msg->msg_data);
             strncpy(msg_data, msg->msg_data, msg_data_len);
-        
-            msg->msg_type = CRT_DISPLAY;
-            send_message(PID_CRT, msg);
+            
+            //msg->msg_type = CRT_DISPLAY;
+            //send_message(PID_CRT, msg); // -> crt_proc -> uart_i_proc -> frees msg
+            
             itr = msg_data;
-                        
-            if(msg_data[0] == '%') {
-                while(*itr != ' ' && *itr != '\0') {
-                    buffer[i++] = *itr++;
+            if (msg_data[0] == '%') {
+                while (*itr != ' ' && *itr != '\r') {
+                    if (*itr == '\0') {
+                        *itr++;
+                    } else {
+                        buffer[i++] = *itr++;
+                    }
                 }
                 
-                for(i = 0; i < num_of_cmds_reg; i++) {
-                    if(strcmp(commands[i].cmd, buffer)) {
-                        msg = request_memory_block();
+                for (i = 0; i < num_of_cmds_reg; i++) {
+                    if (strcmp(commands[i].cmd, buffer) > 0) {
+                        msg = (msg_buf_t*)request_memory_block();
                         msg->msg_type = DEFAULT;
                         strncpy(msg->msg_data, msg_data, msg_data_len);
                         send_message(commands[i].pid, msg);
@@ -111,13 +120,17 @@ void kcd_proc(void) {
                 }
             }
 
-            for(i = 0; i < strlen(buffer); i++) {
+            for(i = 0; i < 10; i++) {
                 buffer[i] = '\0';
             }
             
-            reset_msg_data();
+            i = 0;
             
+            reset_msg_data();
             continue;
+
+            // since we're forwarding the msg, we should not free it in this case
+
         } else if(msg->msg_type == KCD_REG) {
             if(num_of_cmds_reg != 10) {
                 commands[num_of_cmds_reg].pid = sender_id;
@@ -125,8 +138,8 @@ void kcd_proc(void) {
                 strncpy(commands[num_of_cmds_reg].cmd, msg->msg_data, msg_data_len);
                 num_of_cmds_reg++;
             }
+
+            k_release_memory_block_i(msg); // done reading msg, can now free it
         }
-        release_memory_block(msg);
     }
 }
-

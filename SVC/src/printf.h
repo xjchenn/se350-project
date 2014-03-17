@@ -116,6 +116,8 @@ void tfp_sprintf(char* s, char* fmt, ...);
 
 void tfp_format(void* putp, void (*putf) (void*, char), char* fmt, va_list va);
 
+char a2i(char ch, char** src, int base, int* nump);
+
 #define printf tfp_printf
 #define println tfp_println
 #define sprintf tfp_sprintf

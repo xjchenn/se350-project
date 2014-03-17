@@ -6,7 +6,8 @@
 #include "utils.h"
 #include "linkedlist.h"
 #include "uart_polling.h"
-#include "usr_proc.h"
+#include "test_proc.h"
+#include "user_proc.h"
 #include "memory.h"
 #include <LPC17xx.h>
 #include <system_LPC17xx.h>
@@ -20,7 +21,8 @@ linkedlist_t** mem_blocked_pqs;
 linkedlist_t** msg_blocked_pqs;
 
 extern proc_image_t k_proc_table[NUM_K_PROCESSES];
-extern proc_image_t g_test_procs[NUM_USR_PROCESSES];
+extern proc_image_t g_test_procs[NUM_TEST_PROCESSES];
+extern proc_image_t u_proc_table[NUM_USER_PROCESSES];
 
 // whether to continue running the process after UART interrupt
 // the UART handler is responsbile for setting this var
@@ -65,8 +67,9 @@ uint32_t k_init_processor(void) {
     uint32_t* stack_ptr;
 
     set_test_procs();
+    set_user_procs();
     k_set_procs();
-
+		
     for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
@@ -74,8 +77,8 @@ uint32_t k_init_processor(void) {
         switch (i) {
             case 0:
                 // null process
-                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-                pcbs[i]->pid = k_proc_table[0].pid;
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid      = k_proc_table[0].pid;
                 pcbs[i]->priority = k_proc_table[0].priority;
                 break;
 
@@ -86,44 +89,60 @@ uint32_t k_init_processor(void) {
             case 5:
             case 6:
                 // user process
-                *(--stack_ptr) = (uint32_t)(g_test_procs[i - 1].proc_start);
-                pcbs[i]->pid = g_test_procs[i - 1].pid;
+                *(--stack_ptr)    = (uint32_t)(g_test_procs[i - 1].proc_start);
+                pcbs[i]->pid      = g_test_procs[i - 1].pid;
                 pcbs[i]->priority = g_test_procs[i - 1].priority;
                 break;
 
             case 7:
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[1].proc_start);
+                pcbs[i]->pid      = u_proc_table[1].pid;
+                pcbs[i]->priority = u_proc_table[1].priority;
+                break;
+
             case 8:
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[2].proc_start);
+                pcbs[i]->pid      = u_proc_table[2].pid;
+                pcbs[i]->priority = u_proc_table[2].priority;
+                break;
+
             case 9:
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[3].proc_start);
+                pcbs[i]->pid      = u_proc_table[3].pid;
+                pcbs[i]->priority = u_proc_table[3].priority;
+                break;
+
             case 10:
-                // TODO unimplemented
-                *(--stack_ptr) = (uint32_t)(k_proc_table[0].proc_start);
-                pcbs[i]->pid = i;//k_proc_table[0].pid;
+                // TODO unimplemented, using null proc now
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[0].proc_start);
+                pcbs[i]->pid      = 10;
                 pcbs[i]->priority = LOWEST;
                 break;
 
             case 11:
-                *(--stack_ptr) = (uint32_t)(g_test_procs[6].proc_start);
-                pcbs[i]->pid = g_test_procs[6].pid;
-                pcbs[i]->priority = g_test_procs[6].priority;
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[0].proc_start);
+                pcbs[i]->pid      = u_proc_table[0].pid;
+                pcbs[i]->priority = u_proc_table[0].priority;
                 break;
 
             case 12:
-                *(--stack_ptr) = (uint32_t)(k_proc_table[3].proc_start);
-                pcbs[i]->pid = k_proc_table[3].pid;
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[3].proc_start);
+                pcbs[i]->pid      = k_proc_table[3].pid;
                 pcbs[i]->priority = k_proc_table[3].priority;
                 break;
 
             case 13:
-                *(--stack_ptr) = (uint32_t)(k_proc_table[4].proc_start);
-                pcbs[i]->pid = k_proc_table[4].pid;
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start);
+                pcbs[i]->pid      = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;
 
             case 14:
+                pcbs[i]->pid = k_proc_table[1].pid;
+                break;
+
             case 15:
-                *(--stack_ptr);
                 pcbs[i]->pid = k_proc_table[2].pid;
-                pcbs[i]->priority = LOWEST;
                 break;
 
             default:

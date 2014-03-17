@@ -22,26 +22,18 @@ typedef void (*func_ptr_t)();
 #define STACK_SIZE              0x100
 #define NUM_PRIORITIES          5
 
-#define NUM_K_PROCESSES         5
-#define NUM_I_PROCESSES         2
-#define NUM_USR_PROCESSES       7
-#define NUM_PROCESSES           16//(uint32_t)(NUM_USR_PROCESSES + NUM_K_PROCESSES + NUM_I_PROCESSES)
+#define NUM_K_PROCESSES         6 // includes i processes
+#define NUM_TEST_PROCESSES      6
+#define NUM_USER_PROCESSES      4
+#define NUM_PROCESSES           (uint32_t)(NUM_K_PROCESSES + NUM_TEST_PROCESSES + NUM_USER_PROCESSES)
 
 #define CLOCK_INTERVAL          1000
-
 #define MSG_LOG_BUFFER_SIZE     10
 
 #define SWAP_UINT16(x)          (((x) >> 8 ) | ((x) << 8))
 #define SWAP_UINT32(x)          (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 #define MIN(X, Y)               ((X) < (Y) ? (X) : (Y));
 
-
-
-#ifdef DEBUG_0
-#define DEBUG_PRINT(msg)        printf(msg)
-#else
-#define DEBUG_PRINT(msg)        /* nop */
-#endif
 
 
 
@@ -66,7 +58,16 @@ typedef void (*func_ptr_t)();
 #define KEY_BLOCKED_MSG_QUEUE   '.'
 #define KEY_MSG_LOG_BUFFER      '/'
 
+
+
+
 #define PRINT_NEWLINE           printf("\r\n")
 #define PRINT_HEADER            printf("----------------------------------------------------------\r\n")
+
+#ifdef DEBUG_0
+#define DEBUG_PRINT(msg)        printf(msg)
+#else
+#define DEBUG_PRINT(msg)        /* nop */
+#endif
 
 #endif

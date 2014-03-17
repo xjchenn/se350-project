@@ -6,7 +6,6 @@
 #include "memory.h"
 #include "string.h"
 #include "timer.h"
-#include "wall_clock.h"
 #include "printf.h"
 
 typedef struct {
@@ -35,14 +34,14 @@ void k_set_procs(void) {
     k_proc_table[1].pid = PID_TIMER_IPROC;
     k_proc_table[1].proc_start = &timer_i_process;
 
-    k_proc_table[2].pid = 15;
-    k_proc_table[2].proc_start = &c_UART0_IRQHandler;
+    k_proc_table[2].pid = PID_UART_IPROC;
+    k_proc_table[2].proc_start = &irq_i_process;
 
-    k_proc_table[3].pid = 12;
+    k_proc_table[3].pid = PID_KCD;
     k_proc_table[3].priority = HIGHEST;
     k_proc_table[3].proc_start = &kcd_proc;
 
-    k_proc_table[4].pid = 13;
+    k_proc_table[4].pid = PID_CRT;
     k_proc_table[4].priority = HIGHEST;
     k_proc_table[4].proc_start = &crt_proc;
 

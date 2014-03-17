@@ -1,9 +1,29 @@
-#include "printf.h"
-#include "uart_polling.h"
-#include "wall_clock.h"
-#include "message.h"
-#include "string.h"
+#include "user_proc.h"
 #include "rtx.h"
+
+proc_image_t u_proc_table[NUM_USER_PROCESSES];
+
+void set_user_procs(void) {
+    u_proc_table[0].pid        = PID_CLOCK;
+    u_proc_table[0].proc_start = &wall_clock_proc;
+    u_proc_table[0].priority   = HIGHEST;
+
+    u_proc_table[1].pid        = PID_A;
+    u_proc_table[1].proc_start = &stress_test_proc_a;
+    u_proc_table[1].priority   = MEDIUM;
+
+    u_proc_table[2].pid        = PID_B;
+    u_proc_table[2].proc_start = &stress_test_proc_b;
+    u_proc_table[2].priority   = MEDIUM;
+
+    u_proc_table[3].pid        = PID_C;
+    u_proc_table[3].proc_start = &stress_test_proc_c;
+    u_proc_table[3].priority   = MEDIUM;
+}
+
+/******************************************************************************
+* Wall Clock P11
+*******************************************************************************/
 
 void wall_clock_proc(void) {
     int32_t sender_id;
@@ -117,3 +137,35 @@ void wall_clock_proc(void) {
     }
 }
 
+/******************************************************************************
+* Stress Test P7
+* TODO add desc
+*******************************************************************************/
+
+void stress_test_proc_a(void) {
+    while (1) {
+        release_processor();
+    }
+}
+
+/******************************************************************************
+* Stress Test P8
+* TODO add desc
+*******************************************************************************/
+
+void stress_test_proc_b(void) {
+    while (1) {
+        release_processor();
+    }
+}
+
+/******************************************************************************
+* Stress Test P9
+* TODO add desc
+*******************************************************************************/
+
+void stress_test_proc_c(void) {
+    while (1) {
+        release_processor();
+    }
+}

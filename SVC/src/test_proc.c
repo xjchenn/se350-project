@@ -1,19 +1,15 @@
-#include "printf.h"
-#include "uart_polling.h"
-#include "wall_clock.h"
-#include "usr_proc.h"
-#include "message.h"
-#include "string.h"
+#include "test_proc.h"
 #include "rtx.h"
 
-proc_image_t g_test_procs[NUM_USR_PROCESSES];
-int32_t test_results[NUM_USR_PROCESSES];
-int32_t test_ran[NUM_USR_PROCESSES];
+proc_image_t g_test_procs[NUM_TEST_PROCESSES];
+
+int32_t test_results[NUM_TEST_PROCESSES];
+int32_t test_ran[NUM_TEST_PROCESSES];
 
 void set_test_procs() {
     uint32_t i;
 
-    for (i = 0; i < NUM_USR_PROCESSES; ++i) {
+    for (i = 0; i < NUM_TEST_PROCESSES; ++i) {
         g_test_procs[i].pid = (i + 1);
         test_results[i] = 1;
         test_ran[i] = 0;
@@ -31,35 +27,31 @@ void set_test_procs() {
     //g_test_procs[0].priority = MEDIUM;
     //g_test_procs[1].priority = HIGH;
 
-    g_test_procs[0].proc_start = &usr_proc_p1_b_1;
-    g_test_procs[1].proc_start = &usr_proc_p1_b_2;
-    g_test_procs[2].proc_start = &usr_proc_p1_b_3;
-    g_test_procs[3].proc_start = &usr_proc_p1_b_4;
-    g_test_procs[4].proc_start = &usr_proc_p1_b_5;
-    g_test_procs[5].proc_start = &usr_proc_p1_b_6;
+    g_test_procs[0].proc_start = &test_proc_p1_b_1;
+    g_test_procs[1].proc_start = &test_proc_p1_b_2;
+    g_test_procs[2].proc_start = &test_proc_p1_b_3;
+    g_test_procs[3].proc_start = &test_proc_p1_b_4;
+    g_test_procs[4].proc_start = &test_proc_p1_b_5;
+    g_test_procs[5].proc_start = &test_proc_p1_b_6;
     */
 
-    g_test_procs[0].proc_start = &usr_proc_p2_1;
+    g_test_procs[0].proc_start = &test_proc_p2_1;
     g_test_procs[0].priority = MEDIUM;
 
-    g_test_procs[1].proc_start = &usr_proc_p2_2;
+    g_test_procs[1].proc_start = &test_proc_p2_2;
     g_test_procs[1].priority = MEDIUM;
 
-    g_test_procs[2].proc_start = &usr_proc_p2_3;
+    g_test_procs[2].proc_start = &test_proc_p2_3;
     g_test_procs[2].priority = MEDIUM;
 
-    g_test_procs[3].proc_start = &usr_proc_p2_4;
+    g_test_procs[3].proc_start = &test_proc_p2_4;
     g_test_procs[3].priority = MEDIUM;
 
-    g_test_procs[4].proc_start = &usr_proc_p2_5;
+    g_test_procs[4].proc_start = &test_proc_p2_5;
     g_test_procs[4].priority = MEDIUM;
 
-    g_test_procs[5].proc_start = &usr_proc_p1_6; // always use p1 usr_proc for printing our test results
+    g_test_procs[5].proc_start = &test_proc_p1_6; // always use p1 test_proc for printing our test results
     g_test_procs[5].priority = LOW;
-
-    g_test_procs[6].pid = 11;
-    g_test_procs[6].proc_start = &wall_clock_proc;
-    g_test_procs[6].priority = HIGHEST;
 
     printf("G005_test: START\r\n");
     printf("G005_test: total 5 tests\r\n");
@@ -72,7 +64,7 @@ void set_test_procs() {
 /**
  * Process prints five uppercase letters
  */
-void usr_proc_p1_1() {
+void test_proc_p1_1() {
     int i = 0;
     int ranOnce = 0;
     while (1) {
@@ -93,7 +85,7 @@ void usr_proc_p1_1() {
  * This process will request 2 memory blocks, print their value
  * then release them. Finally it will output the return value;
  */
-void usr_proc_p1_2() {
+void test_proc_p1_2() {
     int ret;
     int i = 0;
     int proc = 1;
@@ -138,7 +130,7 @@ void usr_proc_p1_2() {
 /**
  * Tries to free invalid memory location
  */
-void usr_proc_p1_3() {
+void test_proc_p1_3() {
     int i = 0;
     int ret;
     int proc = 2;
@@ -167,7 +159,7 @@ void usr_proc_p1_3() {
 /**
  * Set the process priority from LOWEST to HIGHEST, check if returns correct
  */
-void usr_proc_p1_4() {
+void test_proc_p1_4() {
     int i = 0;
     int ret;
     int proc = 3;
@@ -206,7 +198,7 @@ void usr_proc_p1_4() {
 /**
  * Changes priority of p4
  */
-void usr_proc_p1_5() {
+void test_proc_p1_5() {
     int i = 0;
     int ret;
     int proc = 4;
@@ -254,7 +246,7 @@ void usr_proc_p1_5() {
 /**
  * Prints results of our tests
  */
-void usr_proc_p1_6() {
+void test_proc_p1_6() {
     int i;
     static int ranOnce = 0;
     static int passed = 0;
@@ -297,7 +289,7 @@ void usr_proc_p1_6() {
 */
 
 /* Delayed Send Test */
-void usr_proc_p2_1(void) {
+void test_proc_p2_1(void) {
     int result_pid = 0;
     msg_buf_t* msg_envelope = NULL;
     char* msg = "Hello";
@@ -324,7 +316,7 @@ void usr_proc_p2_1(void) {
     }
 }
 /* Send message to user process 3 */
-void usr_proc_p2_2(void) {
+void test_proc_p2_2(void) {
     int result_pid = 1;
     msg_buf_t* msg_envelope = 0;
     char* sent_msg = "SE350";
@@ -355,7 +347,7 @@ void usr_proc_p2_2(void) {
 }
 
 /* Sends message to user process 2 */
-void usr_proc_p2_3(void) {
+void test_proc_p2_3(void) {
     int result_pid = 2;
     msg_buf_t* msg_envelope = 0;
     char* sent_msg = "OS";
@@ -384,7 +376,7 @@ void usr_proc_p2_3(void) {
     }
 }
 
-void usr_proc_p2_4(void) {
+void test_proc_p2_4(void) {
     int i = 1;
     int counter = 0;
     int result_pid = 3;
@@ -413,7 +405,7 @@ void usr_proc_p2_4(void) {
     }
 }
 
-void usr_proc_p2_5(void) {
+void test_proc_p2_5(void) {
     int i = 1;
     int counter = 0;
     int result_pid = 4;
@@ -449,7 +441,7 @@ void usr_proc_p2_5(void) {
 /**
  * @brief: a process that prints 2x5 lowercase letters
  */
-void usr_proc_p1_a_1(void) {
+void test_proc_p1_a_1(void) {
     int i = 0;
     int counter = 0;
     int ret_val = 100;
@@ -480,7 +472,7 @@ void usr_proc_p1_a_1(void) {
 /**
  * @brief: a process that prints 4x5 numbers
  */
-void usr_proc_p1_a_2(void) {
+void test_proc_p1_a_2(void) {
     int i = 0;
     int ret_val = 20;
     int counter = 0;
@@ -508,7 +500,7 @@ void usr_proc_p1_a_2(void) {
     }
 }
 
-void usr_proc_p1_a_3(void) {
+void test_proc_p1_a_3(void) {
 
     while (1) {
         uart1_put_string("proc3: \n\r");
@@ -516,21 +508,21 @@ void usr_proc_p1_a_3(void) {
     }
 }
 
-void usr_proc_p1_a_4(void) {
+void test_proc_p1_a_4(void) {
     while (1) {
         uart1_put_string("proc4: \n\r");
         release_processor();
     }
 }
 
-void usr_proc_p1_a_5(void) {
+void test_proc_p1_a_5(void) {
     while (1) {
         uart1_put_string("proc5: \n\r");
         release_processor();
     }
 }
 
-void usr_proc_p1_a_6(void) {
+void test_proc_p1_a_6(void) {
     while (1) {
         uart1_put_string("proc6: \n\r");
         release_processor();
@@ -540,7 +532,7 @@ void usr_proc_p1_a_6(void) {
 /**
  * Prints five uppercase letters and request a memory block.
  */
-void usr_proc_p1_b_1(void) {
+void test_proc_p1_b_1(void) {
     int i = 0;
     void* p_mem_blk;
     while ( 1 ) {
@@ -559,7 +551,7 @@ void usr_proc_p1_b_1(void) {
 /**
  * Prints five numbers and then releases a memory block
  */
-void usr_proc_p1_b_2(void) {
+void test_proc_p1_b_2(void) {
     int i = 0;
     int ret_val = 20;
     void* p_mem_blk;
@@ -590,7 +582,7 @@ void usr_proc_p1_b_2(void) {
     }
 }
 
-void usr_proc_p1_b_3(void) {
+void test_proc_p1_b_3(void) {
     int i = 0;
 
     while (1) {
@@ -602,7 +594,7 @@ void usr_proc_p1_b_3(void) {
     }
 }
 
-void usr_proc_p1_b_4(void) {
+void test_proc_p1_b_4(void) {
     int i = 0;
 
     while (1) {
@@ -614,7 +606,7 @@ void usr_proc_p1_b_4(void) {
     }
 }
 
-void usr_proc_p1_b_5(void) {
+void test_proc_p1_b_5(void) {
     int i = 0;
 
     while (1) {
@@ -626,7 +618,7 @@ void usr_proc_p1_b_5(void) {
     }
 }
 
-void usr_proc_p1_b_6(void) {
+void test_proc_p1_b_6(void) {
     int i = 0;
 
     while (1) {

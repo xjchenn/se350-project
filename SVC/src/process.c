@@ -132,7 +132,7 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 13:
-                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start);
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start); 
                 pcbs[i]->pid      = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;
@@ -150,7 +150,8 @@ uint32_t k_init_processor(void) {
                 break;
         }
 
-        // add padding to stack?
+        // add room for default registers saved onto stack below PC after a context switch (LR, R12, R3-0)
+        // see http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0552a/Babefdjc.html
         for (j = 0; j < 6; j++) {
             *(--stack_ptr) = NULL;
         }

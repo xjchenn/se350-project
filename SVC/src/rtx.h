@@ -5,10 +5,11 @@
 
 #include "rtx_init.h"
 #include "utils.h"
+#include "printf.h"
+#include "uart_polling.h"
 
 #include "memory.h"
 #include "process.h"
 
 #include "message.h"
 #include "string.h"
-#include "printf.h"

@@ -25,6 +25,10 @@ void set_user_procs(void) {
 * Wall Clock P11
 *******************************************************************************/
 
+int is_numeric_char(char c) {
+    return (c >= '0' && c <= '9') ? 1 : 0;
+}
+
 void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
@@ -57,12 +61,13 @@ void wall_clock_proc(void) {
             // print time to crt
             envelope = (msg_buf_t*)request_memory_block();
             envelope->msg_type = CRT_DISPLAY;
-            sprintf(buffer, "%02d:%02d:%02d\r", (currentTime / 3600) % 24, (currentTime / 60) % 60, (currentTime % 60));
+            sprintf(buffer, "\033[s\033[1;69H%02d:%02d:%02d\n\033[u", (currentTime / 3600) % 24, (currentTime / 60) % 60, (currentTime % 60)); // 69 x-offset = (80 col width - 11 char for HH:MM:SS)
             strncpy(envelope->msg_data, buffer, strlen(buffer));
             send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
 
             // received a wall clock update
             currentTime++;
+            currentTime = currentTime % (60 * 60 * 24);
 
         } else if (sender_id == PID_KCD) {
             strncpy(buffer, envelope->msg_data, 15);
@@ -87,6 +92,31 @@ void wall_clock_proc(void) {
                 }
 
                 case 'S': {
+                    if (buffer[3] != ' ') {
+                        DEBUG_PRINT("wall_clock_proc did a space after WS");
+                        goto INPUT_ERROR;
+
+                    } else if (buffer[6] != ':' || buffer[9] != ':') {
+                        DEBUG_PRINT("wall_clock_proc did not see 2 colons in WS");
+                        goto INPUT_ERROR;
+
+                    } else if (!is_numeric_char(buffer[04]) || !is_numeric_char(buffer[05])) {
+                        DEBUG_PRINT("wall_clock_proc received an invalid hour");
+                        goto INPUT_ERROR;
+
+                    } else if (!is_numeric_char(buffer[07]) || !is_numeric_char(buffer[07])) {
+                        DEBUG_PRINT("wall_clock_proc received an invalid minute");
+                        goto INPUT_ERROR;
+
+                    } else if (!is_numeric_char(buffer[10]) || !is_numeric_char(buffer[11])) {
+                        DEBUG_PRINT("wall_clock_proc received an invalid second");
+                        goto INPUT_ERROR;
+
+                    } else if (strlen(buffer) > strlen("%WS_HH:MM:SS\r\n")) {
+                        DEBUG_PRINT("wall_clock_proc received a format longer than expected");
+                        goto INPUT_ERROR;
+                    }
+
                     currentTime = 0;
 
                     // 0 1 2 3 4 5 6 7 8 9 A B
@@ -113,15 +143,26 @@ void wall_clock_proc(void) {
                     if (running == 0) {
                         envelope = (msg_buf_t*)request_memory_block();
                         envelope->msg_type = DEFAULT;
-                        send_message(PID_CLOCK, envelope); // show the 00:00:00 immediately
+                        send_message(PID_CLOCK, envelope); // show the HH:MM:SS immediately
                     }
 
                     running = 1;
                     break;
+
+                    INPUT_ERROR:
+                    continue;
                 }
 
                 case 'T': {
                     running = 0;
+
+                    // clear the clock
+                    envelope = (msg_buf_t*)request_memory_block();
+                    envelope->msg_type = CRT_DISPLAY;
+                    sprintf(buffer, "\033[s\033[1;69H%11s\n\033[u", ' ');
+                    strncpy(envelope->msg_data, buffer, strlen(buffer));
+                    send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
+
                     break;
                 }
 

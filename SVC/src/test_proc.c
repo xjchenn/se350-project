@@ -14,7 +14,7 @@ void set_test_procs() {
         test_results[i] = 1;
         test_ran[i] = 0;
     }
-    test_ran[6] = 1;
+    test_ran[5] = 1;
 
     /*
     // Testing p1

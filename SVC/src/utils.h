@@ -65,7 +65,7 @@ typedef void (*func_ptr_t)();
 #define PRINT_HEADER            printf("----------------------------------------------------------\r\n")
 
 #ifdef DEBUG_0
-#define DEBUG_PRINT(msg)        printf(msg)
+#define DEBUG_PRINT(msg)        println(msg)
 #else
 #define DEBUG_PRINT(msg)        /* nop */
 #endif

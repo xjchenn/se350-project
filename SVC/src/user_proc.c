@@ -29,7 +29,7 @@ int is_numeric_char(char c) {
     return (c >= '0' && c <= '9') ? 1 : 0;
 }
 
-void wall_clock_proc(void) {
+void wall_clock_proc(void) {    
     int32_t sender_id;
     msg_buf_t* envelope;
     char* cmd;
@@ -92,29 +92,30 @@ void wall_clock_proc(void) {
                 }
 
                 case 'S': {
-                    if (buffer[3] != ' ') {
-                        DEBUG_PRINT("wall_clock_proc did a space after WS");
+                    if (strlen(buffer) != strlen("%WS HH:MM:SS\r\n")) {
+                        println("wall_clock_proc recieved invalid format");
+                        goto INPUT_ERROR;
+
+                    } else if (buffer[3] != ' ') {
+                        println("wall_clock_proc did a space after WS - buffer[3]=%c", buffer[3]);
                         goto INPUT_ERROR;
 
                     } else if (buffer[6] != ':' || buffer[9] != ':') {
-                        DEBUG_PRINT("wall_clock_proc did not see 2 colons in WS");
+                        println("wall_clock_proc did not see 2 colons in WS - buffer[6]=%c buffer[9]=%c", buffer[6], buffer[9]);
                         goto INPUT_ERROR;
 
-                    } else if (!is_numeric_char(buffer[04]) || !is_numeric_char(buffer[05])) {
-                        DEBUG_PRINT("wall_clock_proc received an invalid hour");
+                    } else if (!is_numeric_char(buffer[4]) || !is_numeric_char(buffer[5])) {
+                        println("wall_clock_proc received an invalid hour %c%c", buffer[4], buffer[5]);
                         goto INPUT_ERROR;
 
-                    } else if (!is_numeric_char(buffer[07]) || !is_numeric_char(buffer[07])) {
-                        DEBUG_PRINT("wall_clock_proc received an invalid minute");
+                    } else if (!is_numeric_char(buffer[7]) || !is_numeric_char(buffer[8])) {
+                        println("wall_clock_proc received an invalid minute %c%c", buffer[7], buffer[8]);
                         goto INPUT_ERROR;
 
                     } else if (!is_numeric_char(buffer[10]) || !is_numeric_char(buffer[11])) {
-                        DEBUG_PRINT("wall_clock_proc received an invalid second");
+                        println("wall_clock_proc received an invalid second %c%c", buffer[10], buffer[11]);
                         goto INPUT_ERROR;
 
-                    } else if (strlen(buffer) > strlen("%WS_HH:MM:SS\r\n")) {
-                        DEBUG_PRINT("wall_clock_proc received a format longer than expected");
-                        goto INPUT_ERROR;
                     }
 
                     currentTime = 0;

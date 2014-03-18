@@ -29,18 +29,44 @@ int is_numeric_char(char c) {
     return (c >= '0' && c <= '9') ? 1 : 0;
 }
 
-void wall_clock_proc(void) {    
+void display_error_on_crt(char* error_message, uint32_t n) {
+    static const uint32_t max_error_length = 80;
+
+    msg_buf_t* envelope;
+    char error_buffer[max_error_length];
+
+    if (strlen(error_message) + strlen("ERROR: \r\n") > max_error_length) {
+        sprintf(error_buffer, "ERROR: display_error_on_crt got an error that's too long to show\r\n");
+    } else {
+        sprintf(error_buffer, "ERROR: %s\r\n", error_message);
+    }
+
+    while (n-- > 0) {
+        *(error_message++) = '\0';
+    }
+
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = CRT_DISPLAY;
+    strncpy(envelope->msg_data, error_buffer, strlen(error_buffer));
+    send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
+}
+
+void wall_clock_proc(void) {
+    static const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
+    static const uint32_t error_buffer_size = 80; // more than enough for most error messages
+    uint32_t i = 0;
+
     int32_t sender_id;
     msg_buf_t* envelope;
-    char* cmd;
-    char buffer[15];            // enough to store longest command "%WS hh:mm:ss\r\n\0"
     int32_t time_value;
-
+    char buffer[buffer_size];                        
+    char error_buffer[error_buffer_size];   
+    
+    char* cmd = "%W";
     uint32_t running = 0;
-    uint32_t currentTime = 0;   // in sec
+    uint32_t currentTime = 0; // in sec
 
     // register the command with kcd
-    cmd = "%W";
     envelope = (msg_buf_t*)request_memory_block();
     envelope->msg_type = KCD_REG;
     strncpy(envelope->msg_data, cmd, strlen(cmd));
@@ -49,6 +75,11 @@ void wall_clock_proc(void) {
     // run clock
     while (1) {
         envelope = receive_message(&sender_id);
+
+        // reset buffer before using it again
+        for (i = 0; i < buffer_size; ++i) {
+            buffer[i] = '\0';
+        }
 
         // guaranteed that there's at least 1 free memory block
         if (sender_id == PID_CLOCK && running == 1) {
@@ -68,17 +99,22 @@ void wall_clock_proc(void) {
             // received a wall clock update
             currentTime++;
             currentTime = currentTime % (60 * 60 * 24);
-
-        } else if (sender_id == PID_KCD) {
-            strncpy(buffer, envelope->msg_data, 15);
+        } else {
+            strncpy(buffer, envelope->msg_data, buffer_size);
             release_memory_block(envelope); // since we already copied out the data into our buffer
 
-            if (buffer[0] != '%' || buffer[1] != 'W') {
-                DEBUG_PRINT("wall_clock_proc received invalid message from kcd");
+            if (strlen(buffer) < strlen("%W") || buffer[0] != '%' || buffer[1] != 'W') {
+                // can also arrive here when the sender_pid is PID_CLOCK and runnning=0
+                // in general, we ignore any non command messages
+                continue;
             }
 
             switch (buffer[2]) {
                 case 'R': {
+                    if (strlen(buffer) != strlen("%WR\r\n")) {
+                        sprintf(error_buffer, "wall_clock_proc WR recieved an invalid format length of %d", strlen(buffer));
+                        goto ERROR_INPUT;
+                    }
                     currentTime = 0;
 
                     if (running == 0) {
@@ -93,29 +129,28 @@ void wall_clock_proc(void) {
 
                 case 'S': {
                     if (strlen(buffer) != strlen("%WS HH:MM:SS\r\n")) {
-                        println("wall_clock_proc recieved invalid format");
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc WS recieved an invalid format length of %d", strlen(buffer));
+                        goto ERROR_INPUT;
 
                     } else if (buffer[3] != ' ') {
-                        println("wall_clock_proc did a space after WS - buffer[3]=%c", buffer[3]);
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc did not see a space after WS - buffer[3]=%c", buffer[3]);
+                        goto ERROR_INPUT;
 
                     } else if (buffer[6] != ':' || buffer[9] != ':') {
-                        println("wall_clock_proc did not see 2 colons in WS - buffer[6]=%c buffer[9]=%c", buffer[6], buffer[9]);
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc did not see 2 colons in WS - buffer[6]=%c buffer[9]=%c", buffer[6], buffer[9]);
+                        goto ERROR_INPUT;
 
                     } else if (!is_numeric_char(buffer[4]) || !is_numeric_char(buffer[5])) {
-                        println("wall_clock_proc received an invalid hour %c%c", buffer[4], buffer[5]);
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc received an invalid hour - buffer[4]=%c buffer[5]=%c", buffer[4], buffer[5]);
+                        goto ERROR_INPUT;
 
                     } else if (!is_numeric_char(buffer[7]) || !is_numeric_char(buffer[8])) {
-                        println("wall_clock_proc received an invalid minute %c%c", buffer[7], buffer[8]);
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc received an invalid minute - buffer[7]=%c buffer[8]=%c", buffer[7], buffer[8]);
+                        goto ERROR_INPUT;
 
                     } else if (!is_numeric_char(buffer[10]) || !is_numeric_char(buffer[11])) {
                         println("wall_clock_proc received an invalid second %c%c", buffer[10], buffer[11]);
                         goto INPUT_ERROR;
-
                     }
 
                     currentTime = 0;
@@ -149,14 +184,9 @@ void wall_clock_proc(void) {
 
                     running = 1;
                     break;
-
-                    INPUT_ERROR:
-                    continue;
                 }
 
                 case 'T': {
-                    running = 0;
-
                     // clear the clock
                     envelope = (msg_buf_t*)request_memory_block();
                     envelope->msg_type = CRT_DISPLAY;
@@ -164,6 +194,7 @@ void wall_clock_proc(void) {
                     strncpy(envelope->msg_data, buffer, strlen(buffer));
                     send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
 
+                    running = 0;
                     break;
                 }
 
@@ -172,9 +203,8 @@ void wall_clock_proc(void) {
                     break;
                 }
             }
-
-        } else {
-            release_memory_block(envelope); // clock got turned off
+            
+            continue;
         }
     }
 }

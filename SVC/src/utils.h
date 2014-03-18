@@ -19,7 +19,7 @@ typedef void (*func_ptr_t)();
 #define END_OF_MEM              0x10008000
 #define XPSR                    0x01000000 // default processor state register value
 
-#define STACK_SIZE              0x100
+#define STACK_SIZE              0x200   // 0x2000 bytes of memory used for stack
 #define NUM_PRIORITIES          5
 
 #define NUM_K_PROCESSES         6 // includes i processes

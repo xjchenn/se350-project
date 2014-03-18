@@ -6,6 +6,7 @@
 #include "k_process.h"
 #include "printf.h"
 #include "timer.h"
+#include "lcd_display.h"
 
 void k_rtx_init(void) {
     __disable_irq();
@@ -15,6 +16,7 @@ void k_rtx_init(void) {
     k_init_memory_blocks();
     k_init_processor();
     timer_init(0);
+    init_logo_on_lcd();
     __enable_irq();
 
     k_release_processor();

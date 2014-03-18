@@ -230,7 +230,7 @@ void irq_i_process(void) {
             } else {
                 // if it's a backspace or delete, make index go back by 1
                 if (buffer_index > 0) {
-                    g_buffer[buffer_index--] = '\0';
+                    buffer_index--;
                 }
             }
 

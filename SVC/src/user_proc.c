@@ -51,7 +51,6 @@ void wall_clock_proc(void) {
     static const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
     static const uint32_t error_buffer_size = 80; // more than enough for most error messages
     uint32_t i = 0;
-
     int32_t sender_id;
     msg_buf_t* envelope;
     char buffer[buffer_size];                        

@@ -6,6 +6,7 @@
 char* strncpy(char* dest, const char* source, int n);
 int strlen(const char* str);
 int strcmp(const char* s1, const char* s2);
+int atoi(char* str);
 
 uint32_t is_numeric_char(char c);
 uint32_t atoi(char* str);

@@ -374,7 +374,7 @@ void k_print_queues(linkedlist_t** queues) {
         pcb_node_itr = queue_itr->first;
         while (pcb_node_itr != NULL) {
             curr_pcb_itr = (pcb_t*) pcb_node_itr->value;
-            println("PID:%d Priority:%d SP:%x", curr_pcb_itr->pid, curr_pcb_itr->priority, curr_pcb_itr->stack_ptr);
+            println("PID:%02d Priority:%d SP:%x", curr_pcb_itr->pid, curr_pcb_itr->priority, curr_pcb_itr->stack_ptr);
             pcb_node_itr = pcb_node_itr->next;
         }
     }

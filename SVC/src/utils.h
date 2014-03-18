@@ -53,10 +53,10 @@ typedef void (*func_ptr_t)();
 #define PID_CRT                 13
 #define PID_TIMER_IPROC         14
 #define PID_UART_IPROC          15
-#define KEY_READY_QUEUE         'm'
-#define KEY_BLOCKED_MEM_QUEUE   ','
-#define KEY_BLOCKED_MSG_QUEUE   '.'
-#define KEY_MSG_LOG_BUFFER      '/'
+#define KEY_READY_QUEUE         ','
+#define KEY_BLOCKED_MEM_QUEUE   '.'
+#define KEY_BLOCKED_MSG_QUEUE   '/'
+#define KEY_MSG_LOG_BUFFER      ';'
 
 
 

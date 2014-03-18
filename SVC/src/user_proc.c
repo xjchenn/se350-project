@@ -57,6 +57,7 @@ void wall_clock_proc(void) {
     char error_buffer[error_buffer_size];   
     
     char* cmd = "%W";
+
     uint32_t running = 0;
     uint32_t currentTime = 0; // in sec
 
@@ -110,6 +111,7 @@ void wall_clock_proc(void) {
                         display_error_on_crt(error_buffer, strlen(error_buffer));
                         continue;
                     }
+
                     currentTime = 0;
 
                     if (running == 0) {
@@ -179,6 +181,14 @@ void wall_clock_proc(void) {
                 }
 
                 case 'T': {
+                    if (strlen(buffer) != strlen("%WT\r\n")) {
+                        sprintf(error_buffer, "wall_clock_proc WS recieved an invalid format length of %d", strlen(buffer));
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
+                    }
+
+                    running = 0;
+
                     // clear the clock
                     envelope = (msg_buf_t*)request_memory_block();
                     envelope->msg_type = CRT_DISPLAY;
@@ -191,45 +201,117 @@ void wall_clock_proc(void) {
                 }
 
                 default: {
-                    DEBUG_PRINT("wall_clock_proc received invalid command");
+                    sprintf(error_buffer, "wall_clock_proc received invalid command %c", buffer[2]);
+                    display_error_on_crt(error_buffer, strlen(error_buffer))
                     break;
                 }
             }
-            
-            continue;
         }
     }
 }
 
 /******************************************************************************
-* Stress Test P7
+* Stress Test A
 * TODO add desc
 *******************************************************************************/
 
 void stress_test_proc_a(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+    char* cmd = "%Z";
+    char buffer[5]; // enough to store "%Z\r\n\0"
+
+    uint32_t num = 0;
+
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+
     while (1) {
+        envelope = receive_message(&sender_id);
+        strncpy(buffer, envelope->msg_data, 5);
+        release_memory_block(envelope);
+
+        if (buffer[0] == '%' && buffer[1] == 'Z') {
+            break;
+        }
+    }
+
+    while (1) {
+        envelope = (msg_buf_t*)request_memory_block();
+        envelope->msg_type = COUNT_REPORT;
+        sprintf(envelope->msg_data, "%d", num++);
+        send_message(PID_B, envelope);
+
         release_processor();
     }
 }
 
 /******************************************************************************
-* Stress Test P8
+* Stress Test B
 * TODO add desc
 *******************************************************************************/
 
 void stress_test_proc_b(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+
     while (1) {
-        release_processor();
+        envelope = receive_message(&sender_id);
+        send_message(PID_C, envelope);
     }
 }
 
 /******************************************************************************
-* Stress Test P9
+* Stress Test C
 * TODO add desc
 *******************************************************************************/
 
 void stress_test_proc_c(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+    char buffer[10]; // enough to store 2^32 = 4294967296
+
     while (1) {
+        // TODO remove when finished implementation
+        release_processor();
+    }
+
+    // TODO create local queue
+
+    while (1) {
+        //TODO if (local queue empty) {
+            envelope = receive_message(&sender_id);
+        //} else {
+            // TODO envelope = dequeue from local queue
+        //}
+
+        if (envelope->msg_type == COUNT_REPORT) {
+            // TODO implement atoi in string.c
+            if (atoi(envelope->msg_data) % 20 == 0) {
+                envelope->msg_type = CRT_DISPLAY;
+                send_message(PID_CRT, envelope);
+
+                // add messages recieved in the next 10 sec to its on local queue
+                // i.e. this is its own termination signal
+                envelope = (msg_buf_t*)request_memory_block();
+                envelope->msg_type = WAKEUP10;
+                delayed_send(PID_C, envelope, 10 * 1000);
+                
+                while (1) {
+                    envelope = receive_message(&sender_id);
+
+                    if (envelope->msg_type == WAKEUP10) {
+                        break; // got termination signal, stop enqueuing messages
+                    } else {
+                        // TODO put envelope on local queue
+                    }
+                }
+            }
+        }
+
+        release_memory_block(envelope);
         release_processor();
     }
 }

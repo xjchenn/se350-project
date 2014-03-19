@@ -16,6 +16,7 @@ char* strncpy(char* dest, const char* source, int n) {
 
     return ret;
 }
+
 int strlen(const char* str) {
     const char* s;
     int i;
@@ -23,6 +24,7 @@ int strlen(const char* str) {
     i = (s - str);
     return i;
 }
+
 // returns the index that the strings last matched or the length if they're identical
 int strcmp(const char* s1, const char* s2) {
     int i = 0;
@@ -35,3 +37,23 @@ int strcmp(const char* s1, const char* s2) {
     return i;
 }
 
+uint32_t is_numeric_char(char c) {
+    return (c >= '0' && c <= '9') ? 1 : 0;
+}
+
+uint32_t atoi(char* s) {
+    return substring_toi(s, strlen(s));
+}
+
+uint32_t substring_toi(char* s, int32_t n) {
+    uint32_t base  = 1;
+    int32_t value  = 0;
+
+    // loop from last char to first char multiplying the digit by powers of 10
+    while (--n >= 0) {
+        value += base * (s[n] - '0');
+        base  *= 10;
+    }
+
+    return value;
+}

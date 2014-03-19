@@ -212,9 +212,7 @@ void irq_i_process(void) {
     node_t* previous_pcb_node = current_pcb_node;
 
     g_switch_flag = 0;
-		#ifdef DEBUG_0
-    DEBUG_PRINT("Entering c_UART0_IRQHandler\n\r");
-		#endif // DEBUG_0
+
     // Reading IIR automatically acknowledges the interrupt
     IIR_IntId = (pUart->IIR) >> 1 ; // skip pending bit in IIR
 
@@ -227,7 +225,15 @@ void irq_i_process(void) {
         g_send_char = 1;
 
         if ((buffer_index < buffer_size - 3) && (g_char_in != '\r')) {
-            g_buffer[buffer_index++] = g_char_in;
+            if (g_char_in != 8 && g_char_in != 127) {
+                g_buffer[buffer_index++] = g_char_in;
+            } else {
+                // if it's a backspace or delete, make index go back by 1
+                if (buffer_index > 0) {
+                    g_buffer[buffer_index--] = '\0';
+                }
+            }
+
             pUart->THR = g_char_in;
         } else {
             g_buffer[buffer_index++] = '\r';
@@ -238,7 +244,7 @@ void irq_i_process(void) {
             pUart->THR = '\0';
 
             // prepare message to kcd to decode
-            read_msg = (msg_buf_t*)k_request_memory_block();
+            read_msg = (msg_buf_t*)k_request_memory_block_i();
             if (read_msg == NULL) {
                 return;
             }
@@ -290,12 +296,12 @@ void irq_i_process(void) {
 
     } else if (IIR_IntId & IIR_THRE) {
         /**************************************************************************
-        * Interrupt came from empty Transmit Holding Register 
+        * Interrupt came from empty Transmit Holding Register
         * (i.e. we want to print something)
         **************************************************************************/
 
         if (*gp_buffer != '\0' ) {
-            PRINT:
+PRINT:
             g_char_out = *gp_buffer;
             pUart->THR = g_char_out;
             gp_buffer++;
@@ -330,5 +336,5 @@ void irq_i_process(void) {
  */
 void read_interrupt() {
     LPC_UART_TypeDef* pUart = (LPC_UART_TypeDef*)LPC_UART0;
-    pUart->IER |= IER_THRE; // 
+    pUart->IER |= IER_THRE; //
 }

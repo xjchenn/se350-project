@@ -47,28 +47,6 @@ void display_error_on_crt(char* error_message, uint32_t n) {
     send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
 }
 
-void display_error_on_crt(char* error_message, uint32_t n) {
-    static const uint32_t max_error_length = 80;
-
-    msg_buf_t* envelope;
-    char error_buffer[max_error_length];
-
-    if (strlen(error_message) + strlen("ERROR: \r\n") > max_error_length) {
-        sprintf(error_buffer, "ERROR: display_error_on_crt got an error that's too long to show\r\n");
-    } else {
-        sprintf(error_buffer, "ERROR: %s\r\n", error_message);
-    }
-
-    while (n-- > 0) {
-        *(error_message++) = '\0';
-    }
-
-    envelope = (msg_buf_t*)request_memory_block();
-    envelope->msg_type = CRT_DISPLAY;
-    strncpy(envelope->msg_data, error_buffer, strlen(error_buffer));
-    send_message(PID_CRT, envelope); // -> crt_proc -> uart_i_proc -> frees envelope
-}
-
 void wall_clock_proc(void) {
     static const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
     static const uint32_t error_buffer_size = 80; // more than enough for most error messages
@@ -223,7 +201,7 @@ void wall_clock_proc(void) {
 
                 default: {
                     sprintf(error_buffer, "wall_clock_proc received invalid command %c", buffer[2]);
-                    display_error_on_crt(error_buffer, strlen(error_buffer))
+                    display_error_on_crt(error_buffer, strlen(error_buffer));
                     break;
                 }
             }

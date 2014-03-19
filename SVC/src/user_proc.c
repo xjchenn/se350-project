@@ -108,7 +108,8 @@ void wall_clock_proc(void) {
                 case 'R': {
                     if (strlen(buffer) != strlen("%WR\r\n")) {
                         sprintf(error_buffer, "wall_clock_proc WR recieved an invalid format length of %d", strlen(buffer));
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
                     }
                     currentTime = 0;
 
@@ -125,27 +126,33 @@ void wall_clock_proc(void) {
                 case 'S': {
                     if (strlen(buffer) != strlen("%WS HH:MM:SS\r\n")) {
                         sprintf(error_buffer, "wall_clock_proc WS recieved an invalid format length of %d", strlen(buffer));
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
 
                     } else if (buffer[3] != ' ') {
                         sprintf(error_buffer, "wall_clock_proc did not see a space after WS - buffer[3]=%c", buffer[3]);
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
 
                     } else if (buffer[6] != ':' || buffer[9] != ':') {
                         sprintf(error_buffer, "wall_clock_proc did not see 2 colons in WS - buffer[6]=%c buffer[9]=%c", buffer[6], buffer[9]);
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
 
                     } else if (!is_numeric_char(buffer[4]) || !is_numeric_char(buffer[5])) {
                         sprintf(error_buffer, "wall_clock_proc received an invalid hour - buffer[4]=%c buffer[5]=%c", buffer[4], buffer[5]);
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
 
                     } else if (!is_numeric_char(buffer[7]) || !is_numeric_char(buffer[8])) {
                         sprintf(error_buffer, "wall_clock_proc received an invalid minute - buffer[7]=%c buffer[8]=%c", buffer[7], buffer[8]);
-                        goto ERROR_INPUT;
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
 
                     } else if (!is_numeric_char(buffer[10]) || !is_numeric_char(buffer[11])) {
-                        println("wall_clock_proc received an invalid second %c%c", buffer[10], buffer[11]);
-                        goto INPUT_ERROR;
+                        sprintf(error_buffer, "wall_clock_proc received an invalid second - buffer[10]=%c buffer[11]=%c", buffer[10], buffer[11]);
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
                     }
 
                     currentTime = 0;

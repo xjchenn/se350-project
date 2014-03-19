@@ -462,6 +462,16 @@
           <GroupName>System Code</GroupName>
           <Files>
             <File>
+              <FileName>system_LPC17xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\system_LPC17xx.c</FilePath>
+            </File>
+            <File>
+              <FileName>GLCD_SPI_LPC1700.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\GLCD_SPI_LPC1700.c</FilePath>
+            </File>
+            <File>
               <FileName>uart_irq.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_irq.c</FilePath>
@@ -472,11 +482,6 @@
               <FilePath>.\src\uart_polling.c</FilePath>
             </File>
             <File>
-              <FileName>system_LPC17xx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\system_LPC17xx.c</FilePath>
-            </File>
-            <File>
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
@@ -485,6 +490,11 @@
               <FileName>string.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\string.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\lcd_display.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -951,6 +961,16 @@
           <GroupName>System Code</GroupName>
           <Files>
             <File>
+              <FileName>system_LPC17xx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\system_LPC17xx.c</FilePath>
+            </File>
+            <File>
+              <FileName>GLCD_SPI_LPC1700.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\GLCD_SPI_LPC1700.c</FilePath>
+            </File>
+            <File>
               <FileName>uart_irq.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart_irq.c</FilePath>
@@ -961,11 +981,6 @@
               <FilePath>.\src\uart_polling.c</FilePath>
             </File>
             <File>
-              <FileName>system_LPC17xx.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\system_LPC17xx.c</FilePath>
-            </File>
-            <File>
               <FileName>printf.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\printf.c</FilePath>
@@ -974,6 +989,11 @@
               <FileName>string.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\string.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\lcd_display.c</FilePath>
             </File>
           </Files>
         </Group>

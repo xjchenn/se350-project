@@ -25,10 +25,6 @@ void set_user_procs(void) {
 * Wall Clock P11
 *******************************************************************************/
 
-int is_numeric_char(char c) {
-    return (c >= '0' && c <= '9') ? 1 : 0;
-}
-
 void display_error_on_crt(char* error_message, uint32_t n) {
     static const uint32_t max_error_length = 80;
 
@@ -58,7 +54,6 @@ void wall_clock_proc(void) {
 
     int32_t sender_id;
     msg_buf_t* envelope;
-    int32_t time_value;
     char buffer[buffer_size];                        
     char error_buffer[error_buffer_size];   
     
@@ -159,22 +154,13 @@ void wall_clock_proc(void) {
                     // % W S _ H H : M M : S S
 
                     // get hour
-                    time_value = 0;
-                    time_value += (buffer[4] - '0') * 10;
-                    time_value += (buffer[5] - '0');
-                    currentTime += time_value * 3600;
+                    currentTime += substring_toi(&buffer[4], 2) * 3600;
 
                     // get minutes
-                    time_value = 0;
-                    time_value += (buffer[7] - '0') * 10;
-                    time_value += (buffer[8] - '0');
-                    currentTime += time_value * 60;
+                    currentTime += substring_toi(&buffer[7], 2) * 60;
 
                     // get seconds
-                    time_value = 0;
-                    time_value += (buffer[10] - '0') * 10;
-                    time_value += (buffer[11] - '0');
-                    currentTime += time_value;
+                    currentTime += substring_toi(&buffer[10], 2);
 
                     if (running == 0) {
                         envelope = (msg_buf_t*)request_memory_block();

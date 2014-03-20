@@ -19,6 +19,10 @@ void set_user_procs(void) {
     u_proc_table[3].pid        = PID_C;
     u_proc_table[3].proc_start = &stress_test_proc_c;
     u_proc_table[3].priority   = MEDIUM;
+
+    u_proc_table[4].pid        = PID_SET_PRIO;
+    u_proc_table[4].proc_start = &priority_change_proc;
+    u_proc_table[4].priority   = HIGHEST;
 }
 
 /******************************************************************************
@@ -48,8 +52,8 @@ void display_error_on_crt(char* error_message, uint32_t n) {
 }
 
 void wall_clock_proc(void) {
-    static const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
-    static const uint32_t error_buffer_size = 80; // more than enough for most error messages
+    const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
+    const uint32_t error_buffer_size = 80; // more than enough for most error messages
     uint32_t i = 0;
 
     int32_t sender_id;
@@ -199,6 +203,84 @@ void wall_clock_proc(void) {
             
             continue;
         }
+    }
+}
+
+void priority_change_proc(void) {
+    int32_t process_id;
+    int32_t new_priority;
+		int32_t msg_len;
+    int32_t i = 0;
+    char* cmd = "%C";
+    msg_buf_t* envelope;
+    const uint32_t buffer_size       = 7; // this can store "%C pid(2 chars) priority(1 char)"
+    const uint32_t error_buffer_size = 80; // more than enough for most error messages
+    char buffer[buffer_size];                        
+    char error_buffer[error_buffer_size];
+
+    // register the command with kcd
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+		msg_len = strlen(cmd);
+    strncpy(envelope->msg_data, cmd, msg_len);
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+
+    while(1) {
+
+        envelope = receive_message(NULL);
+        strncpy(buffer, envelope->msg_data, buffer_size);
+        release_memory_block(envelope); // since we already copied out the data into our buffer
+
+        // reset buffer before using it again
+        for (i = 0; i < buffer_size; ++i) {
+            buffer[i] = '\0';
+        }
+
+        if (strlen(buffer) < strlen("%C") || buffer[0] != '%' || buffer[1] != 'C') {
+            // in general, we ignore any non command messages
+            continue;
+        }
+        if (strlen(buffer) == strlen("%C 00 0")) {
+            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[4]) || !is_numeric_char(buffer[6])) {
+                sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%cbuffer[4]=%c buffer[6]=%c", buffer[3], buffer[4], buffer[6]);
+                display_error_on_crt(error_buffer, strlen(error_buffer));
+                continue;
+
+            } else {
+                process_id = substring_toi(&buffer[3], 2);
+                new_priority = substring_toi(&buffer[6], 1);
+
+            }
+        } else if (strlen(buffer) == strlen("%C 0 0")) {
+            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[5])) {
+                sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%c buffer[5]=%c", buffer[3], buffer[5]);
+                display_error_on_crt(error_buffer, strlen(error_buffer));
+                continue;
+            } else {
+                process_id = substring_toi(&buffer[3], 1);
+                new_priority = substring_toi(&buffer[5], 1);
+            }
+        } else {
+            sprintf(error_buffer, "priority_change_proc received invalid input");
+            display_error_on_crt(error_buffer, strlen(error_buffer));
+            continue;
+        }
+
+
+        if (process_id < 1 || process_id > 11) {
+            sprintf(error_buffer, "process with id=%d not available or has restricted access", process_id);
+            display_error_on_crt(error_buffer, strlen(error_buffer));
+            continue;
+        }
+
+        if (new_priority < 1 || new_priority > 3) {
+            sprintf(error_buffer, "process priority level %d not available", new_priority);
+            display_error_on_crt(error_buffer, strlen(error_buffer));
+            continue;   
+        }
+        sprintf(error_buffer, "test information: pid: %d, new priority: %d", process_id, new_priority);
+        set_process_priority(process_id, new_priority);
+        continue;
     }
 }
 

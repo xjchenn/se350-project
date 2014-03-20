@@ -114,9 +114,9 @@ uint32_t k_init_processor(void) {
 
             case 10:
                 // TODO unimplemented, using null proc now
-                *(--stack_ptr)    = (uint32_t)(k_proc_table[0].proc_start);
-                pcbs[i]->pid      = 10;
-                pcbs[i]->priority = LOWEST;
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[4].proc_start);
+                pcbs[i]->pid      = u_proc_table[4].pid;
+                pcbs[i]->priority = u_proc_table[4].priority;
                 break;
 
             case 11:

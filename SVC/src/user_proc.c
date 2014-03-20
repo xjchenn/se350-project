@@ -242,7 +242,7 @@ void priority_change_proc(void) {
         }
         if (strlen(buffer) == strlen("%C 00 0\r\n")) {
             if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[4]) || !is_numeric_char(buffer[6])) {
-                sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%cbuffer[4]=%c buffer[6]=%c", buffer[3], buffer[4], buffer[6]);
+                sprintf(error_buffer, "priority_change_proc expected numbers but found: \"%c%c\" &\"%c\"", buffer[3], buffer[4], buffer[6]);
                 display_error_on_crt(error_buffer, strlen(error_buffer));
                 continue;
 
@@ -253,7 +253,7 @@ void priority_change_proc(void) {
             }
         } else if (strlen(buffer) == strlen("%C 0 0\r\n")) {
             if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[5])) {
-                sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%c buffer[5]=%c", buffer[3], buffer[5]);
+                sprintf(error_buffer, "priority_change_proc expected numbers but found: \"%c\" &\"%c\"", buffer[3], buffer[5]);
                 display_error_on_crt(error_buffer, strlen(error_buffer));
                 continue;
             } else {
@@ -268,7 +268,7 @@ void priority_change_proc(void) {
 
 
         if (process_id < 1 || process_id > 11) {
-            sprintf(error_buffer, "process with id=%d not available or has restricted access", process_id);
+            sprintf(error_buffer, "process with id=%d not available", process_id);
             display_error_on_crt(error_buffer, strlen(error_buffer));
             continue;
         }
@@ -278,8 +278,8 @@ void priority_change_proc(void) {
             display_error_on_crt(error_buffer, strlen(error_buffer));
             continue;   
         }
-        sprintf(error_buffer, "test information: pid: %d, new priority: %d", process_id, new_priority);
-        display_error_on_crt(error_buffer, strlen(error_buffer));
+        // sprintf(error_buffer, "test information: pid: %d, new priority: %d", process_id, new_priority);
+        // display_error_on_crt(error_buffer, strlen(error_buffer));
         set_process_priority(process_id, new_priority);
         continue;
     }

@@ -311,8 +311,10 @@ PRINT:
             g_char_out = *gp_buffer;
             pUart->THR = g_char_out;
             gp_buffer++;
+
         } else {
             k_release_memory_block_i(message);
+            gp_buffer = "\0"; // now we don't point to invalid memory
 
             current_pcb_node = pcb_nodes[PID_UART_IPROC];
             message = k_receive_message_i(NULL);

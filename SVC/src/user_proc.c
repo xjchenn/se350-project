@@ -240,7 +240,7 @@ void stress_test_proc_a(void) {
     while (1) {
         envelope = (msg_buf_t*)request_memory_block();
         envelope->msg_type = COUNT_REPORT;
-        sprintf(envelope->msg_data, "%d", num++);
+        sprintf(envelope->msg_data, "%d\r\n", num++);
         send_message(PID_B, envelope);
 
         release_processor();
@@ -279,6 +279,7 @@ void stress_test_proc_c(void) {
     msg_buf_t* envelope;
     char buffer[10]; // enough to store 2^32 = 4294967296
 
+	
     for (i = 0; i < queue_size; i++) {
         message_queue[i] = NULL;
     }

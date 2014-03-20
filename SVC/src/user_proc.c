@@ -213,7 +213,7 @@ void priority_change_proc(void) {
     int32_t i = 0;
     char* cmd = "%C";
     msg_buf_t* envelope;
-    const uint32_t buffer_size       = 7; // this can store "%C pid(2 chars) priority(1 char)"
+    const uint32_t buffer_size       = 10; // this can store "%C pid(2 chars) priority(1 char)\r\n"
     const uint32_t error_buffer_size = 80; // more than enough for most error messages
     char buffer[buffer_size];                        
     char error_buffer[error_buffer_size];
@@ -221,26 +221,26 @@ void priority_change_proc(void) {
     // register the command with kcd
     envelope = (msg_buf_t*)request_memory_block();
     envelope->msg_type = KCD_REG;
-		msg_len = strlen(cmd);
+    msg_len = strlen(cmd);
     strncpy(envelope->msg_data, cmd, msg_len);
     send_message(PID_KCD, envelope); // envelope is now considered freed memory
 
     while(1) {
 
         envelope = receive_message(NULL);
-        strncpy(buffer, envelope->msg_data, buffer_size);
-        release_memory_block(envelope); // since we already copied out the data into our buffer
 
         // reset buffer before using it again
         for (i = 0; i < buffer_size; ++i) {
             buffer[i] = '\0';
         }
-
+        strncpy(buffer, envelope->msg_data, buffer_size);
+        release_memory_block(envelope); // since we already copied out the data into our buffer
+        println(buffer);
         if (strlen(buffer) < strlen("%C") || buffer[0] != '%' || buffer[1] != 'C') {
             // in general, we ignore any non command messages
             continue;
         }
-        if (strlen(buffer) == strlen("%C 00 0")) {
+        if (strlen(buffer) == strlen("%C 00 0\r\n")) {
             if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[4]) || !is_numeric_char(buffer[6])) {
                 sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%cbuffer[4]=%c buffer[6]=%c", buffer[3], buffer[4], buffer[6]);
                 display_error_on_crt(error_buffer, strlen(error_buffer));
@@ -251,7 +251,7 @@ void priority_change_proc(void) {
                 new_priority = substring_toi(&buffer[6], 1);
 
             }
-        } else if (strlen(buffer) == strlen("%C 0 0")) {
+        } else if (strlen(buffer) == strlen("%C 0 0\r\n")) {
             if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[5])) {
                 sprintf(error_buffer, "priority_change_proc received an input - buffer[3]=%c buffer[5]=%c", buffer[3], buffer[5]);
                 display_error_on_crt(error_buffer, strlen(error_buffer));
@@ -279,6 +279,7 @@ void priority_change_proc(void) {
             continue;   
         }
         sprintf(error_buffer, "test information: pid: %d, new priority: %d", process_id, new_priority);
+        display_error_on_crt(error_buffer, strlen(error_buffer));
         set_process_priority(process_id, new_priority);
         continue;
     }

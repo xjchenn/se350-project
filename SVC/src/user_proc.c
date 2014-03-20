@@ -267,27 +267,36 @@ void stress_test_proc_b(void) {
 * TODO add desc
 *******************************************************************************/
 
+
+
 void stress_test_proc_c(void) {
+    const int32_t queue_size = 48;
+    int32_t i;
     int32_t sender_id;
+    uint32_t first_pointer = 0;
+    uint32_t end_pointer = 0;
+    msg_buf_t* message_queue[queue_size];
     msg_buf_t* envelope;
     char buffer[10]; // enough to store 2^32 = 4294967296
 
-    while (1) {
-        // TODO remove when finished implementation
-        release_processor();
+    for (i = 0; i < queue_size; i++) {
+        message_queue[i] = NULL;
     }
 
-    // TODO create local queue
-
     while (1) {
-        //TODO if (local queue empty) {
+
+        if (message_queue[first_pointer] == NULL && message_queue[end_pointer] == NULL) {
+            first_pointer = end_pointer = 0;
             envelope = receive_message(&sender_id);
-        //} else {
-            // TODO envelope = dequeue from local queue
-        //}
+        } else {
+            envelope = message_queue[first_pointer];
+            message_queue[first_pointer] = NULL;
+            if (message_queue[(first_pointer+1) % queue_size] != NULL) {
+                first_pointer = (first_pointer+1) % queue_size;
+            }
+        }
 
         if (envelope->msg_type == COUNT_REPORT) {
-            // TODO implement atoi in string.c
             if (atoi(envelope->msg_data) % 20 == 0) {
                 envelope->msg_type = CRT_DISPLAY;
                 send_message(PID_CRT, envelope);
@@ -304,12 +313,14 @@ void stress_test_proc_c(void) {
                     if (envelope->msg_type == WAKEUP10) {
                         break; // got termination signal, stop enqueuing messages
                     } else {
-                        // TODO put envelope on local queue
+                        if (message_queue[end_pointer] != NULL) {
+                            end_pointer = (end_pointer + 1) % queue_size;
+                        }
+                        message_queue[end_pointer] = envelope;
                     }
                 }
             }
         }
-
         release_memory_block(envelope);
         release_processor();
     }

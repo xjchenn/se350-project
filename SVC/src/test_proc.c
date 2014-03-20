@@ -268,7 +268,7 @@ void test_proc_p1_6() {
             printf("/5 FAIL\r\n");
             printf("G005_test: END\r\n");
             ranOnce = 1;
-            g_test_procs[5].priority = LOW;
+            set_process_priority(PID_P6, LOW);
         }
         release_processor();
     }

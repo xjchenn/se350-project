@@ -209,7 +209,7 @@ void wall_clock_proc(void) {
 void priority_change_proc(void) {
     int32_t process_id;
     int32_t new_priority;
-		int32_t msg_len;
+    int32_t msg_len;
     int32_t i = 0;
     char* cmd = "%C";
     msg_buf_t* envelope;
@@ -240,9 +240,14 @@ void priority_change_proc(void) {
             // in general, we ignore any non command messages
             continue;
         }
+        if (strlen(buffer) < strlen("%C ") || buffer[2] != ' ') {
+            sprintf(error_buffer, "priority_change_proc received invalid input.");
+            display_error_on_crt(error_buffer, strlen(error_buffer));
+            continue;
+        }
         if (strlen(buffer) == strlen("%C 00 0\r\n")) {
-            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[4]) || !is_numeric_char(buffer[6])) {
-                sprintf(error_buffer, "priority_change_proc expected numbers but found: \"%c%c\" &\"%c\"", buffer[3], buffer[4], buffer[6]);
+            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[4]) || !is_numeric_char(buffer[6]) || buffer[5] != ' ') {
+                sprintf(error_buffer, "priority_change_proc received invalid input.");
                 display_error_on_crt(error_buffer, strlen(error_buffer));
                 continue;
 
@@ -252,8 +257,8 @@ void priority_change_proc(void) {
 
             }
         } else if (strlen(buffer) == strlen("%C 0 0\r\n")) {
-            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[5])) {
-                sprintf(error_buffer, "priority_change_proc expected numbers but found: \"%c\" &\"%c\"", buffer[3], buffer[5]);
+            if (!is_numeric_char(buffer[3]) || !is_numeric_char(buffer[5]) || buffer[4] != ' ') {
+                sprintf(error_buffer, "priority_change_proc received invalid input.");
                 display_error_on_crt(error_buffer, strlen(error_buffer));
                 continue;
             } else {
@@ -261,27 +266,24 @@ void priority_change_proc(void) {
                 new_priority = substring_toi(&buffer[5], 1);
             }
         } else {
-            sprintf(error_buffer, "priority_change_proc received invalid input");
+            sprintf(error_buffer, "priority_change_proc received invalid input.");
             display_error_on_crt(error_buffer, strlen(error_buffer));
             continue;
         }
 
 
-        if (process_id < 1 || process_id > 11) {
-            sprintf(error_buffer, "process with id=%d not available", process_id);
+        if (process_id < 1 || process_id > 13) {
+            sprintf(error_buffer, "Process with id=%d not available.", process_id);
             display_error_on_crt(error_buffer, strlen(error_buffer));
             continue;
         }
 
-        if (new_priority < 1 || new_priority > 3) {
-            sprintf(error_buffer, "process priority level %d not available", new_priority);
+        if (new_priority < 0 || new_priority > 3) {
+            sprintf(error_buffer, "Process priority level %d not available.", new_priority);
             display_error_on_crt(error_buffer, strlen(error_buffer));
             continue;   
         }
-        // sprintf(error_buffer, "test information: pid: %d, new priority: %d", process_id, new_priority);
-        // display_error_on_crt(error_buffer, strlen(error_buffer));
         set_process_priority(process_id, new_priority);
-        continue;
     }
 }
 

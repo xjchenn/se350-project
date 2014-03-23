@@ -55,13 +55,14 @@ void wall_clock_proc(void) {
     const uint32_t buffer_size       = 15; // enough to store longest command "%WS hh:mm:ss\r\n\0"
     const uint32_t error_buffer_size = 80; // more than enough for most error messages
     uint32_t i = 0;
-
     int32_t sender_id;
     msg_buf_t* envelope;
+
     char buffer[buffer_size];                        
     char error_buffer[error_buffer_size];   
     
     char* cmd = "%W";
+
     uint32_t running = 0;
     uint32_t currentTime = 0; // in sec
 
@@ -115,6 +116,7 @@ void wall_clock_proc(void) {
                         display_error_on_crt(error_buffer, strlen(error_buffer));
                         continue;
                     }
+
                     currentTime = 0;
 
                     if (running == 0) {
@@ -184,6 +186,12 @@ void wall_clock_proc(void) {
                 }
 
                 case 'T': {
+                    if (strlen(buffer) != strlen("%WT\r\n")) {
+                        sprintf(error_buffer, "wall_clock_proc WS recieved an invalid format length of %d", strlen(buffer));
+                        display_error_on_crt(error_buffer, strlen(error_buffer));
+                        continue;
+                    }
+
                     // clear the clock
                     envelope = (msg_buf_t*)request_memory_block();
                     envelope->msg_type = CRT_DISPLAY;
@@ -196,12 +204,11 @@ void wall_clock_proc(void) {
                 }
 
                 default: {
-                    DEBUG_PRINT("wall_clock_proc received invalid command");
+                    sprintf(error_buffer, "wall_clock_proc received invalid command %c", buffer[2]);
+                    display_error_on_crt(error_buffer, strlen(error_buffer));
                     break;
                 }
             }
-            
-            continue;
         }
     }
 }
@@ -288,34 +295,119 @@ void priority_change_proc(void) {
 }
 
 /******************************************************************************
-* Stress Test P7
+* Stress Test A
 * TODO add desc
 *******************************************************************************/
 
 void stress_test_proc_a(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+    char* cmd = "%Z";
+    char buffer[5]; // enough to store "%Z\r\n\0"
+
+    uint32_t num = 0;
+
+    envelope = (msg_buf_t*)request_memory_block();
+    envelope->msg_type = KCD_REG;
+    strncpy(envelope->msg_data, cmd, strlen(cmd));
+    send_message(PID_KCD, envelope); // envelope is now considered freed memory
+
     while (1) {
+        envelope = receive_message(&sender_id);
+        strncpy(buffer, envelope->msg_data, 5);
+        release_memory_block(envelope);
+
+        if (buffer[0] == '%' && buffer[1] == 'Z') {
+            break;
+        }
+    }
+
+    while (1) {
+        envelope = (msg_buf_t*)request_memory_block();
+        envelope->msg_type = COUNT_REPORT;
+        sprintf(envelope->msg_data, "%d\r\n", num++);
+        send_message(PID_B, envelope);
+
         release_processor();
     }
 }
 
 /******************************************************************************
-* Stress Test P8
+* Stress Test B
 * TODO add desc
 *******************************************************************************/
 
 void stress_test_proc_b(void) {
+    int32_t sender_id;
+    msg_buf_t* envelope;
+
     while (1) {
-        release_processor();
+        envelope = receive_message(&sender_id);
+        send_message(PID_C, envelope);
     }
 }
 
 /******************************************************************************
-* Stress Test P9
+* Stress Test C
 * TODO add desc
 *******************************************************************************/
 
+
+
 void stress_test_proc_c(void) {
+    const int32_t queue_size = 48;
+    int32_t i;
+    int32_t sender_id;
+    uint32_t first_pointer = 0;
+    uint32_t end_pointer = 0;
+    msg_buf_t* message_queue[queue_size];
+    msg_buf_t* envelope;
+    char buffer[10]; // enough to store 2^32 = 4294967296
+
+	
+    for (i = 0; i < queue_size; i++) {
+        message_queue[i] = NULL;
+    }
+
     while (1) {
+
+        if (message_queue[first_pointer] == NULL && message_queue[end_pointer] == NULL) {
+            first_pointer = end_pointer = 0;
+            envelope = receive_message(&sender_id);
+        } else {
+            envelope = message_queue[first_pointer];
+            message_queue[first_pointer] = NULL;
+            if (message_queue[(first_pointer+1) % queue_size] != NULL) {
+                first_pointer = (first_pointer+1) % queue_size;
+            }
+        }
+
+        if (envelope->msg_type == COUNT_REPORT) {
+            if (atoi(envelope->msg_data) % 20 == 0) {
+                envelope->msg_type = CRT_DISPLAY;
+                send_message(PID_CRT, envelope);
+
+                // add messages recieved in the next 10 sec to its on local queue
+                // i.e. this is its own termination signal
+                envelope = (msg_buf_t*)request_memory_block();
+                envelope->msg_type = WAKEUP10;
+                delayed_send(PID_C, envelope, 10 * 1000);
+                
+                while (1) {
+                    envelope = receive_message(&sender_id);
+
+                    if (envelope->msg_type == WAKEUP10) {
+                        break; // got termination signal, stop enqueuing messages
+                    } else {
+                        if (message_queue[end_pointer] != NULL) {
+                            end_pointer = (end_pointer + 1) % queue_size;
+                        }
+                        message_queue[end_pointer] = envelope;
+                    }
+                }
+            }
+        }
+        release_memory_block(envelope);
         release_processor();
     }
 }

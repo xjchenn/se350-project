@@ -261,37 +261,43 @@ void irq_i_process(void) {
         }
 
 #ifdef _DEBUG_HOTKEYS
-        PRINT_HEADER;
-        println("CURRENT PROCESS:");
-        println("PID:%d Priority:%d SP:%x", ((pcb_t*)current_pcb_node->value)->pid, ((pcb_t*)current_pcb_node->value)->priority, ((pcb_t*)current_pcb_node->value)->stack_ptr);
-        PRINT_NEWLINE;
+        if (g_char_in == KEY_READY_QUEUE ||
+            g_char_in == KEY_BLOCKED_MEM_QUEUE ||
+            g_char_in == KEY_BLOCKED_MSG_QUEUE ||
+            g_char_in == KEY_MSG_LOG_BUFFER) {
 
-        switch (g_char_in) {
-            case KEY_READY_QUEUE:
-                println("READY QUEUE:");
-                k_print_queues(ready_pqs);
-                break;
+            PRINT_HEADER;
+            println("CURRENT PROCESS:");
+            println("PID:%d Priority:%d SP:%x", ((pcb_t*)current_pcb_node->value)->pid, ((pcb_t*)current_pcb_node->value)->priority, ((pcb_t*)current_pcb_node->value)->stack_ptr);
+            PRINT_NEWLINE;
 
-            case KEY_BLOCKED_MEM_QUEUE:
-                println("MEM BLOCKED QUEUE:");
-                k_print_queues(mem_blocked_pqs);
-                break;
+            switch (g_char_in) {
+                case KEY_READY_QUEUE:
+                    println("READY QUEUE:");
+                    k_print_queues(ready_pqs);
+                    break;
 
-            case KEY_BLOCKED_MSG_QUEUE:
-                println("MESSAGE BLOCKED QUEUE:");
-                k_print_queues(msg_blocked_pqs);
-                break;
+                case KEY_BLOCKED_MEM_QUEUE:
+                    println("MEM BLOCKED QUEUE:");
+                    k_print_queues(mem_blocked_pqs);
+                    break;
 
-            case KEY_MSG_LOG_BUFFER:
-                k_print_msg_logs();
-                break;
+                case KEY_BLOCKED_MSG_QUEUE:
+                    println("MESSAGE BLOCKED QUEUE:");
+                    k_print_queues(msg_blocked_pqs);
+                    break;
 
-            default:
-                break;
+                case KEY_MSG_LOG_BUFFER:
+                    // TODO fix later...
+                    //k_print_msg_logs(); 
+                    break;
+
+                default:
+                    break;
+            }
+
+            PRINT_HEADER;
         }
-
-        g_switch_flag = 0;
-        PRINT_HEADER;
 #endif
 
     } else if (IIR_IntId & IIR_THRE) {
@@ -305,8 +311,10 @@ PRINT:
             g_char_out = *gp_buffer;
             pUart->THR = g_char_out;
             gp_buffer++;
+
         } else {
             k_release_memory_block_i(message);
+            gp_buffer = "\0"; // now we don't point to invalid memory
 
             current_pcb_node = pcb_nodes[PID_UART_IPROC];
             message = k_receive_message_i(NULL);

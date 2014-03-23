@@ -143,6 +143,10 @@ void timer_i_process(void) {
         current_pcb_node = pcb_nodes[current_message->sender_pid];
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
         current_pcb_node = previous_pcb_node;
+        
+        if (pcbs[current_message->receiver_pid]->priority <= ((pcb_t*)previous_pcb_node->value)->priority) {
+            switch_flag = 1;
+        }
 
         if (pcbs[current_message->receiver_pid]->priority <= ((pcb_t*)previous_pcb_node->value)->priority) {
             switch_flag = 1;

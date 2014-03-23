@@ -42,7 +42,14 @@ uint32_t is_numeric_char(char c) {
 }
 
 uint32_t atoi(char* s) {
-    return substring_toi(s, strlen(s));
+    uint32_t digits = 0;
+
+    while (*(s + digits) != '\r' && 
+           *(s + digits) != '\0') {
+        digits++;
+    }
+
+    return substring_toi(s, digits);
 }
 
 uint32_t substring_toi(char* s, int32_t n) {

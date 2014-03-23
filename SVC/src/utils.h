@@ -10,7 +10,7 @@ typedef void (*func_ptr_t)();
 
 #define MEM_OFFSET_SIZE         8       // padding between kernel and heap
 #define MEM_BLOCK_SIZE          0x100   // 0x100 bytes / sizeof(mem_blk_t)
-#define MAX_MEM_BLOCKS          0x30    // 48 blocks uses 0x3000 bytes of memory
+#define MAX_MEM_BLOCKS          0x20    // 48 blocks uses 0x3000 bytes of memory
 #define MEM_BLOCK_HEADER_SIZE   16      // 4 variables * 4 bytes each
 #define KERNEL_MSG_HEADER_SIZE  24      // 6 variables * 4 bytes each
 #define USER_DATA_BLOCK_SIZE    MEM_BLOCK_SIZE - MEM_BLOCK_HEADER_SIZE - KERNEL_MSG_HEADER_SIZE

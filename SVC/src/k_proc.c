@@ -138,7 +138,7 @@ void kcd_proc(void) {
                 num_of_cmds_reg++;
             }
 
-            k_release_memory_block_i(msg); // done reading msg, can now free it
+            k_release_memory_block(msg); // done reading msg, can now free it
         }
     }
 }

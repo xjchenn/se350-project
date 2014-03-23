@@ -132,7 +132,12 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 13:
-                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start); 
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start);
+                // sketchy pointer byte alignment hax
+                if (*stack_ptr & 0x1) {
+                    *stack_ptr = *stack_ptr ^ 0x1;
+                }
+
                 pcbs[i]->pid      = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;

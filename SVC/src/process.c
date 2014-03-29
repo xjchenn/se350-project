@@ -138,11 +138,17 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 14:
-                pcbs[i]->pid = k_proc_table[1].pid;
+                pcbs[i]->pid      = k_proc_table[1].pid;
                 break;
 
             case 15:
-                pcbs[i]->pid = k_proc_table[2].pid;
+                pcbs[i]->pid      = k_proc_table[2].pid;
+                break;
+
+            case 16:
+                *(--stack_ptr)    = (uint32_t)(g_test_procs[6].proc_start);
+                pcbs[i]->pid      = g_test_procs[6].pid;
+                pcbs[i]->priority = g_test_procs[6].priority;
                 break;
 
             default:

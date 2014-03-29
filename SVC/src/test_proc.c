@@ -1,10 +1,14 @@
 #include "test_proc.h"
 #include "rtx.h"
+//#include "testtimer.h"
+#include "timer.h"
 
 proc_image_t g_test_procs[NUM_TEST_PROCESSES];
 
 int32_t test_results[NUM_TEST_PROCESSES];
 int32_t test_ran[NUM_TEST_PROCESSES];
+
+extern volatile uint32_t g_timer_count;
 
 void set_test_procs() {
     uint32_t i;
@@ -52,6 +56,10 @@ void set_test_procs() {
 
     g_test_procs[5].proc_start = &test_proc_p1_6; // always use p1 test_proc for printing our test results
     g_test_procs[5].priority = LOW;
+
+    g_test_procs[6].pid = PID_TIMER_TEST_PROC;
+    g_test_procs[6].proc_start = &timer_test_proc_p4;
+    g_test_procs[6].priority = LOW;
 
     printf("G005_test: START\r\n");
     printf("G005_test: total 5 tests\r\n");
@@ -269,6 +277,7 @@ void test_proc_p1_6() {
             printf("G005_test: END\r\n");
             ranOnce = 1;
             set_process_priority(PID_P6, LOW);
+            set_process_priority(PID_TIMER_TEST_PROC, MEDIUM);
         }
         release_processor();
     }
@@ -627,5 +636,55 @@ void test_proc_p1_b_6(void) {
         }
         release_processor();
         i++;
+    }
+}
+
+
+/** Timer Test Process
+*       
+*   This process will be testing the speed of our tasks.
+*   We'll be testing:
+*
+*       1) send_message
+*       2) reseive_message
+*       3) request_memory_block 
+*
+*/
+
+void timer_test_proc_p4(void) {
+    uint32_t start_time, end_time;
+    uint32_t elapsed_time_send, elapsed_time_receive, elapsed_time_req;
+    msg_buf_t* envelope;
+    char * msg;
+
+    start_time = g_timer_count;
+    envelope = (msg_buf_t*)request_memory_block();
+    end_time = g_timer_count;
+    elapsed_time_req = end_time - start_time;
+
+
+    envelope->msg_type = CRT_DISPLAY;
+    msg = "A";
+    strncpy(envelope->msg_data, msg, strlen(msg));
+    start_time = g_timer_count;
+    send_message(PID_TIMER_TEST_PROC, envelope);
+    end_time = g_timer_count;
+    elapsed_time_send = end_time - start_time;
+
+    start_time = g_timer_count;
+    envelope = (msg_buf_t*)receive_message(NULL);
+    end_time = g_timer_count;
+    elapsed_time_receive = end_time - start_time;
+
+    DEBUG_PRINT("Timer Test Proc Ran");
+    printf("Request memory block time: %d\r\n", g_timer_count);
+    printf("Send message time: %d\r\n", g_timer_count);
+    printf("Receive message time: %d\r\n", g_timer_count);
+    test_ran[6] = 1;
+
+    release_memory_block(envelope);
+
+    while (1) {
+        release_processor();
     }
 }

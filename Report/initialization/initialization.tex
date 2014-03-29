@@ -39,7 +39,7 @@
 \begin{document}
 
 \section{Initialization}
-At the start of our OS, we disabled interrupts before we initialize our system, otherwise our interrupt handlers cannot run properly.
+At the start of our OS, we disabled interrupts before we initialize our system, otherwise our interrupt handlers cannot run properly. Once everything was initialized properly, we re-enabled interrupts and called our scheduler to dispatch the first process.
 
 \subsection{System APIs}
 The first stage of our initialization was to setup our system APIs. These allowed us to use \texttt{printf}, to use interrupt-driven IO on UART0, to use program-driven IO on UART1 (for debugging), and to receive timer interrupts every second.
@@ -56,7 +56,7 @@ As an added bonus, we also enabled the use of our board's LCD screen. From the e
 
 
 \subsection{Memory}
-After the system APIs have been initialized, we then initialized and allocated our system memory. We did this before any of our other code runs because the OS itself only contained pointers to our data structures. Since our data structures were allocated at this stage, any references to these structures would either hard fault or experience non-deterministic behaviour. The entire memory map of our system after this step is shown on Figure~\ref{fig:memory-map}. 
+After the system APIs have been initialized, we then initialized and allocated our system memory. We did this before any of our other code runs because the OS itself only contained pointers to our data structures. Since our data structures were allocated at this stage, any references to these structures would either hard fault or experience non-deterministic behaviour. The entire memory map of our system after initialization is shown on Figure~\ref{fig:memory-map}. 
 
 \subsubsection{Kernel Memory Space}
 
@@ -95,7 +95,7 @@ pcb_t
     linkedlist_t msg_queue;
 	\end{code}
 	
-	The \texttt{PROCESS\_STATE} is a enum that we use to keep track of the current state. Currently we have 6 states: new, ready, running, memory blocked, message blocked, and exit. 
+	The \texttt{PROCESS\_STATE} type is a enum that we use to keep track of the current state. Currently we have 6 states: new, ready, running, memory blocked, message blocked, and exit. 
 	
 \end{itemize}
 
@@ -110,9 +110,6 @@ mem_blk_t
     void* data;
     uint32_t padding;
 \end{code}
-
-\subsubsection{Process Stacks}
-After the memory blocks were initialized, we then allocated \texttt{0x200} space for each of our processes' stacks starting from the top of the RAM. Although the i-processes did not actually need a stack because they used the kernel stack whenever they got invoked, it made initialization a lot easier because we could use a generic loop rather than one that checks for process types. In addition, it was also at no cost to us because we still had leftover free space in our RAM in the end. 
 
 \begin{figure}[H]
 \centering
@@ -138,7 +135,77 @@ After the memory blocks were initialized, we then allocated \texttt{0x200} space
 
 \end{figure}
 
-\subsection{Processor}
+\subsection{Processes}
+After the memory had been allocated, we then move on to initializing our PCBs with their corresponding process information.
 
+\subsubsection{Process tables}
+
+First we call these methods to fill in our process tables:
+\begin{code}
+set_test_procs() // sets test processes 1-6
+set_user_procs() // sets stress tests A-C, wall clock, and change priority
+k_set_procs() // sets the null process, KCD, CRT, and i-processes
+\end{code}
+
+These methods filled in our process tables (which had been allocated at compile time instead of at runtime in the previous step):
+\begin{code}
+proc_image_t k_proc_table[NUM_K_PROCESSES] // size 5 (processes 0, 12-15)
+proc_image_t g_test_procs[NUM_TEST_PROCESSES] // size 6 (processes 1-6)
+proc_image_t u_proc_table[NUM_USER_PROCESSES] // size 5 (processes 7-11)
+\end{code}
+
+And each entry of our process table contained:
+\begin{code}
+proc_image_t
+    uint32_t pid
+    PROCESS_PRIORITY priority
+    func_ptr_t proc_start
+\end{code}
+
+The \texttt{PROCESS\_PRIORITY} type is a enum that we use to designate the priority of a process from \texttt{HIGHEST} being 0 to \texttt{LOWEST} being 4. The \texttt{func\_ptr\_t} type is function pointer that points to where our process actually resides in memory. 
+
+\subsubsection{Putting processes onto the ready queue}
+
+After our process tables were filled, we then iterated over all the processes in the process tables and setup our PCBs:
+\begin{enumerate}
+	\item
+	Copy the \texttt{pid} and \texttt{priority} into their corresponding PCBs.
+
+	\item
+	Set the PCB state to \texttt{NEW}.
+
+	\item
+	Initialize the PCB's message queue to be an empty linked list. Since the linked list was not declared as a pointer, its members (\texttt{first}, \texttt{last}, \texttt{length}) were already within the PCB struct.
+	
+	\item
+	Assign a stack of size \texttt{0x200} from the top of the RAM (at \texttt{0x1000 8000}) or just below the previously allocated stack to the current process. The \texttt{stack\_ptr} in PCB itself, however, points 8 words below the start of the stack to allow the scheduler to work properly.
+	
+	 As specified in the board's documentation, to go from handler mode (scheduler) to thread mode (a user process), we need to use the \texttt{BL 0xFFFF FFF9} instruction. This special instruction pops values off the stack frame, as shown below, and copies them into their corresponding registers.
+	
+	\begin{figure}[H]
+	\label{fig:stack-after-branch}
+	\caption{Stack after calling \texttt{BL 0xFFFF FFF9}}
+	\begin{bytefield}[rightcurly=.]{L}
+		\begin{rightwordgroup}{$\leftarrow$ SP is here after resuming to thread mode}
+	   		\memsection{}{}{1.5}{-- NULL --} 
+		\end{rightwordgroup} \\
+	    \memsection{}{}{1.5}{xPSR = \texttt{0x1000 0000}} \\
+		\memsection{}{}{1.5}{PC = \texttt{proc\_start}} \\
+        \memsection{}{}{1.5}{LR = \texttt{0x0}} \\
+        \memsection{}{}{1.5}{R12 = \texttt{0x0}} \\
+        \memsection{}{}{1.5}{R3 = \texttt{0x0}} \\
+        \memsection{}{}{1.5}{R2 = \texttt{0x0}} \\
+        \memsection{}{}{1.5}{R1 = \texttt{0x0}} \\
+		\begin{rightwordgroup}{$\leftarrow$ SP initially points here in handler mode}
+		    \memsection{}{}{1.5}{R0 = \texttt{0x0}}
+		\end{rightwordgroup} \\
+	\end{bytefield}
+	\end{figure}
+	
+	Normally, these values are be automatically set when we make a system call from thread mode. However because our OS is initialized in handler mode, we need to manually set these default values (as shown above) the first time so that the scheduler don't hard fault. 
+	
+	Also, although the i-processes did not actually need a stack because they used the kernel stack whenever they got invoked, it made initialization a lot easier because our loop did not need to check process types. In addition, it was also at no cost to us because we still had leftover free space in our RAM in the end. 
+	
+\end{enumerate}
 
 \end{document}

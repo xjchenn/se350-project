@@ -14,6 +14,7 @@
 \usepackage{float}
 
 \setlength{\parindent}{24pt}
+\setlength{\belowcaptionskip}{10pt}
 
 \definecolor{verbgray}{gray}{0.9}
 
@@ -38,37 +39,33 @@
 \begin{document}
 
 \section{Initialization}
-
+At the start of our OS, we disabled interrupts before we initialize our system, otherwise our interrupt handlers cannot run properly.
 
 \subsection{System APIs}
+The first stage of our initialization was to setup our system APIs. These allowed us to use \texttt{printf}, to use interrupt-driven IO on UART0, to use program-driven IO on UART1 (for debugging), and to receive timer interrupts every second.
 
+\begin{itemize}
+	\item \texttt{SystemInit()}
+	\item \texttt{init\_printf(putc, NULL)}	
+	\item \texttt{uart\_irq\_init(0)}
+	\item \texttt{uart1\_init()}
+	\item \texttt{timer\_init(0)}
+\end{itemize}
 
-\subsubsection{printf}
-
-
-\subsubsection{UART0}
-
-
-\subsubsection{UART1}
-
-
-\subsubsection{Timer}
-
-
-\subsubsection{LCD Display}
+As an added bonus, we also enabled the use of our board's LCD screen. From the example code found in uVision's installation directory, we were able to write text and draw basic geometric shapes onto the LCD. Since the LCD API uses polling for IO like UART1, we decided that it was infeasible to use it for system functionalities such as the Wall Clock. Instead, we decided to make the LCD screen display our OS's logo, doge (See Appendix~TODO for more background history).
 
 
 \subsection{Memory}
-After the system APIs have been initialized, we then initialize and allocate our system memory. We do this before any of our other code runs because the OS itself only contains pointers to our data structures. Since our data structures have not been allocated at this stage, they will either hard fault or experience nondeterministic behaviour. The entire memory map of our system after this initialization step is shown on Figure~\ref{fig:memory-map}. 
+After the system APIs have been initialized, we then initialized and allocated our system memory. We did this before any of our other code runs because the OS itself only contained pointers to our data structures. Since our data structures were allocated at this stage, any references to these structures would either hard fault or experience non-deterministic behaviour. The entire memory map of our system after this step is shown on Figure~\ref{fig:memory-map}. 
 
 \subsubsection{Kernel Memory Space}
 
-After the process image, we dynamically allocate space for all of our kernel's data structures. We chose to allocate our data structures dynamically instead of at compile time because we are first "zeroing" out our entire memory space from \texttt{0x10008000} down to the end of our image with \texttt{0xDEADBEEF}. This makes it easier to debug faults because if any registers (especially the link register) is \texttt{0xDEADBEEF} instead of 0 or some other random value, then we will instantly know that it's caused by uninitialized memory. In our kernel space, we have the following data structures initialized:
+After the process image, we dynamically allocated space for all of our kernel's data structures. We chose to allocate our data structures dynamically instead of at compile time because we were first "zeroing" out our entire memory space from \texttt{0x10008000} down to the end of our image with \texttt{0xDEADBEEF}. This made it easier to debug faults because if any registers (especially the link register) is \texttt{0xDEADBEEF} instead of 0 or some other random value, then we would instantly know that it was caused by uninitialized memory. In our kernel space, we initialized the following data structures:
 
 \begin{itemize}
 	\item \textbf{5 Ready, 5 memory blocked, and 5 message blocked queues:} 
 	
-	For each state that needs a queue (ready, memory blocked, and message blocked), we have one queue for each priority and each queue is implemented as a doubly-linked list:
+	We had three states (ready, memory blocked, and message blocked) that each needed five queues, one for each priority. In total, we had 15 queues, each implemented as a doubly-linked list:
 	\begin{code}
 linkedlist_t
     node_t* first;
@@ -78,7 +75,7 @@ linkedlist_t
 	
 	\item \textbf{16 PCB Nodes:} (one for each PCB)
 	
-	Unlike a traditional linked list implementation, our linked list does not dynamically allocate and free memory. Instead, our implementation simply changes the pointers because we do not want our kernel to be blocked on memory or get pre-empted while it's running the scheduler. We wrapped our PCB struct with this node instead of putting the next and previous pointers inside the PCB itself was because we wanted the linked list to be generic enough for other kernel features (such as the process message queues).
+	Unlike a traditional linked list implementation, our linked list did not dynamically allocate and free memory. Instead, our implementation simply changed the pointers because we did not want our kernel to be blocked on memory or get pre-empted while it is running the scheduler. We wrapped our PCB struct with this node, instead of putting the next and previous pointers inside the PCB itself, was because we wanted the linked list implementation to be generic enough for other kernel features (such as the message queues).
 	\begin{code}
 node_t
     node_t* next;
@@ -103,7 +100,7 @@ pcb_t
 \end{itemize}
 
 \subsubsection{User Memory Space}
-After we finish initializing our kernel's memory space, we then use the space above the PCBs for our memory blocks. However, before we initialize the memory blocks, we first byte align our heap pointer after the PCBs with \texttt{0x100}. This will make it easier to debug with the memory window at the cost of at most 0xFF memory.
+After we finished initializing our kernel's memory space, we then used the space above the PCBs for our memory blocks. However, before we initialized the memory blocks, we first byte aligned our heap pointer after the PCBs with \texttt{0x100}. This made it easier to debug with the memory window at the cost of at most 0xFF memory.
 
 The memory blocks themselves have the same "header" as a regular node because we can then cast the memory blocks to nodes and reuse our linked list implementation. See Section~TODO for more details about the memory blocks.
 \begin{code}
@@ -115,11 +112,12 @@ mem_blk_t
 \end{code}
 
 \subsubsection{Process Stacks}
-After the memory blocks have been initialized, we then start from the top of the available RAM for our processes' stacks, each with a size of \texttt{0x200}. Although the i-processes does not actually need a stack because it's working off the kernel stack when it gets invoked, it makes initialization easier because we have have a generic loop rather than one that checks for every process types. It's also at no cost to us because we still have leftover free space in our RAM in the end. 
+After the memory blocks were initialized, we then allocated \texttt{0x200} space for each of our processes' stacks starting from the top of the RAM. Although the i-processes did not actually need a stack because they used the kernel stack whenever they got invoked, it made initialization a lot easier because we could use a generic loop rather than one that checks for process types. In addition, it was also at no cost to us because we still had leftover free space in our RAM in the end. 
 
 \begin{figure}[H]
 \centering
 \label{fig:memory-map}
+\caption{Memory Map after Initialization}
 
 \begin{bytefield}{}
     \begin{rightwordgroup}{User Memory Space}
@@ -137,7 +135,6 @@ After the memory blocks have been initialized, we then start from the top of the
     \memsection{}{}{2}{-- 8-byte Guard --} \\
     \memsection{End of Image}{1000 0000}{5}{Process Image} \\
 \end{bytefield}
-\caption{Memory Map}
 
 \end{figure}
 

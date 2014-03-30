@@ -179,6 +179,46 @@ TODO
 
 \section{Kernel API}\label{sec:kernel}
 
+\subsection{Memory}
+
+\subsubsection{\texttt{void* request\_memory\_block()}}
+
+This method takes zero arguments and returns an address to a piece of memory that the caller can use. The returned address points to a continuous block of memory of size \texttt{0x1F4} bytes that the current process can read and write to. Currently, the memory protection unit is disabled so if the process writes outside of the data region indicated in Figure~\ref{fig:memory-block}, then undefined behaviour will occur.
+
+\begin{figure}
+\label{fig:memory-block}
+\caption{Memory Block}
+\begin{bytefield}{}
+    \memsection{0x200}{}{1.5}{\texttt{next}} \\
+    \memsection{}{}{1.5}{\texttt{prev}} \\
+    \begin{rightwordgroup}{Process allocated space of size \texttt{0x1F4}}
+    	\memsection{returned pointer}{}{10}{\texttt{data}}
+    \end{rightwordgroup} \\
+    \memsection{}{0x0}{2}{\texttt{padding = 0xABAD1DEA}} 
+\end{bytefield}
+\end{figure}
+
+If the system is out of memory, the calling process will be pre-empted and be placed on its priority's memory blocked queue until more memory becomes available (i.e. when another process releases their memory). It is recommended that once the user is finished with their allocated block that they release it otherwise the system will have memory leaks and run out of memory very quickly. See Section~\ref{sec:release-memory-block} for more information.
+
+\subsubsection{\texttt{int32\_t release\_memory\_block(void*)}}
+\label{sec:release-memory-block}
+
+This method takes in a pointer returned by \texttt{request\_memory\_block} and deallocate it. If the pointer is invalid such as NULL or out of the range of the RAM, this method returns -1. This method also checks if there are processes blocked on memory with a priority greater than or equal to the calling process. If so, then the current process will get pre-empted and the scheduler will get called instead of continuing with the current process.
+
+\subsubsection{Example Usage of Requesting and Releasing Memory}
+\begin{code}
+void example_process(void) {
+    int* array;
+    
+    while (1) {
+        array = (int*) request_memory_block();
+        array[0] = 0xDEADC0DE;
+        release_memory_block(array);
+    }
+}
+\end{code}
+
+
 \section{Interrupts}\label{sec:interupt}
 
 \section{System and User Processes}\label{sec:proc}

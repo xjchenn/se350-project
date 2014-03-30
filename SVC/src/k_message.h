@@ -11,11 +11,13 @@
 #define MSG_BUFFER_SIZE 10
 
 typedef struct {
-    node_t msg_node;
-    uint32_t sender_pid;
-    uint32_t receiver_pid;
-    uint32_t expiry;
+    // hidden to the user (6 words)
+    node_t msg_node;        // 3 words 
+    uint32_t sender_pid;    // 1 word
+    uint32_t receiver_pid;  // 1 word
+    uint32_t expiry;        // 1 word
 
+    // user gets pointer here
     uint32_t msg_type;
     char msg_data[1];
 } message_t;

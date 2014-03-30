@@ -14,6 +14,7 @@
 #include "k_process.h"
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
+volatile uint32_t test_timer_count = 0; // incremenet every 10 microseconds
 //volatile uint32_t test_timer_count = 0;
 linkedlist_t timeout_queue; // queue of messages
 int32_t switch_flag = 0;
@@ -23,6 +24,7 @@ int32_t switch_flag = 0;
  */
 uint32_t timer_init(uint8_t n_timer) {
     LPC_TIM_TypeDef* pTimer;
+    LPC_TIM_TypeDef* testTimer;
     if (n_timer == 0) {
         /*
         Steps 1 & 2: system control configuration.
@@ -56,45 +58,68 @@ uint32_t timer_init(uint8_t n_timer) {
         */
         pTimer = (LPC_TIM_TypeDef*) LPC_TIM0;
 
-    } else { /* other timer not supported yet */
+        /* Step 4.1: Prescale Register PR setting
+           CCLK = 100 MHZ, PCLK = CCLK/4 = 25 MHZ
+           2*(12499 + 1)*(1/25) * 10^(-6) s = 10^(-3) s = 1 ms
+           TC (Timer Counter) toggles b/w 0 and 1 every 12500 PCLKs
+           see MR setting below
+        */
+        pTimer->PR = 12499;
+
+        /*
+        -----------------------------------------------------
+        Step 4: Interrupts configuration
+        -----------------------------------------------------
+        */
+
+        /* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
+
+        pTimer->MR0 = 1;
+
+        /* Step 4.3: MCR setting, see table 429 on pg496 of LPC17xx_UM.
+           Interrupt on MR0: when MR0 mathches the value in the TC,
+                             generate an interrupt.
+           Reset on MR0: Reset TC if MR0 mathches it.
+        */
+
+        pTimer->MCR = BIT(0) | BIT(1);
+
+        g_timer_count = 0;
+
+        /* Step 4.4: CSMSIS enable timer0 IRQ */
+        NVIC_EnableIRQ(TIMER0_IRQn);
+        
+        /* Step 4.5: Enable the TCR. See table 427 on pg494 of LPC17xx_UM. */
+        pTimer->TCR = 1;
+
+        // Initialize the linkedlist
+        linkedlist_init(&timeout_queue);
+
+    } else if (n_timer == 1) { /* Initialize timer 1 */
+        
+        testTimer = (LPC_TIM_TypeDef*) LPC_TIM1;
+        /*
+        PR Value Reference:
+
+                PR of 12499 = 1   millisecond
+                PR of 1249  = 100 microseconds
+                PR of 124   = 10  microseconds
+                PR of 11.5  = 1   microsecond
+
+        */
+        testTimer->PR = 11.5;
+        testTimer->MR0 = 1;
+
+        testTimer->MCR = BIT(0) | BIT(1);
+
+        test_timer_count = 0;
+
+        NVIC_EnableIRQ(TIMER1_IRQn);
+
+        testTimer->TCR = 1;
+    } else {
         return 1;
     }
-
-    /*
-    -----------------------------------------------------
-    Step 4: Interrupts configuration
-    -----------------------------------------------------
-    */
-
-    /* Step 4.1: Prescale Register PR setting
-       CCLK = 100 MHZ, PCLK = CCLK/4 = 25 MHZ
-       2*(12499 + 1)*(1/25) * 10^(-6) s = 10^(-3) s = 1 ms
-       TC (Timer Counter) toggles b/w 0 and 1 every 12500 PCLKs
-       see MR setting below
-    */
-    pTimer->PR = 11.5;//12499;
-
-    /* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
-    pTimer->MR0 = 1;
-
-    /* Step 4.3: MCR setting, see table 429 on pg496 of LPC17xx_UM.
-       Interrupt on MR0: when MR0 mathches the value in the TC,
-                         generate an interrupt.
-       Reset on MR0: Reset TC if MR0 mathches it.
-    */
-    pTimer->MCR = BIT(0) | BIT(1);
-
-    g_timer_count = 0;
-
-    /* Step 4.4: CSMSIS enable timer0 IRQ */
-    NVIC_EnableIRQ(TIMER0_IRQn);
-
-    /* Step 4.5: Enable the TCR. See table 427 on pg494 of LPC17xx_UM. */
-    pTimer->TCR = 1;
-
-    // Initialize the linkedlist
-    linkedlist_init(&timeout_queue);
-
     return 0;
 }
 
@@ -117,10 +142,29 @@ __asm void TIMER0_IRQHandler(void) {
     MOV R5, #0
     CMP R4, R5
     CPSIE i                         ;// enable interrupts
-    BEQ RESTORE
+    BEQ RESTORE_0
     BL k_release_processor
 
-RESTORE
+RESTORE_0
+    POP {r4 - r11, pc}
+}
+
+__asm void TIMER1_IRQHandler(void) {
+    CPSID i                         ;// disable interrupts
+    PRESERVE8
+    IMPORT c_TIMER1_IRQHandler
+    IMPORT k_release_processor
+    PUSH {r4 - r11, lr}
+    BL c_TIMER1_IRQHandler
+    LDR R4, = __cpp(&switch_flag)
+    LDR R4, [R4]
+    MOV R5, #0
+    CMP R4, R5
+    CPSIE i                         ;// enable interrupts
+    BEQ RESTORE_1
+    BL k_release_processor
+
+RESTORE_1
     POP {r4 - r11, pc}
 }
 
@@ -129,6 +173,11 @@ void c_TIMER0_IRQHandler(void) {
     LPC_TIM0->IR = BIT(0);
     g_timer_count++;
     timer_i_process();
+}
+
+void c_TIMER1_IRQHandler(void) {
+    LPC_TIM1->IR = BIT(0);
+    test_timer_count++;
 }
 
 void timer_i_process(void) {

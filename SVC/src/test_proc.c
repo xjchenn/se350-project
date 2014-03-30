@@ -1,6 +1,5 @@
 #include "test_proc.h"
 #include "rtx.h"
-//#include "testtimer.h"
 #include "timer.h"
 
 proc_image_t g_test_procs[NUM_TEST_PROCESSES];
@@ -8,6 +7,7 @@ proc_image_t g_test_procs[NUM_TEST_PROCESSES];
 int32_t test_results[NUM_TEST_PROCESSES];
 int32_t test_ran[NUM_TEST_PROCESSES];
 
+extern volatile uint32_t test_timer_count;
 extern volatile uint32_t g_timer_count;
 
 void set_test_procs() {
@@ -652,37 +652,50 @@ void test_proc_p1_b_6(void) {
 */
 
 void timer_test_proc_p4(void) {
+    const uint32_t sample_size = 1000;
     uint32_t start_time, end_time;
-    uint32_t elapsed_time_send, elapsed_time_receive, elapsed_time_req;
+    uint32_t elapsed_time_send[sample_size];
+    uint32_t elapsed_time_receive[sample_size];
+    uint32_t elapsed_time_req[sample_size];
     msg_buf_t* envelope;
     char * msg;
+    uint32_t i = 0;
 
-    start_time = g_timer_count;
-    envelope = (msg_buf_t*)request_memory_block();
-    end_time = g_timer_count;
-    elapsed_time_req = end_time - start_time;
+    for (i = 0; i < sample_size; i++) {
+        start_time = test_timer_count;
+        envelope = (msg_buf_t*)request_memory_block();
+        end_time = test_timer_count;
+        elapsed_time_req[i] = (end_time - start_time);
 
 
-    envelope->msg_type = CRT_DISPLAY;
-    msg = "A";
-    strncpy(envelope->msg_data, msg, strlen(msg));
-    start_time = g_timer_count;
-    send_message(PID_TIMER_TEST_PROC, envelope);
-    end_time = g_timer_count;
-    elapsed_time_send = end_time - start_time;
+        envelope->msg_type = DEFAULT;
+        msg = "A";
+        strncpy(envelope->msg_data, msg, strlen(msg));
+        start_time = test_timer_count;
+        send_message(PID_TIMER_TEST_PROC, envelope);
+        end_time = test_timer_count;
+        elapsed_time_send[i] = (end_time - start_time);
+        release_memory_block(envelope);
 
-    start_time = g_timer_count;
-    envelope = (msg_buf_t*)receive_message(NULL);
-    end_time = g_timer_count;
-    elapsed_time_receive = end_time - start_time;
-
-    DEBUG_PRINT("Timer Test Proc Ran");
-    printf("Request memory block time: %d\r\n", g_timer_count);
-    printf("Send message time: %d\r\n", g_timer_count);
-    printf("Receive message time: %d\r\n", g_timer_count);
+        start_time = test_timer_count;
+        envelope = (msg_buf_t*)receive_message(NULL);
+        end_time = test_timer_count;
+        elapsed_time_receive[i] = (end_time - start_time);
+        release_memory_block(envelope);
+    }
+    printf("Request Memory Block Timings:\r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_req[i]);
+    }
+    printf("Send Message Timings:\r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_send[i]);
+    }
+    printf("Receive Message Timings: \r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_receive[i]);
+    }
     test_ran[6] = 1;
-
-    release_memory_block(envelope);
 
     while (1) {
         release_processor();

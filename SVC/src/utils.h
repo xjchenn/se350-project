@@ -23,8 +23,8 @@ typedef void (*func_ptr_t)();
 #define NUM_PRIORITIES          5
 
 #define NUM_K_PROCESSES         5 // includes i processes
-#define NUM_TEST_PROCESSES      7
-#define NUM_USER_PROCESSES      5
+#define NUM_TEST_PROCESSES      6
+#define NUM_USER_PROCESSES      6
 #define NUM_PROCESSES           (uint32_t)(NUM_K_PROCESSES + NUM_TEST_PROCESSES + NUM_USER_PROCESSES)
 
 #define CLOCK_INTERVAL          1000

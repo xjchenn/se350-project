@@ -146,9 +146,9 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 16:
-                *(--stack_ptr)    = (uint32_t)(g_test_procs[6].proc_start);
-                pcbs[i]->pid      = g_test_procs[6].pid;
-                pcbs[i]->priority = g_test_procs[6].priority;
+                *(--stack_ptr)    = (uint32_t)(u_proc_table[5].proc_start);
+                pcbs[i]->pid      = u_proc_table[5].pid;
+                pcbs[i]->priority = u_proc_table[5].priority;
                 break;
 
             default:

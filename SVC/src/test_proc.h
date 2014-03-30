@@ -31,6 +31,4 @@ void test_proc_p1_b_4(void);
 void test_proc_p1_b_5(void);
 void test_proc_p1_b_6(void);
 
-void timer_test_proc_p4(void);
-
 #endif

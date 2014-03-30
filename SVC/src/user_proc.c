@@ -1,7 +1,11 @@
 #include "user_proc.h"
 #include "rtx.h"
+#include "timer.h"
 
 proc_image_t u_proc_table[NUM_USER_PROCESSES];
+
+extern volatile uint32_t test_timer_count;
+extern volatile uint32_t g_timer_count;
 
 void set_user_procs(void) {
     u_proc_table[0].pid        = PID_CLOCK;
@@ -23,6 +27,10 @@ void set_user_procs(void) {
     u_proc_table[4].pid        = PID_SET_PRIO;
     u_proc_table[4].proc_start = &priority_change_proc;
     u_proc_table[4].priority   = HIGHEST;
+
+    u_proc_table[5].pid        = PID_TIMER_TEST_PROC;
+    u_proc_table[5].proc_start = &timer_test_proc;
+    u_proc_table[5].priority   = MEDIUM;
 }
 
 /******************************************************************************
@@ -408,6 +416,78 @@ void stress_test_proc_c(void) {
             }
         }
         release_memory_block(envelope);
+        release_processor();
+    }
+}
+
+/** Timer Test Process
+*       
+*   This process will be testing the speed of our tasks.
+*   We'll be testing:
+*
+*       1) send_message
+*       2) receive_message
+*       3) request_memory_block 
+*
+*/
+
+void timer_test_proc(void) {
+    const uint32_t sample_size = 1000;
+    uint32_t start_time, end_time;
+    uint32_t elapsed_time_send[sample_size];
+    uint32_t elapsed_time_receive[sample_size];
+    uint32_t elapsed_time_request[sample_size];
+    msg_buf_t* envelope;
+    char * msg;
+    uint32_t i = 0;
+
+    for (i = 0; i < sample_size; i++) {
+
+        /*
+            Time request_memory_block()
+        */
+        start_time = test_timer_count;
+        envelope = (msg_buf_t*)request_memory_block();
+        end_time = test_timer_count;
+        elapsed_time_request[i] = (end_time - start_time); //adds elapsed time to array
+
+        /*
+            Create a new message, and send to itself. Timing only done on send_message()
+        */
+        envelope->msg_type = DEFAULT;
+        msg = "A";
+        strncpy(envelope->msg_data, msg, strlen(msg));
+        start_time = test_timer_count;
+        send_message(PID_TIMER_TEST_PROC, envelope);
+        end_time = test_timer_count;
+        elapsed_time_send[i] = (end_time - start_time);
+        release_memory_block(envelope);
+
+        /*
+            Time receive_message()
+        */
+        start_time = test_timer_count;
+        envelope = (msg_buf_t*)receive_message(NULL);
+        end_time = test_timer_count;
+        elapsed_time_receive[i] = (end_time - start_time);
+        release_memory_block(envelope);
+    }
+
+    // Now we print each test's results, adding in a label to easily differentiate when outputted
+    printf("Request Memory Block Timings:\r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_request[i]);
+    }
+    printf("Send Message Timings:\r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_send[i]);
+    }
+    printf("Receive Message Timings: \r\n");
+    for (i = 0; i < sample_size; i++) {
+        printf("%d\r\n", elapsed_time_receive[i]);
+    }
+
+    while (1) {
         release_processor();
     }
 }

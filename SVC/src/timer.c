@@ -15,7 +15,7 @@
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
 volatile uint32_t test_timer_count = 0; // incremenet every 10 microseconds
-//volatile uint32_t test_timer_count = 0;
+
 linkedlist_t timeout_queue; // queue of messages
 int32_t switch_flag = 0;
 

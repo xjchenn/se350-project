@@ -14,17 +14,16 @@
 #include "k_process.h"
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
-volatile uint32_t test_timer_count = 0; // incremenet every 10 microseconds
 
 linkedlist_t timeout_queue; // queue of messages
 int32_t switch_flag = 0;
-
+volatile uint32_t* tc_count;
 /**
  * @brief: initialize timer. Only timer 0 is supported
  */
 uint32_t timer_init(uint8_t n_timer) {
     LPC_TIM_TypeDef* pTimer;
-    LPC_TIM_TypeDef* testTimer;
+
     if (n_timer == 0) {
         /*
         Steps 1 & 2: system control configuration.
@@ -88,7 +87,7 @@ uint32_t timer_init(uint8_t n_timer) {
 
         /* Step 4.4: CSMSIS enable timer0 IRQ */
         NVIC_EnableIRQ(TIMER0_IRQn);
-        
+
         /* Step 4.5: Enable the TCR. See table 427 on pg494 of LPC17xx_UM. */
         pTimer->TCR = 1;
 
@@ -96,27 +95,16 @@ uint32_t timer_init(uint8_t n_timer) {
         linkedlist_init(&timeout_queue);
 
     } else if (n_timer == 1) { /* Initialize timer 1 */
-        
-        testTimer = (LPC_TIM_TypeDef*) LPC_TIM1;
-        /*
-        PR Value Reference:
 
-                PR of 12499 = 1   millisecond
-                PR of 1249  = 100 microseconds
-                PR of 124   = 10  microseconds
-                PR of 11.5  = 1   microsecond
+        pTimer = (LPC_TIM_TypeDef*) LPC_TIM1;
 
-        */
-        testTimer->PR = 11.5;
-        testTimer->MR0 = 1;
+        pTimer->PR = 49;
 
-        testTimer->MCR = BIT(0) | BIT(1);
+        pTimer->MCR = BIT(0) | BIT(1);
+        pTimer->TCR = BIT(0);
+        pTimer->TC = 1;
 
-        test_timer_count = 0;
-
-        NVIC_EnableIRQ(TIMER1_IRQn);
-
-        testTimer->TCR = 1;
+        tc_count = &pTimer->TC;
     } else {
         return 1;
     }
@@ -133,51 +121,27 @@ uint32_t timer_init(uint8_t n_timer) {
 __asm void TIMER0_IRQHandler(void) {
     CPSID i                         ;// disable interrupts
     PRESERVE8
-    IMPORT c_TIMER0_IRQHandler
+    IMPORT c_TIMER_IRQHandler
     IMPORT k_release_processor
     PUSH {r4 - r11, lr}
-    BL c_TIMER0_IRQHandler
+    BL c_TIMER_IRQHandler
     LDR R4, = __cpp(&switch_flag)
     LDR R4, [R4]
     MOV R5, #0
     CMP R4, R5
     CPSIE i                         ;// enable interrupts
-    BEQ RESTORE_0
+    BEQ RESTORE
     BL k_release_processor
 
-RESTORE_0
+RESTORE
     POP {r4 - r11, pc}
 }
 
-__asm void TIMER1_IRQHandler(void) {
-    CPSID i                         ;// disable interrupts
-    PRESERVE8
-    IMPORT c_TIMER1_IRQHandler
-    IMPORT k_release_processor
-    PUSH {r4 - r11, lr}
-    BL c_TIMER1_IRQHandler
-    LDR R4, = __cpp(&switch_flag)
-    LDR R4, [R4]
-    MOV R5, #0
-    CMP R4, R5
-    CPSIE i                         ;// enable interrupts
-    BEQ RESTORE_1
-    BL k_release_processor
-
-RESTORE_1
-    POP {r4 - r11, pc}
-}
-
-void c_TIMER0_IRQHandler(void) {
+void c_TIMER_IRQHandler(void) {
     /* ack inttrupt, see section  21.6.1 on pg 493 of LPC17XX_UM */
     LPC_TIM0->IR = BIT(0);
     g_timer_count++;
     timer_i_process();
-}
-
-void c_TIMER1_IRQHandler(void) {
-    LPC_TIM1->IR = BIT(0);
-    test_timer_count++;
 }
 
 void timer_i_process(void) {
@@ -193,7 +157,7 @@ void timer_i_process(void) {
         current_pcb_node = pcb_nodes[current_message->sender_pid];
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
         current_pcb_node = previous_pcb_node;
-        
+
         if (pcbs[current_message->receiver_pid]->priority <= ((pcb_t*)previous_pcb_node->value)->priority) {
             switch_flag = 1;
         }

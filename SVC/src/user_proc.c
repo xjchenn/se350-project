@@ -4,8 +4,8 @@
 
 proc_image_t u_proc_table[NUM_USER_PROCESSES];
 
-extern volatile uint32_t test_timer_count;
-extern volatile uint32_t g_timer_count;
+extern volatile uint32_t  g_timer_count;
+extern volatile uint32_t* tc_count;
 
 void set_user_procs(void) {
     u_proc_table[0].pid        = PID_CLOCK;
@@ -66,9 +66,9 @@ void wall_clock_proc(void) {
     int32_t sender_id;
     msg_buf_t* envelope;
 
-    char buffer[buffer_size];                        
-    char error_buffer[error_buffer_size];   
-    
+    char buffer[buffer_size];
+    char error_buffer[error_buffer_size];
+
     char* cmd = "%W";
 
     uint32_t running = 0;
@@ -230,7 +230,7 @@ void priority_change_proc(void) {
     msg_buf_t* envelope;
     const uint32_t buffer_size       = 10; // this can store "%C pid(2 chars) priority(1 char)\r\n"
     const uint32_t error_buffer_size = 80; // more than enough for most error messages
-    char buffer[buffer_size];                        
+    char buffer[buffer_size];
     char error_buffer[error_buffer_size];
 
     // register the command with kcd
@@ -240,7 +240,7 @@ void priority_change_proc(void) {
     strncpy(envelope->msg_data, cmd, msg_len);
     send_message(PID_KCD, envelope); // envelope is now considered freed memory
 
-    while(1) {
+    while (1) {
 
         envelope = receive_message(NULL);
 
@@ -296,7 +296,7 @@ void priority_change_proc(void) {
         if (new_priority < 0 || new_priority > 3) {
             sprintf(error_buffer, "Process priority level %d not available.", new_priority);
             display_error_on_crt(error_buffer, strlen(error_buffer));
-            continue;   
+            continue;
         }
         set_process_priority(process_id, new_priority);
     }
@@ -372,7 +372,7 @@ void stress_test_proc_c(void) {
     msg_buf_t* envelope;
     char buffer[10]; // enough to store 2^32 = 4294967296
 
-	
+
     for (i = 0; i < queue_size; i++) {
         message_queue[i] = NULL;
     }
@@ -385,8 +385,8 @@ void stress_test_proc_c(void) {
         } else {
             envelope = message_queue[first_pointer];
             message_queue[first_pointer] = NULL;
-            if (message_queue[(first_pointer+1) % queue_size] != NULL) {
-                first_pointer = (first_pointer+1) % queue_size;
+            if (message_queue[(first_pointer + 1) % queue_size] != NULL) {
+                first_pointer = (first_pointer + 1) % queue_size;
             }
         }
 
@@ -400,7 +400,7 @@ void stress_test_proc_c(void) {
                 envelope = (msg_buf_t*)request_memory_block();
                 envelope->msg_type = WAKEUP10;
                 delayed_send(PID_C, envelope, 10 * 1000);
-                
+
                 while (1) {
                     envelope = receive_message(&sender_id);
 
@@ -421,24 +421,24 @@ void stress_test_proc_c(void) {
 }
 
 /** Timer Test Process
-*       
+*
 *   This process will be testing the speed of our tasks.
 *   We'll be testing:
 *
 *       1) send_message
 *       2) receive_message
-*       3) request_memory_block 
+*       3) request_memory_block
 *
 */
 
 void timer_test_proc(void) {
-    const uint32_t sample_size = 1000;
+    const uint32_t sample_size = 100;
     uint32_t start_time, end_time;
     uint32_t elapsed_time_send[sample_size];
     uint32_t elapsed_time_receive[sample_size];
     uint32_t elapsed_time_request[sample_size];
     msg_buf_t* envelope;
-    char * msg;
+    char* msg;
     uint32_t i = 0;
 
     for (i = 0; i < sample_size; i++) {
@@ -446,29 +446,32 @@ void timer_test_proc(void) {
         /*
             Time request_memory_block()
         */
-        start_time = test_timer_count;
+        //*tc_count = 0;
+        start_time = *tc_count;
         envelope = (msg_buf_t*)request_memory_block();
-        end_time = test_timer_count;
+        end_time = *tc_count;
         elapsed_time_request[i] = (end_time - start_time); //adds elapsed time to array
 
         /*
             Create a new message, and send to itself. Timing only done on send_message()
         */
+        //*tc_count = 0;
         envelope->msg_type = DEFAULT;
         msg = "A";
         strncpy(envelope->msg_data, msg, strlen(msg));
-        start_time = test_timer_count;
+        start_time = *tc_count;
         send_message(PID_TIMER_TEST_PROC, envelope);
-        end_time = test_timer_count;
+        end_time = *tc_count;
         elapsed_time_send[i] = (end_time - start_time);
         release_memory_block(envelope);
 
         /*
             Time receive_message()
         */
-        start_time = test_timer_count;
+        //*tc_count = 0;
+        start_time = *tc_count;
         envelope = (msg_buf_t*)receive_message(NULL);
-        end_time = test_timer_count;
+        end_time = *tc_count;
         elapsed_time_receive[i] = (end_time - start_time);
         release_memory_block(envelope);
     }

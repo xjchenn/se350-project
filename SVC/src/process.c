@@ -69,7 +69,7 @@ uint32_t k_init_processor(void) {
     set_test_procs();
     set_user_procs();
     k_set_procs();
-		
+
     for (i = 0; i < NUM_PROCESSES; ++i) {
         stack_ptr = k_alloc_stack(STACK_SIZE);
         *(--stack_ptr) = XPSR;
@@ -132,7 +132,7 @@ uint32_t k_init_processor(void) {
                 break;
 
             case 13:
-                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start); 
+                *(--stack_ptr)    = (uint32_t)(k_proc_table[4].proc_start);
                 pcbs[i]->pid      = k_proc_table[4].pid;
                 pcbs[i]->priority = k_proc_table[4].priority;
                 break;

@@ -7,9 +7,9 @@
 
 void display_logo(void) {
     uint32_t line;
-	
+
     GLCD_Clear(White); // clear display
-	
+
     GLCD_SetBackColor(Blue);
     GLCD_SetTextColor(White);
     GLCD_DisplayString(0, 0, BIG_FONT, "    OS WOW     ");

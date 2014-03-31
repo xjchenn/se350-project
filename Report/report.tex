@@ -153,14 +153,13 @@
 %% it will also use roman page numbers.
 \frontmatter
 
-% We continue with required sections, such as the Executive Summary.
-\section{Executive Summary}
-TODO
-
 % Next, we need to make a Table of Contents, List of Figures and 
 % List of Tables.  You will most likely need to run LaTeX twice to
 % get these correct.  The first pass for LaTeX to figure out the
 % labels, and the second pass to put in the right references.
+
+\setcounter{tocdepth}{1}
+
 \tableofcontents
 \listoffigures
 \listoftables

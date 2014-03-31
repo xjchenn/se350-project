@@ -209,7 +209,7 @@ void* request_memory_block()
 
 This method takes zero arguments and returns an address to a piece of memory that the caller can use. The returned address points to a continuous block of memory of size \texttt{0x1E4} bytes that the current process can read and write to. Currently, the memory protection unit is disabled so if the process reads or writes outside of \texttt{returned address + 0x1E4}, then undefined behaviour will occur.
 
-If the system is out of memory, then the calling process will be pre-empted and will be placed on its priority's memory blocked queue until more memory becomes available (i.e. when another process releases their memory). It is recommended that once the user is finished with their allocated block that they release it otherwise the system will run out of memory very quickly. See Section~\ref{sec:release-memory-block} for more information about releasing memory blocks.
+If the system is out of memory, then the calling process will be pre-empted and will be placed on its priority's memory blocked queue until more memory becomes available (i.e. when another process releases their memory). It is recommended that once the user is finished with their allocated block that they release it otherwise the system will run out of memory very quickly.
 
 \subsubsection{Release Memory}
 \label{sec:release-memory-block}
@@ -286,19 +286,19 @@ void example_process(void) {
 At the start of the OS, the OS disables interrupts before it initializes the system, otherwise the interrupt handlers cannot run properly. Once everything is initialized properly, it re-enables interrupts and calls the scheduler to dispatch the first process.
 
 \subsection{System APIs}
-The first stage of the initialization is to setup the system APIs. The OS calls: \texttt{SystemInit()} to setup the board and the system clock frequency; \texttt{init\_printf(NULL, putc)} to enable the use of \texttt{printf} for debugging; \texttt{uart\_irq\_init(0)} to enable interrupt-driven I/O on UART0; \texttt{uart1\_init()} to use program-driven I/O on UART1 for debugging; \texttt{timer\_init(0)} to enable the first timer for sending delayed messages;  \texttt{timer\_init(1)} to enable the second timer for benchmarking; and \texttt{init\_logo\_on\_lcd()} to draw our OS's logo on the LCD display.
+The first stage of the initialization is to setup the system APIs. First, \texttt{SystemInit()} ic alled to setup the board and the system clock frequency. Second, \texttt{init\_printf(NULL, putc)} is called to enable the use of \texttt{printf} for debugging. Third, \texttt{uart\_irq\_init(0)} enables interrupt-driven I/O on UART0. Fourth, \texttt{uart1\_init()} enables program-driven I/O on UART1 for debugging. Fifth, \texttt{timer\_init(0)} enables the first timer for sending delayed messages. Sixth,  \texttt{timer\_init(1)} enables the second timer for benchmarking. Lastly, \texttt{init\_logo\_on\_lcd()} enables the ability to draw our OS's logo on the LCD display.
 
 \subsection{Memory}
 
-\begin{figure} \label{fig:memory-map}
+\begin{figure}[h] \label{fig:memory-map}
 \caption{Memory Map after Initialization}
 \begin{bytefield}{}
     \begin{rightwordgroup}{User Memory Space}
-    	\memsection{0x1000 7fff}{0x1000 6000}{6}{16 Process Stacks \\ (each size 0x200)} \\
-    	\memsection{}{}{3}{-- unused --} \\
-    	\memsection{}{}{9}{48 Memory Blocks \\ (each size 0x100)}
+    	\memsection{0x1000 7fff}{0x1000 6000}{4}{16 Process Stacks \\ (each size 0x200)} \\
+    	\memsection{}{}{1.5}{-- unused --} \\
+    	\memsection{}{}{3}{48 Memory Blocks \\ (each size 0x100)}
     \end{rightwordgroup} \\
-    \memsection{0x100 aligned}{}{3}{-- unused --} \\
+    \memsection{0x100 aligned}{}{1.5}{-- unused --} \\
     \begin{rightwordgroup}{Kernel Memory Space}
         \memsection{}{}{1.5}{16 PCBs} \\
         \memsection{}{}{1.5}{16 PCB Nodes} \\
@@ -307,20 +307,20 @@ The first stage of the initialization is to setup the system APIs. The OS calls:
         \memsection{}{}{1.5}{5 Ready Queues} 
     \end{rightwordgroup}\\
     \memsection{}{}{1.5}{-- 2 word(8 byte) guard --} \\
-    \memsection{End of Image}{1000 0000}{4}{Process Image} \\
+    \memsection{End of Image}{1000 0000}{3}{Process Image} \\
 \end{bytefield}
 \end{figure}
 
-After the system APIs have been initialized, the OS then zeros out all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. After zeroing out the memory, the OS then dynamically allocates memory for its data structures. This is before anything else runs because the OS itself only contains pointers to its data structures. A map of the system memory after initialization is shown on Figure~\ref{fig:memory-map}.
+After the system APIs have been initialized, the OS then zeros out all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. After zeroing out the memory, the OS then dynamically allocates memory for its data structures.  A map of the system memory after initialization is shown on Figure~\ref{fig:memory-map}.
 
 \subsubsection{Kernel Memory Space}
 
-After the process image, the OS dynamically allocates space for all of its kernel's data structures. It first allocates 15 doubly-linked lists to represent 5 ready queues, 5 memory blocked queues, and 5 message blocked queues (one for each priority). Unlike a traditional linked list implementation, the OS's linked lists do not dynamically allocate and free memory. Instead, the OS simply changes the node pointers because the kernel should never be blocked on memory or get pre-empted while it is running the scheduler. As a result, the OS's PCBs are wrapped with linked list nodes that are preallocated during its initialization stage. In total, the OS allocates 16 PCBs and 16 nodes structures for managing the PCBs.
+After the process image, the OS dynamically allocates space for all of its kernel's data structures. It first allocates 15 doubly-linked lists to represent 5 ready queues, 5 memory blocked queues, and 5 message blocked queues, one for each process priority. Unlike a traditional linked list implementation, the OS's linked lists do not dynamically allocate and free memory. Instead, the OS simply changes the node pointers because the kernel should never be blocked on memory or get pre-empted while it is running the scheduler. As a result, the OS's PCBs are wrapped with linked list nodes that are preallocated during its initialization stage. In total, the OS allocates 16 PCBs and 16 nodes structures for managing the PCBs.
 
 \subsubsection{User Memory Space}
 After the kernel's data structures have been instantiated, the OS then use the space above the PCBs for memory blocks. It first byte aligns the first memory block after the PCBs with \texttt{0x100}. This makes it easier to debug at the cost of at most \texttt{0xFF} memory. From the \texttt{0x100} byte-aligned address, the OS instantiates 48 new \texttt{0x200} doubly linked blocks as shown below (i.e. each block has a pointer to its subsequently and previously instantiated blocks).
 
-\begin{figure} \label{fig:memory-block}
+\begin{figure}[h] \label{fig:memory-block}
 \caption{Memory Block}
 \begin{bytefield}{}
     \memsection{0x200}{}{1.5}{\texttt{next}} \\
@@ -335,20 +335,20 @@ After the kernel's data structures have been instantiated, the OS then use the s
 \end{bytefield}
 \end{figure}
 
-As shown in Figure~\ref{fig:memory-block}, each memory block is instantiated to be size \texttt{0x200}. However, the OS needs to reserve the top 6 words (24 bytes) for memory and message management (See Section~\ref{sec:ipc} for more information about messages). In addition, the OS reserves the bottom word (4 bytes) as a safety padding to help with debugging because if a user process writes past their allowable region, then this padding will not have the default value any more. 
+As shown in Figure~\ref{fig:memory-block}, each memory block is instantiated to be size \texttt{0x200}. However, the OS needs to reserve the top 6 words (24 bytes) for memory and message management (See Section~\ref{sec:ipc} for more information about messages). In addition, the OS reserves the bottom word (4 bytes) as a safety padding to help with debugging. This padding is required because it can detect if a user process writes past their allowable region by verifying the values in the padding. 
 
 Finally, after all of these blocks are initialized, the OS sets the global \texttt{free\_mem} variable to point to the first memory block of this list. 
 
 \subsection{Processes}
-After both the kernel and user memory space have been initialized, the OS then moves on to initializing its PCBs with their corresponding process information. First the OS calls the processes' provided methods (such as \texttt{set\_test\_procs()}) to fill in its process tables (such as \texttt{g\_test\_procs}). Each entry of the completed process table contains the corresponding process's pid, priority, and pointer to where the process actually resides in memory. 
+After both the kernel and user memory space have been initialized, the OS then moves on to initializing its PCBs with their corresponding process information. First the OS calls the processes' provided initialization methods (e.g. \texttt{set\_test\_procs()}) to fill in its process tables, \texttt{g\_test\_procs}. Each entry of the completed process table contains the corresponding process's pid, priority, and pointer to where the process actually resides in memory. 
 
-After the process tables are filled, the OS then iterates over all the processes in the process tables and initializes its PCBs: copies the \texttt{pid} and \texttt{priority} into the PCB; sets the PCB state to \texttt{NEW}; instantiates the PCB's message queue to be an empty linked list; initializes the process's stack (see Section~\ref{sec:setting-up-stack}); and sets \texttt{stack\_ptr} to the appropriate location.
+After the process tables are filled, the OS then iterates over all the processes in the process tables and initializes its PCBs in a number of steps. First, the \texttt{pid} and \texttt{priority} values are copied into the PCB. Second, the PCB state is set to \texttt{NEW}. Third, the PCB's message queue is initialized to be an empty linked list. Fourth, it initializes the process's stack (see Section~\ref{sec:setting-up-stack}). Lastly, it sets \texttt{stack\_ptr} to the appropriate location.
 	
-Although the i-processes do not actually need a stack because they will be using the kernel's stack whenever they run, it makes initialization a lot easier because the loop does not need to check process types. In addition, it was also of no consequence because there are still leftover space in the end between the stacks and memory blocks.
+Although the i-processes do not need a stack because they rely on the kernel's stack whenever they run, it makes initialization simpler because the loop does not need to check process types. In addition, it was also of no consequence because there is still leftover space between the stacks and memory blocks.
 
 \subsubsection{Setting up the Stack} \label{sec:setting-up-stack}
 
-As specified in the board's documentation, to go from handler mode (scheduler) to thread mode (a user process), the OS uses the \texttt{BL 0xFFFF FFF9} instruction. This special instruction pops values off the stack frame, as shown in Figure~\ref{fig:stack-after-branch}, and copies them into their corresponding registers.
+As specified in the board's documentation, to go from handler mode to thread mode, the OS uses the \texttt{BL 0xFFFF FFF9} instruction. This special instruction pops values off the stack frame, as shown in Figure~\ref{fig:stack-after-branch}, and copies them into their corresponding registers.
 	
 \begin{figure} \label{fig:stack-after-branch}
 \caption{Stack after calling \texttt{BL 0xFFFF FFF9}}
@@ -369,7 +369,7 @@ As specified in the board's documentation, to go from handler mode (scheduler) t
 \end{bytefield}
 \end{figure}
 	
-Normally, these values are automatically set when the user makes a system call from thread mode. However because the OS is initialized in handler mode, it needs to manually set these default values (as shown above) the first time so that the scheduler don't hard fault. Therefore, the OS writes the default values to the stack as show in Figure~\ref{fig:stack-after-branch} and sets \texttt{stack\_ptr} to point 8 words below the start of the stack.
+Normally, these values are automatically set when the user makes a system call from thread mode. However because the OS is initialized in handler mode, it needs to manually set default values the first time it runs so that the scheduler does not hard fault. In other words, the OS writes the default values to the stack as show in Figure~\ref{fig:stack-after-branch} and sets \texttt{stack\_ptr} to point 8 words below the start of the stack.
 
 \section{Testing}\label{sec:test}
 

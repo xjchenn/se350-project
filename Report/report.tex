@@ -236,9 +236,41 @@ void example_process(void) {
 
 \subsection{Inter-Process Communcation} \label{sec:ipc}
 
+Inter-Process Communication is managed by using a messaging passing system within the operating system. Messages are handled in two parts, kernel and user messages. User messages contain two properties, the message type and the message data itself. Kernel messages contain other information such as the sender of the message, the receiver of the message, a linked list node for storing the message and its expiry time.
+
+\begin{code}
+//A kernel message
+typedef struct {
+    node_t msg_node;
+    uint32_t sender_pid;
+    uint32_t receiver_pid;
+    uint32_t expiry;
+    
+    //user message parameters
+    uint32_t msg_type;
+    char msg_data[1];
+} message_t;
+\end{code}
+
 \subsubsection{Send Message}
 
+\begin{code}
+int32_t send_message(int32_t process_id, void* message_envelope)
+\end{code}
+
+The \texttt{send\_message} takes in two parameters, a process id and a message envelope and will return 0 on success. The process id must be a valid process inside of the operating system otherwise the function will return 1. The message envelope to be sent must be created by the calling process. First, the process must request a memory block and cast it to be of type \texttt{msg\_buf\_t}. Then, the process can specify a type and message data to be sent.
+
+Once a process sends a message, the kernel will then convert the message to be a kernel message. This is done by subtracting a offset equal to the size of the kernel header from the struct to reveal the user hidden properties. After doing this, the message is initialized with the sender process id, receiver process id and its linked list node is instantiated. The message is then added to the receiving process' message queue. If the receiving process was blocked on messages, it will then be added to its appriorite ready queue. Additionally, if the process is of equal or higher priority to the current process, the current process will be pre-empted.
+
 \subsubsection{Receive Message}
+
+\begin{code}
+void* receive_message(int32_t* sender_id)
+\end{code}
+
+The receive message function takes in one parameter, a pointer to an integer and will return the received message. The integer pointer passed in will be used to store the the process id of the process that sent the message. 
+
+Once a process wants to receive a message, its message queue is queried to see if there are any waiting messages. If there are no messages available, the process is marked as \texttt{MSG\_BLOCKED}, added to its appropriate message blocked queue and the processor is released. Once there is a message available, it is popped off the process' message queue. Then, if there was a non-null parameter passed in, it stores the process id of the sending process inside of that pointer. Lastly, the message is converted back into a user message and returned to the user.
 
 \subsubsection{Delayed Send}
 

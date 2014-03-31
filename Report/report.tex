@@ -234,6 +234,14 @@ void example_process(void) {
 
 \subsection{Process Management}
 
+There are three functions available to processes for managing scheduling and the processor. These functions can be called by including the \texttt{process.h} header file and are specified below.
+
+\subsubsection{Releasing the Processor}
+
+\subsubsection{Changing a Process' Priority}
+
+\subsubsection{Getting a Process' Priority}
+
 \subsection{Inter-Process Communcation} \label{sec:ipc}
 
 Inter-Process Communication is managed by using a messaging passing system within the operating system. Messages are handled in two parts, kernel and user messages. User messages contain two properties, the message type and the message data itself. Kernel messages contain other information such as the sender of the message, the receiver of the message, a linked list node for storing the message and its expiry time.
@@ -284,14 +292,62 @@ Once a process wants to receive a message, its message queue is queried to see i
 
 \subsection{System Processes}
 
+There are three system processes, the Null Process, the CRT Display, and the Keyboard Command Decoder.
+
+\subsubsection{Null Process}
+
+The Null Process runs as an infinite loop of releasing the processor. This process will only execute if all other processes are blocked, or there are no other processes in the system. As a result, this process has a special reserved priority that is the lowest possible in the system. Pseudocode for this process is below.
+
+\begin{code}
+while looping forever do
+    release the processor
+end
+\end{code}
 
 \subsubsection{Keyboard Command Decoder}
 
+The Keyboard Command Decode (KCD) is designed to handle both the registration and the parsing of commands from the keyboard. The KCD takes all input in the form of a message from the UART i-process, determines which process corresponds to that command, and sends the command in a message to that process. The initial KCD state will be memory blocked upon first executing. The KCD parses input based on two types of messages, \texttt{DEFAULT} and \texttt{KCD\_REG}.
+
+Default messages are treated as inputted commands, and are parsed by checking to see whether the command registered is contained in the contents of the message. If a command is found in the buffer (denoted by a \% symbol), it is checked against a list of registered commands. Commands are stored and implemented as an array of command structs (see below).
+\begin{code}
+typedef struct {
+    uint32_t pid;
+    char cmd[10];
+} kcd_cmd_t;
+\end{code}
+
+When a command is discovered, it is compared against a command in the list of commands. The operating system assumes that all commands will be at most ten characters, and there will be no more than ten commands registered at any given time. The buffer is then copied into a new message envelope and sent to the process ID of the process that registered the matching command.
+
+KCD registration messages are registered into the command list, along with the sender of the message and the type of command. The message is then released here. Registration with the KCD is done by sending a message of type \texttt{KCD\_REG} to the process with the specific command as the message data. This is then stored into the command list for future use and the memory allocated for the message is released.
+
+
 \subsubsection{CRT Display}
+
+The CRT Display process is a controller that provides a level of abstraction between the interrupt process and any user process trying to output. This mainly applies to processes that accept command input, such as the wall clock and the priority change process. 
+
+The CRT receives a message and checks if it is of type \texttt{CRT\_DISPLAY}. If it is a valid message, it sends the message to the UART i-process(Section~\ref{sec:interupt}) and triggers a keyboard interrupt to check for messages and perform the print operation. Otherwise, it will release the memory block.
 
 \subsection{User Processes}
 
+These processes can be found inside of \texttt{user\_proc.c}. These processes require registration of commands with the KCD, and only function on user input.
+
 \subsubsection{Wall Clock}
+
+\subsubsection{Change Process Priority}
+
+The change priority process takes a user input command and sets the priority of a specified process to a specified priority when both are valid input. This process functions with the below input into the console by the user.
+
+\begin{code}
+\%C [Process ID] [New Priority]
+\end{code}
+
+\texttt{Process ID} is the id of the process that will be changed, and ranges from process id 1 to process id 13. This id range excludes the i-processes and the Null Process and they have fixed priorities.
+
+\texttt{New Priority} is the priority that the process will receive. This excludes priority 4 (denoted LOWEST in the priority enumerable) as that priority is reserved for the Null Process.
+
+The change priority process first registers the \%C command with the KCD. It then will wait until it receives a message from the KCD.
+
+The process does several error checks for validation. These include checking for invalid priorities, invalid process ids, process ids that are not numbers and priorities that are not numbers. Checking for valid command format is also done here (i.e. if spaces are used correctly). If the input is invalid, an error message is sent to the CRT for display. Otherwise, the \texttt{set\_process\_priority} method is called with the parsed process id and new priority. This process also outputs all input information to the debug window.
 
 \subsubsection{Stress Test A}
 

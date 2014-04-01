@@ -397,7 +397,7 @@ end
 
 \subsubsection{Keyboard Command Decoder}
 
-The Keyboard Command Decode (KCD) is designed to handle both the registration and the parsing of commands from the keyboard. The KCD takes all input in the form of a message from the UART i-process, determines which process corresponds to that command, and sends the command in a message to that process. The initial KCD state will be memory blocked upon first executing. The KCD parses input based on two types of messages, \texttt{DEFAULT} and \texttt{KCD\_REG}.
+The Keyboard Command Decode (KCD) is designed to handle both the registration and the parsing of commands from the keyboard. The KCD takes all input in the form of a message from the UART i-process, determines which process corresponds to that command, and sends the command in a message to that process. The KCD will be message blocked upon first executing. The KCD parses input based on two types of messages, \texttt{DEFAULT} and \texttt{KCD\_REG}.
 
 Default messages are treated as inputted commands, and are parsed by checking to see whether the command registered is contained in the contents of the message. If a command is found in the buffer (denoted by a \% symbol), it is checked against a list of registered commands. Commands are stored and implemented as an array of command structs (see below).
 \begin{code}
@@ -407,7 +407,7 @@ typedef struct {
 } kcd_cmd_t;
 \end{code}
 
-When a command is discovered, it is compared against a command in the list of commands. The operating system assumes that all commands will be at most ten characters, and there will be no more than ten commands registered at any given time. The buffer is then copied into a new message envelope and sent to the process ID of the process that registered the matching command.
+When a command is discovered, it is compared against a command in the list of commands. The operating system assumes that all commands will be at most ten characters, and there will be no more than ten commands registered at any given time. The buffer is then copied into a new message envelope and sent to the process that registered the matching command via the process ID.
 
 KCD registration messages are registered into the command list, along with the sender of the message and the type of command. The message is then released here. Registration with the KCD is done by sending a message of type \texttt{KCD\_REG} to the process with the specific command as the message data. This is then stored into the command list for future use and the memory allocated for the message is released.
 
@@ -416,7 +416,7 @@ KCD registration messages are registered into the command list, along with the s
 
 The CRT Display process is a controller that provides a level of abstraction between the interrupt process and any user process trying to output. This mainly applies to processes that accept command input, such as the wall clock and the priority change process. 
 
-The CRT receives a message and checks if it is of type \texttt{CRT\_DISPLAY}. If it is a valid message, it sends the message to the UART i-process(Section~\ref{sec:uart}) and triggers a keyboard interrupt to check for messages and perform the print operation. Otherwise, it will release the memory block.
+The CRT receives a message and checks if it is of type \texttt{CRT\_DISPLAY}. If it is a valid message, it sends the message to the UART i-process (Section~\ref{sec:uart}) and triggers a keyboard interrupt to check for messages and perform the print operation. Otherwise, it will release the memory block.
 
 \subsection{User Processes}
 
@@ -426,15 +426,15 @@ These processes can be found inside of \texttt{user\_proc.c}. These processes re
 
 The wall clock displays the time specified by the user in the HH:MM:SS format (hours, minutes, seconds). The user can set the time themselves, let the clock run from 00:00:00 upwards or terminate the clock.
 
-The wall clock process first registers \texttt{\%W} command with the CRT. It then attempts to receive a message. The wall clock uses a state variable to determine whether the clock is currently running or not.
+The wall clock process first registers \texttt{\%W} command with the KCD. It then attempts to receive a message. The wall clock uses a state variable to determine whether the clock is currently running.
 
 If the clock is running and the message received was sent by the clock itself, \texttt{delayed\_send} is used to send another message, with a 1 second delay, to itself. The message sent by \texttt{delayed\_send} is of the \texttt{DEFAULT} message type. The process then requests another memory block and sends a message of type \texttt{CRT\_DISPLAY} to the CRT containing the updated time.
 
 If the clock is not running, or the message was not sent by the clock, it is validated against the registered command. If the command is valid, it is parsed for the correct information.
 
-The \texttt{\%WR} command resets the clock. Specifically, it will set the current time to be zero, and begin running the clock. If the clock is just starting, a \texttt{CRT\_DISPLAY} message is sent to the CRT immediately to display the initial time 00:00:00. The process then proceeds to send delayed messages to itself. An error will be thrown is the input provided is not exactly \texttt{\%WR}.
+The \texttt{\%WR} command resets the clock. Specifically, it will set the current time to be zero, and begin running the clock. If the clock is just starting, a \texttt{CRT\_DISPLAY} message is sent to the CRT immediately to display the initial time 00:00:00. The process then proceeds to send delayed messages to itself. An error will be thrown if the input provided is not exactly \texttt{\%WR}.
 
-The clock set command, \texttt{\%WS},  requires significant validation for the input. The colon locations, the spaces and all of the values are verified to determine whether the input is correct. An error will not be thrown if the input is not specified in the below format.
+The clock set command, \texttt{\%WS},  requires significant validation for the input. The colon locations, the spaces and all of the values are verified to determine whether the input is correct. The input is valid if it adheres to the following format:
 \begin{code}
 %WS HH:MM:SS
 \end{code}

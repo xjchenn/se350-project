@@ -89,7 +89,7 @@
 
 %% First we, should create a title page.  This is done below:
 % Fill in the title of your report.
-\title{OS WOW RTX Documentation}
+\title{OS WOW RTX Design Documentation}
 
 % Fill in your name.
 \author{Fasih Awan, Joshua Kalpin, Si Chuang Li, John Zanutto}
@@ -182,19 +182,9 @@ This operating system was created over the span of three months during the creat
 
 The purpose of this report is to provide the reader with detailed documentation on the OS WOW operating system. This includes the following information. First, the data structures and global variables that the kernel uses. Second, this report will document the APIs that are available to users of the operation system. Third, details on how interrupts are handled within the operating system will be specified. Fourth, the various system, user and test processes will be explained. Fifth, details on how the operating system is initialized, including memory and processes will be provided. Lastly, there will be details on testing, design challenges and timing analysis on the functions of the operating system.
 
-\section{Global Variables}\label{sec:global}
-
-\subsection{Linked Lists}
-
-\subsection{Memory}
-
-\subsection{Processes}
-
 \subsection{Timers}
 
 The timer was used to give functionality to timer interrupts. This allowed the OS to call an interrupt every millisecond. The timer was also used to make the delayed send method work. To incorporate the timer with the delayed send, a timer counter had to be made. This counter would increment every time the timer interrupt entered its interrupt handler. The timer counter was used to keep track of the delayed messages being sent off, as it was needed to determine if the amount of time before the message can be sent has elapsed.
-
-\subsection{Inter-Process Communication}
 
 \section{Kernel API} \label{sec:kernel}
 
@@ -642,9 +632,13 @@ There were a number of stumbling blocks encountered in implementing OS WOW. Firs
 
 Another major stumbling block that was encountered was related to group dynamics. There was a lot of bickering and arguing over many aspects of the project. This lead to a lot of frustration and sometimes malice between the group members. These issues mainly centered around how much of a priority the project was, when to work on it, division of labour and various implementation details. Another potential factor contributing to this is that all of the group mates lived together and potentially spent way too much time together.
 
-\subsection{Things To Change}
+\subsection{Things To Change and Design Issues}
 
-\subsection{Design Issues}
+There would be a number of things that would be changed if OS WOW was built over again. First, a number of the data structures that were allocated at runtime (process queues, pcbs, pcb nodes, etc.) should have been allocated at compile time. This would have simplified the memory initialization process greatly and reduce overall code complexity. Second, the PCB nodes should have been part of the PCBs themselves, similar to how the messages functioned. This would have significantly reduced the operating system's memory usage and made keeping track of the location of PCBS much easier.
+
+Another thing that would be changed is to have a better naming convention for global variables. Currently, global variables have an assortment of names that make them hard to identify and keep track of. The operating system should have followed a prefix convention, such as \texttt{g\_} for all global variables.
+
+The last thing that would be changed would be to have some more consistency with return values. Currently a non-zero return value is considered a failure for a function call. However, more information on what the specific error is would have helped with debugging purposes.
 
 \section{Timing Analysis}\label{sec:time}
 
@@ -701,5 +695,18 @@ Receive Message & 11.09\\
 After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions.
 
 Overall, the functioned resulted in a relatively consistent set of data points, showing that there was little to no discrepancy.
+
+\appendix
+\begin{appendices}
+
+\section{Global Variables}
+
+\texttt{blocks\_allocated}: This variable represents the number of memory blocks that have been allocated from the heap.
+
+\texttt{alloc\_mem}: This variable is a pointer to the linked list of memory blocks that have been allocated from the heap.
+
+
+
+\end{appendices}
 
 \end{document}

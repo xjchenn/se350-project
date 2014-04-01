@@ -464,7 +464,7 @@ The second test process tests sending messages. It creates a new message with a 
 The third test process also tests sending messages. It creates a new message with the string that the second test process is expecting, and then send it off using \texttt{send\_message}. It then calls \texttt{receive\_message} waiting for the message that was sent to it to come in. The process is blocked until then. Once it receives the message, it compares the string to the expected string, sets its own priority to \texttt{LOW} and then enters an infinite loop of calling \texttt{release\_processor}.
 
 
-\subsection{Process 4 & Process 5}
+\subsection{Process 4 \& Process 5}
 
 The fourth test process and the fifth test processes are similar processes. These processes test preemption based on process priority. They both have internal counters that are incremented. Both processes increment their counter every time the loop iterates twice. In the fourth test process when the counter hits 5, it sets the process priority of the fifth test process to \texttt{HIGH} and exits the first loop. It then checks if the fifth process finished first or not. In the fifth test process, when the counter hits 10 it sets the process priority of the fourth process to \texttt{HIGH}. The expected result is that the fourth process will finish first, and the fifth one finishes second. To check that, the process checks the numerical array created to see if the fifth test already completed. 
 

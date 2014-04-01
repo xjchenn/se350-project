@@ -483,12 +483,11 @@ Once the message queue has been initialized, the process enters a loop. First it
 
 The process now checks the message type that it either received of popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 
-If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for the message it sent to itself. It will call \texttt{receive\_message} continuously. If the message type is not \texttt{WAKEUP10} then it pushes the message to the end of the message queue. If the message type is \texttt{WAKEUP10}, it restarts the loop.
-
+If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for that delayed message. While it waits it will queue up any messages that it receives in its own message queue, and when it finally receives that delayed message, it exits the loop and starts from the beginning again. 
 \subsubsection{Stress Test User Process C Flow}
 \begin{code}
 while (1)
-	if (queue is not empty)
+	if (queue is empty)
 		envelope = receive_message()
 	else
 		envelope = queue.pop_front
@@ -508,7 +507,7 @@ while (1)
 
 \section{Test Processes}\label{sec:testproc}
 
-Overall there are 6 test process. The first five test processes test the functionality of the OS, and the sixth test polls all the results. In order to do that, an array of integers is defined which is used to set the result of the test as a $1$ or a $0$. All the test processes start off with a process priority of \texttt{MEDIUM}, and the polling process starts off with a priority of \texttt{LOW}. 
+Overall there are 6 test processes. The first five test processes test the functionality of the OS, and the sixth test polls all the results. In order to do that, an array of integers is defined which is used to set the result of the test as a $1$ or a $0$. All the test processes start off with a process priority of \texttt{MEDIUM}, and the polling process starts off with a priority of \texttt{LOW}. 
 
 
 \subsection{Process 1}

@@ -182,10 +182,6 @@ This operating system was created over the span of three months during the creat
 
 The purpose of this report is to provide the reader with detailed documentation on the OS WOW operating system. This includes the following information. First, the data structures and global variables that the kernel uses. Second, this report will document the APIs that are available to users of the operation system. Third, details on how interrupts are handled within the operating system will be specified. Fourth, the various system, user and test processes will be explained. Fifth, details on how the operating system is initialized, including memory and processes will be provided. Lastly, there will be details on testing, design challenges and timing analysis on the functions of the operating system.
 
-\subsection{Timers}
-
-The timer was used to give functionality to timer interrupts. This allowed the OS to call an interrupt every millisecond. The timer was also used to make the delayed send method work. To incorporate the timer with the delayed send, a timer counter had to be made. This counter would increment every time the timer interrupt entered its interrupt handler. The timer counter was used to keep track of the delayed messages being sent off, as it was needed to determine if the amount of time before the message can be sent has elapsed.
-
 \section{Kernel API} \label{sec:kernel}
 
 \subsection{Memory}
@@ -701,11 +697,23 @@ Overall, the functioned resulted in a relatively consistent set of data points, 
 
 \section{Global Variables}
 
-\texttt{blocks\_allocated}: This variable represents the number of memory blocks that have been allocated from the heap.
+\texttt{blocks\_allocated}: This variable represents the number of memory blocks that have been allocated from the heap. It is used to keep track of whether there was a memory block available to a process. This was then used to move it onto a ready queue from a blocked queue.
 
-\texttt{alloc\_mem}: This variable is a pointer to the linked list of memory blocks that have been allocated from the heap.
+\texttt{pcb\_nodes}: This variable represents an array of linked list nodes for pcbs. These are indexed by their process ids and correspond to their respective PCBs. This was used to easily add and remove PCBs from their various queues.
 
+\texttt{pcbs}: This variable represents an array of PCBs. These are indexed by their respective process ids. This is used to make querying other processes fast and efficient.
 
+\texttt{current\_pcb\_node}: This variable represents the linked list node that holds the currently running process. This was created to make it easy to determine and/or modify the current process that is running.
+
+\texttt{ready\_pqs}: This variable represents an array of 5 doubly linked lists that represent the ready priority queues for pcbs. This was exposed to make it simple to enqueue unblocked processes throughout the operating system.
+
+\texttt{msg\_blocked\_pqs}: This variable represents an array of 5 doubly linked lists that represent the message blocked priority queues for pcbs. This was exposed to allow for the queue of blocked processes.
+
+\texttt{mem\_blocked\_pqs}: This variable represents an array of 5 doubly linked lists that represent the memory blocked priority queues for pcbs. This was exposed to allow for the queue of blocked processes.
+
+\texttt{g\_timer\_count}: This variable represents the current elapsed time for the interrupt timer in miliseconds. This is used to check whether to send a delayed message or not. This was exposed so that delayed send could record the time that a message was to be sent at.
+
+\texttt{tc\_count}: This variable was used to perform our timing tests on our operating system. It is incremented every time the second timer ticks.
 
 \end{appendices}
 

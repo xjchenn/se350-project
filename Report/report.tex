@@ -693,9 +693,30 @@ Figures ~\ref{fig:mem}, ~\ref{fig:send} and ~\ref{fig:receive} show the histogra
 \label{fig:receive}
 \end{figure}
 
-After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions.
+After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions. Figures ~\ref{fig:mem-nobottlenecks}, ~\ref{fig:send-nobottlenecks}, and ~\ref{fig:receive-nobottlenecks} show the new timings after bottlenecks are removed. 
 
 Overall, the functioned resulted in a relatively consistent set of data points, showing that there was little to no discrepancy.
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=110mm]{NB-RequestMemoryHistogram.png}
+\caption{Request Memory Times for Sample Size 30 with Bottlenecks Removed}
+\label{fig:mem-nobottlenecks}
+\end{figure}
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=110mm]{NB-SendMessageHistogram.png}
+\caption{Send Message Times for Sample Size 30 with Bottlenecks Removed}
+\label{fig:send-nobottlenecks}
+\end{figure}
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=110mm]{NB-ReceiveMessageHistogram.png}
+\caption{Receive Message Times for Sample Size 30 with Bottlenecks Removed}
+\label{fig:receive-nobottlenecks}
+\end{figure}
 
 \appendix
 \begin{appendices}

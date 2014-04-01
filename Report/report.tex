@@ -443,7 +443,7 @@ The clock set command, \texttt{\%WS},  requires significant validation for the i
 
 The \texttt{\%WT} command terminates the clock if it is currently running. Otherwise, nothing happens. An error will be thrown if the input is not exactly \texttt{\%WT}.
 
-Additionally, when the clock outputs, the output is sent to the top right corner of the terminal. This was done with by using special parsing modifiers in the output string. This can be seen below.
+Additionally, when the clock outputs, the output is sent to the top right corner of the terminal. This was done by using special parsing modifiers in the output string. This can be seen below.
 \begin{code}
 "\033[s\033[1;69H\%02d:\%02d:\%02d\n\033[u"
 \end{code}
@@ -646,11 +646,11 @@ There was a specific case that required unit testing. To actually write the func
 
 There were a number of mistakes made in the course of developing OS WOW.
 
-In Part 1, the linked list data structures in the operating system requested memory from the heap. This was a major problem because the kernel was using up a significant portion of the heap in the operating system. Additionally, there were strange pre-emption and scheduling issues that occured as a result. As a result, a lot of time was spent rewriting these in the second part of the project.
+In Part 1, the linked list data structures in the operating system requested memory from the heap. This was a major problem because the kernel was using up a significant portion of the heap in the operating system. Additionally, there were strange pre-emption and scheduling issues that occured. As a result, a lot of time was spent rewriting these in the second part of the project.
 
 Another issue that occured was that the scheduler was giving priority to processes that were blocked on memory over other processes. This made the scheduler not use a First-In-First-Out (FIFO) approach when choosing the next process. Additionally, the operating system was not pre-empting processes when their priority was equal to the current process. This caused out of order execution in some test cases.
 
-For the second part of the project, a number of different mistakes were found. First, the wall clock was not working as a 24-hour clock and instead was working on an 100 hour rollover. Second, there were a number of error cases not being checked for when the user sent messages to the wall clock process. Third, the wall clock was not being initialized properly and as a result hard faulted the test cases for this section of the project. Lastly, another strange bug that appeared was in the KCD. The KCD was not releasing memory blocks in some instances and a result blocking on memory was not acting as expected.
+For the second part of the project, a number of different mistakes were found. First, the wall clock was not working as a 24-hour clock and instead was working on an 100 hour rollover. Second, there were a number of error cases not being checked for when the user sent messages to the wall clock process. Third, the wall clock was not being initialized properly and as a result hard faulted the test cases for this section of the project. Lastly, another strange bug that appeared was in the KCD. The KCD was not releasing memory blocks in some instances and caused blocking on memory to not act as expected.
 
 \subsection{Stumbling Blocks}
 

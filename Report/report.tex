@@ -222,7 +222,7 @@ void example_process(void) {
 
 \subsection{Process Management}
 
-\subsubsection{PCB Data Structure}
+\subsubsection{Process Control Block}
 
 A Process Control Block (PCB) specifies the various pieces of information that a process needs to be scheduled and executed. A PCB contains the process' id, current state, priority, top of stack pointer and a message queue for receiving messages.
 
@@ -247,13 +247,13 @@ Processes can be in one of five states. Before a process is first run, it is in 
 int32_t release_processor()
 \end{code}
 
-When a process has completed a task or is blocked it should release the processor to another process. This is done by calling \texttt{release\_processor()}, a function that takes no arguments and returns 0 on success. This function executes several steps to choose the next process, save the current process' state and then switch to the next process.
+When a process has completed a task or is blocked it should release the processor to another process. This is done by calling \texttt{release\_processor()}, a function that takes no arguments and returns 0 on success. This function chooses the next process, saves the current process' state and switches to the next process.
 
-To choose the next process and enqueue the current process several steps are completed. First, the operating system checks if the current process is blocked or not. If it is blocked, it checks all possible priority levels for the next available process to queue. Otherwise, it only checks if there is a process on a ready queue with a higher or equal priority to schedule next. If there is no process that satisfies this condition, then the current process is chosen as the next process. Otherwise, the highest priority process at the front of its respective ready queue is chosen. After the next process is chosen, the current process is either put onto a ready queue or a blocked queue for its priority depending on its current state.
+To choose the next process and enqueue the current process, the operating system first checks if the current process is blocked or not. If it is blocked, it checks all possible priority levels for the next available process to queue. Otherwise, it only checks if there is a process on a ready queue with a higher or equal priority to schedule next. If there is no process that satisfies this condition, then the current process is chosen as the next process. Otherwise, the highest priority process at the front of its respective ready queue is chosen. After the next process is chosen, the current process is either put onto a ready queue or a blocked queue for its priority depending on its current state.
 
 Once the next process is chosen, the context switch occurs. If we are not changing process' (i.e. the next process is the currently running one), the operating system skips this step. This operation occurs in two slightly different ways depending on if the operating system is switching to a new process or a process that has already ran.
 
-In both cases, the operating system will save the current stack value to the old process' PCB. Next, it sets the current process to running and sets the stack pointer to the current PCB's stack pointer. Lastly, if the new process has never been run, the operating system switches to from handler mode to user mode. Once the function returns, the new process is immediately invoked.
+In both cases, the operating system will save the current stack value to the old process' PCB. Next, it sets the current process to running and sets the stack pointer to the current PCB's stack pointer. Lastly, if the new process has never been run, the operating system switches from handler mode to user mode. Once the function returns, the new process is immediately invoked.
 
 \subsubsection{Changing a Process' Priority}
 
@@ -261,7 +261,7 @@ In both cases, the operating system will save the current stack value to the old
 int32_t set_process_priority(int32_t process_id, int32_t new_priority)
 \end{code}
 
-A process may invoke the \texttt{set\_process\_priority} function if it wishes to change its or another process' priority. This function takes two parameters, \texttt{process\_id}, the id of the process that it wishes to change the priority of, and \texttt{new\_priority}, the priority it wishes the chosen process to be at. This function will return 0 if a valid process and priority are specified; otherwise, it returns -1.
+A process may invoke the \texttt{set\_process\_priority} function if it wishes to change its or another process' priority. This function takes two parameters, \texttt{process\_id}, the id of the process that it wishes to change the priority of, and \texttt{new\_priority}, the new priority of the chosen process. This function will return 0 if a valid process and priority are specified; otherwise, it returns -1.
 
 The function works slightly differently depending on whether the process priority being changed is the calling process or another process. If the calling process' priority is changed, it is immediately changed. If there is a process with a priority greater than or equal to the current process after the change, the process is pre-empted. 
 
@@ -319,9 +319,11 @@ Once a process wants to receive a message, its message queue is queried to see i
 int32_t delayed_send(int32_t process_id, void* message, int32_t delay)
 \end{code}
 
-The delayed send method works alongside the timer interrupts. To start off, delayed send needs its own message queue since it needs to hold on to messages until its time to send them. First of all, another parameter for the message struct has to be added so that each message has an expiry time. Then, to actually store these messages so that they're separate from the regular message queue, a new linked list object is created that held these messages. The linked list object is created when the timer is initialized since that is where all the messages will be sent out from.
+The delayed send method worked with the timer interrupts. To start off, delayed send needed its own message queue since it needed to hold on to messages until it was time to send them. First of all, another parameter for the message struct was added that gave each message an expiry time. Then, to actually store these messages so that they're separate from the regular message queue, a new linked list object was created that held these messages.
 
-Delayed send started off with some sanity checks such as if the delay was a value of 0, then the message should be sent directly using \texttt{send\_message}. After the sanity check, the message is initialized with the sender process id, receiver process id and its linked list node is instantiated. After the message has been initialized, the time delay set to the message is the value of the current timer count [~\ref{g_timer_count} ] plus the delay passed. This way it's easier to decide if the expiry date has been met. After that is done, the message queue for delayed send is iterated upon to look for an expiry time for a message to be greater than the current message. If the time is greater, then the current message will be placed right before that. This is basically using insertion sort. Once the message has been placed within the queue, the function exits. 
+Delayed send started off with some sanity checks such as if the delay was a value of 0, then the message should be sent directly using \texttt{send\_message}. After the sanity check, the message is fully created using \texttt{init\_message} which just gives everything in the message block a default value. After the message has been initialized, the time delay set to the message is the value of the current timer count plus the delay passed. This way it's easier to decide if the expiry date has been met. After that is done, the message queue for delayed send is iterated upon to look for an expiry time for a message to be greater than the current message. If the time is greater, then the current message will be placed right before that. This is basically using insertion sort. Once the message has been placed within the queue, the function exits. 
+
+If however the message queue for delayed send is empty, then the message is pushed onto the linked list and then method exits.
 
 \subsubsection{Example Usage of Inter-Process Communication}
 
@@ -483,11 +485,12 @@ Once the message queue has been initialized, the process enters a loop. First it
 
 The process now checks the message type that it either received of popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 
-If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for that delayed message. While it waits it will queue up any messages that it receives in its own message queue, and when it finally receives that delayed message, it exits the loop and starts from the beginning again. 
+If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for the message it sent to itself. It will call \texttt{receive\_message} continuously. If the message type is not \texttt{WAKEUP10} then it pushes the message to the end of the message queue. If the message type is \texttt{WAKEUP10}, it restarts the loop.
+
 \subsubsection{Stress Test User Process C Flow}
 \begin{code}
 while (1)
-	if (queue is empty)
+	if (queue is not empty)
 		envelope = receive_message()
 	else
 		envelope = queue.pop_front
@@ -507,7 +510,7 @@ while (1)
 
 \section{Test Processes}\label{sec:testproc}
 
-Overall there are 6 test processes. The first five test processes test the functionality of the OS, and the sixth test polls all the results. In order to do that, an array of integers is defined which is used to set the result of the test as a $1$ or a $0$. All the test processes start off with a process priority of \texttt{MEDIUM}, and the polling process starts off with a priority of \texttt{LOW}. 
+Overall there are 6 test process. The first five test processes test the functionality of the OS, and the sixth test polls all the results. In order to do that, an array of integers is defined which is used to set the result of the test as a $1$ or a $0$. All the test processes start off with a process priority of \texttt{MEDIUM}, and the polling process starts off with a priority of \texttt{LOW}. 
 
 
 \subsection{Process 1}
@@ -713,30 +716,9 @@ Figures ~\ref{fig:mem}, ~\ref{fig:send} and ~\ref{fig:receive} show the histogra
 \label{fig:receive}
 \end{figure}
 
-After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions. Figures ~\ref{fig:mem-nobottlenecks}, ~\ref{fig:send-nobottlenecks}, and ~\ref{fig:receive-nobottlenecks} show the new timings after bottlenecks are removed. 
+After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions.
 
 Overall, the functioned resulted in a relatively consistent set of data points, showing that there was little to no discrepancy.
-
-\begin{figure}[bp!]
-\centering
-\includegraphics[width=110mm]{NB-RequestMemoryHistogram.png}
-\caption{Request Memory Times for Sample Size 30 with Bottlenecks Removed}
-\label{fig:mem-nobottlenecks}
-\end{figure}
-
-\begin{figure}[bp!]
-\centering
-\includegraphics[width=110mm]{NB-SendMessageHistogram.png}
-\caption{Send Message Times for Sample Size 30 with Bottlenecks Removed}
-\label{fig:send-nobottlenecks}
-\end{figure}
-
-\begin{figure}[bp!]
-\centering
-\includegraphics[width=110mm]{NB-ReceiveMessageHistogram.png}
-\caption{Receive Message Times for Sample Size 30 with Bottlenecks Removed}
-\label{fig:receive-nobottlenecks}
-\end{figure}
 
 \appendix
 \begin{appendices}
@@ -757,7 +739,7 @@ Overall, the functioned resulted in a relatively consistent set of data points, 
 
 \texttt{mem\_blocked\_pqs}: This variable represents an array of 5 doubly linked lists that represent the memory blocked priority queues for pcbs. This was exposed to allow for the queue of blocked processes.
 
-\texttt{g\_timer\_count} \label{g_timer_count}: This variable represents the current elapsed time for the interrupt timer in miliseconds. This is used to check whether to send a delayed message or not. This was exposed so that delayed send could record the time that a message was to be sent at.
+\texttt{g\_timer\_count}: This variable represents the current elapsed time for the interrupt timer in miliseconds. This is used to check whether to send a delayed message or not. This was exposed so that delayed send could record the time that a message was to be sent at.
 
 \texttt{tc\_count}: This variable was used to perform our timing tests on our operating system. It is incremented every time the second timer ticks.
 

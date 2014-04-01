@@ -282,7 +282,7 @@ If however the message queue for delayed send is empty, then the message is push
 
 \section{Interrupts}\label{sec:interupt}
 
-\subsection{Keyboard Interrupts}
+\subsection{Keyboard Interrupts} \label{sec:uart}
 
 \subsubsection{UART I-Process}
 
@@ -350,7 +350,7 @@ KCD registration messages are registered into the command list, along with the s
 
 The CRT Display process is a controller that provides a level of abstraction between the interrupt process and any user process trying to output. This mainly applies to processes that accept command input, such as the wall clock and the priority change process. 
 
-The CRT receives a message and checks if it is of type \texttt{CRT\_DISPLAY}. If it is a valid message, it sends the message to the UART i-process(Section~\ref{sec:interupt}) and triggers a keyboard interrupt to check for messages and perform the print operation. Otherwise, it will release the memory block.
+The CRT receives a message and checks if it is of type \texttt{CRT\_DISPLAY}. If it is a valid message, it sends the message to the UART i-process(Section~\ref{sec:uart}) and triggers a keyboard interrupt to check for messages and perform the print operation. Otherwise, it will release the memory block.
 
 \subsection{User Processes}
 
@@ -480,7 +480,7 @@ The first stage of the initialization is to setup the system APIs. First, \textt
 
 \subsection{Memory}
 
-\begin{figure}[h] \label{fig:memory-map}
+\begin{figure}[h]
 \caption{Memory Map after Initialization}
 \begin{bytefield}{}
     \begin{rightwordgroup}{User Memory Space}
@@ -499,9 +499,10 @@ The first stage of the initialization is to setup the system APIs. First, \textt
     \memsection{}{}{1.5}{-- 2 word(8 byte) guard --} \\
     \memsection{End of Image}{1000 0000}{3}{Process Image} \\
 \end{bytefield}
+ \label{fig:memory-map}
 \end{figure}
 
-After the system APIs have been initialized, the OS then zeros out all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. After zeroing out the memory, the OS then dynamically allocates memory for its data structures.  A map of the system memory after initialization is shown on Figure~\ref{fig:memory-map}.
+After the system APIs have been initialized, the OS then zeros out all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. After zeroing out the memory, the OS then dynamically allocates memory for its data structures.  A map of the system memory after initialization is shown on Figure ~\ref{fig:memory-map}.
 
 \subsubsection{Kernel Memory Space}
 
@@ -510,7 +511,7 @@ After the process image, the OS dynamically allocates space for all of its kerne
 \subsubsection{User Memory Space}
 After the kernel's data structures have been instantiated, the OS then use the space above the PCBs for memory blocks. It first byte aligns the first memory block after the PCBs with \texttt{0x100}. This makes it easier to debug at the cost of at most \texttt{0xFF} memory. From the \texttt{0x100} byte-aligned address, the OS instantiates 48 new \texttt{0x200} doubly linked blocks as shown below (i.e. each block has a pointer to its subsequently and previously instantiated blocks).
 
-\begin{figure}[h] \label{fig:memory-block}
+\begin{figure}[h]
 \caption{Memory Block}
 \begin{bytefield}{}
     \memsection{0x200}{}{1.5}{\texttt{next}} \\
@@ -523,6 +524,7 @@ After the kernel's data structures have been instantiated, the OS then use the s
     \end{rightwordgroup} \\
     \memsection{}{}{1.5}{\texttt{padding = 0xABAD1DEA}} 
 \end{bytefield}
+\label{fig:memory-block}
 \end{figure}
 
 As shown in Figure~\ref{fig:memory-block}, each memory block is instantiated to be size \texttt{0x200}. However, the OS needs to reserve the top 6 words (24 bytes) for memory and message management (See Section~\ref{sec:ipc} for more information about messages). In addition, the OS reserves the bottom word (4 bytes) as a safety padding to help with debugging. This padding is required because it can detect if a user process writes past their allowable region by verifying the values in the padding. 
@@ -540,7 +542,7 @@ Although the i-processes do not need a stack because they rely on the kernel's s
 
 As specified in the board's documentation, to go from handler mode to thread mode, the OS uses the \texttt{BL 0xFFFF FFF9} instruction. This special instruction pops values off the stack frame, as shown in Figure~\ref{fig:stack-after-branch}, and copies them into their corresponding registers.
 	
-\begin{figure} \label{fig:stack-after-branch}
+\begin{figure}
 \caption{Stack after calling \texttt{BL 0xFFFF FFF9}}
 \begin{bytefield}[rightcurly=.]{}
 	\begin{rightwordgroup}{$\leftarrow$ SP is here after resuming to thread mode}
@@ -557,6 +559,7 @@ As specified in the board's documentation, to go from handler mode to thread mod
 		\memsection{}{}{1.5}{R0 = \texttt{0x0}}
 	\end{rightwordgroup} \\
 \end{bytefield}
+\label{fig:stack-after-branch}
 \end{figure}
 	
 Normally, these values are automatically set when the user makes a system call from thread mode. However because the OS is initialized in handler mode, it needs to manually set default values the first time it runs so that the scheduler does not hard fault. In other words, the OS writes the default values to the stack as show in Figure~\ref{fig:stack-after-branch} and sets \texttt{stack\_ptr} to point 8 words below the start of the stack.

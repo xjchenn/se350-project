@@ -176,7 +176,7 @@
 
 This report is a detailed design document describing the OS WOW Real-Time Operation System designed by Fasih Awan, Joshua Kalpin, Si Chuang Li and John Zanutto. This operating system was implemented for the Keil MCB1700 board populated with an NXP LPC1768 microcontroller. 
 
-This operating system was created over the span of three months during the creators' 3A term in Software Engineering. It was developed in four parts adding more features each time. The first part involved creating basic memory management and a multiprogramming environment. The second part added the challenge of interrupt driven I/O, timer interrupts and a console. The third part added more processes. Lastly, the fourth part of the project included timing tests and this report.
+This operating system was created over the span of three months during the creators' 3A term in Software Engineering. It was developed in four parts adding more features each time. The first part involved creating basic memory management and a multiprogramming environment. The second part added the challenge of interrupt driven I/O, timer interrupts and inter-process communication. The third part added more user processes. Lastly, the fourth part of the project included timing tests and this report.
 
 \subsection{Purpose}
 
@@ -185,6 +185,8 @@ The purpose of this report is to provide the reader with detailed documentation 
 \section{Kernel API} \label{sec:kernel}
 
 \subsection{Memory}
+
+A memory block is a piece of memory that the user can dynamically request from the kernel to use such as for an array or other complex data structure. Internally, a memory block is represented as a doubly-linked-list node with some extra headers for message passing. Refer to Figure~\ref{fig:memory-block} in the Initialization section for more information about how these blocks are initialized.
 
 The kernel keeps track of the available memory with a global pointer \texttt{free\_mem} that points to the first block of the list of free memory blocks. Whenever a memory block is requested, the front of this list is removed (if the list is not empty) and is given to the requester. Whenever a memory block is released, the given block is added to the front of this list.
 
@@ -208,10 +210,8 @@ This method takes in a pointer returned by \texttt{request\_memory\_block()}, de
 \subsubsection{Example Usage of Requesting and Releasing Memory}
 \begin{code}
 #include "memory.h"
-
 void example_process(void) {
     int* array;
-    
     while (1) {
         array = (int*) request_memory_block();
         array[0] = 0xDEADC0DE;
@@ -542,7 +542,7 @@ The last test process just polls the result from the numerical arrays to see if 
 At the start of the OS, the OS disables interrupts before it initializes the system, otherwise the interrupt handlers cannot run properly. Once everything is initialized properly, it re-enables interrupts and calls the scheduler to dispatch the first process.
 
 \subsection{System APIs}
-The first stage of the initialization is to setup the system APIs. First, \texttt{SystemInit()} ic alled to setup the board and the system clock frequency. Second, \texttt{init\_printf(NULL, putc)} is called to enable the use of \texttt{printf} for debugging. Third, \texttt{uart\_irq\_init(0)} enables interrupt-driven I/O on UART0. Fourth, \texttt{uart1\_init()} enables program-driven I/O on UART1 for debugging. Fifth, \texttt{timer\_init(0)} enables the first timer for sending delayed messages. Sixth,  \texttt{timer\_init(1)} enables the second timer for benchmarking. Lastly, \texttt{init\_logo\_on\_lcd()} enables the ability to draw our OS's logo on the LCD display.
+The first stage of the initialization is to setup the system APIs. First, the OS sets up the board and the system clock frequency. Second, \texttt{printf} is initialized for debugging. Third, UART0 is initialized to allow interrupt-driven I/O. Fourth, UART1 is initialized for program-driven I/O for debugging. Fifth, TIMER0 is initialized to send an interrupt every second. Sixth, TIMER1 is initialized to increment the \texttt{TC} every microsecond. Lastly, the LCD display is initialized to draw the OS's logo.
 
 \subsection{Memory}
 
@@ -568,25 +568,25 @@ The first stage of the initialization is to setup the system APIs. First, \textt
  \label{fig:memory-map}
 \end{figure}
 
-After the system APIs have been initialized, the OS then zeros out all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. After zeroing out the memory, the OS then dynamically allocates memory for its data structures.  A map of the system memory after initialization is shown on Figure ~\ref{fig:memory-map}.
+After the system APIs have been initialized, the OS then defaults all of the memory from the end of the system image to the end of RAM with \texttt{0xDEADBEEF}. This makes it easier to debug because if a value after this stage is \texttt{0xDEADBEEF}, then it will be obvious that the value was not properly instantiated. Afterwards, the OS dynamically allocates memory for its data structures.  A map of the system memory after initialization is shown on Figure ~\ref{fig:memory-map}.
 
 \subsubsection{Kernel Memory Space}
 
 After the process image, the OS dynamically allocates space for all of its kernel's data structures. It first allocates 15 doubly-linked lists to represent 5 ready queues, 5 memory blocked queues, and 5 message blocked queues, one for each process priority. Unlike a traditional linked list implementation, the OS's linked lists do not dynamically allocate and free memory. Instead, the OS simply changes the node pointers because the kernel should never be blocked on memory or get pre-empted while it is running the scheduler. As a result, the OS's PCBs are wrapped with linked list nodes that are preallocated during its initialization stage. In total, the OS allocates 16 PCBs and 16 nodes structures for managing the PCBs.
 
 \subsubsection{User Memory Space}
-After the kernel's data structures have been instantiated, the OS then use the space above the PCBs for memory blocks. It first byte aligns the first memory block after the PCBs with \texttt{0x100}. This makes it easier to debug at the cost of at most \texttt{0xFF} memory. From the \texttt{0x100} byte-aligned address, the OS instantiates 48 new \texttt{0x200} doubly linked blocks as shown below (i.e. each block has a pointer to its subsequently and previously instantiated blocks).
+After the kernel's data structures have been instantiated, the OS then use the space above the PCBs for memory blocks. It first byte aligns the first memory block after the PCBs with \texttt{0x100}. This makes it easier to debug at the cost of at most \texttt{0xFF} memory. From the \texttt{0x100} byte-aligned address, the OS instantiates 48 new doubly linked blocks as shown below (i.e. each block has a pointer to its subsequently and previously instantiated blocks).
 
-\begin{figure}[h]
+\begin{figure}[h] 
 \caption{Memory Block}
 \begin{bytefield}{}
     \memsection{0x200}{}{1.5}{\texttt{next}} \\
     \memsection{}{}{1.5}{\texttt{prev}} \\
     \begin{rightwordgroup}{Message Header}
-    	\memsection{}{}{6}{-- 4 words (16 bytes) --}
+    	\memsection{}{}{4}{-- 4 words (16 bytes) --}
     \end{rightwordgroup} \\
     \begin{rightwordgroup}{User space of size \texttt{0x1E4}}
-    	\memsection{0x1E8}{0x4}{8}{\texttt{data}}
+    	\memsection{0x1E8}{0x4}{4}{\texttt{data}}
     \end{rightwordgroup} \\
     \memsection{}{}{1.5}{\texttt{padding = 0xABAD1DEA}} 
 \end{bytefield}
@@ -598,11 +598,11 @@ As shown in Figure~\ref{fig:memory-block}, each memory block is instantiated to 
 Finally, after all of these blocks are initialized, the OS sets the global \texttt{free\_mem} variable to point to the first memory block of this list. 
 
 \subsection{Processes}
-After both the kernel and user memory space have been initialized, the OS then moves on to initializing its PCBs with their corresponding process information. First the OS calls the processes' provided initialization methods (e.g. \texttt{set\_test\_procs()}) to fill in its process tables, \texttt{g\_test\_procs}. Each entry of the completed process table contains the corresponding process's pid, priority, and pointer to where the process actually resides in memory. 
+After both the kernel and user memory space have been initialized, the OS then moves on to initializing its PCBs with their corresponding process information. First the OS calls the processes' provided initialization methods, e.g. \texttt{set\_test\_procs()}, to fill in the OS's global process tables, e.g. \texttt{g\_test\_procs}. Each entry of the completed process table contains the corresponding process's id, priority, and pointer to where the process actually resides in memory. 
 
 After the process tables are filled, the OS then iterates over all the processes in the process tables and initializes its PCBs in a number of steps. First, the \texttt{pid} and \texttt{priority} values are copied into the PCB. Second, the PCB state is set to \texttt{NEW}. Third, the PCB's message queue is initialized to be an empty linked list. Fourth, it initializes the process's stack (see Section~\ref{sec:setting-up-stack}). Lastly, it sets \texttt{stack\_ptr} to the appropriate location.
 	
-Although the i-processes do not need a stack because they rely on the kernel's stack whenever they run, it makes initialization simpler because the loop does not need to check process types. In addition, it was also of no consequence because there is still leftover space between the stacks and memory blocks.
+Although the i-processes do not need a stack because they rely on the kernel's stack whenever they run, it makes initialization simpler because the loop does not need to check process types. In addition, it is also of no consequence because there is still leftover space between the stacks and memory blocks.
 
 \subsubsection{Setting up the Stack} \label{sec:setting-up-stack}
 
@@ -628,7 +628,7 @@ As specified in the board's documentation, to go from handler mode to thread mod
 \label{fig:stack-after-branch}
 \end{figure}
 	
-Normally, these values are automatically set when the user makes a system call from thread mode. However because the OS is initialized in handler mode, it needs to manually set default values the first time it runs so that the scheduler does not hard fault. In other words, the OS writes the default values to the stack as show in Figure~\ref{fig:stack-after-branch} and sets \texttt{stack\_ptr} to point 8 words below the start of the stack.
+Normally, these values are automatically set when the user makes a system call from thread mode. However because the OS starts in handler mode, these values will not be on the stack when it tries to switch to thread mode the first time. In other words, the OS needs to write the default values onto the stack, as shown in Figure~\ref{fig:stack-after-branch}, and sets the \texttt{stack\_ptr} to point 8 words below the start of the stack so that the scheduler doesn't hard-fault.
 
 \section{Testing}\label{sec:test}
 
@@ -697,21 +697,21 @@ Figures ~\ref{fig:mem}, ~\ref{fig:send} and ~\ref{fig:receive} show the histogra
 
 \begin{figure}[bp!]
 \centering
-\includegraphics[width=120mm]{RequestMemoryHistogram.png}
+\includegraphics[width=120mm]{RequestMemoryHistogram.PNG}
 \caption{Request Memory Times for Sample Size 30}
 \label{fig:mem}
 \end{figure}
 
 \begin{figure}[bp!]
 \centering
-\includegraphics[width=120mm]{SendMessageHistogram.png}
+\includegraphics[width=120mm]{SendMessageHistogram.PNG}
 \caption{Send Message Times for Sample Size 30}
 \label{fig:send}
 \end{figure}
 
 \begin{figure}[bp!]
 \centering
-\includegraphics[width=120mm]{ReceiveMessageHistogram.png}
+\includegraphics[width=120mm]{ReceiveMessageHistogram.PNG}
 \caption{Receive Message Times for Sample Size 30}
 \label{fig:receive}
 \end{figure}

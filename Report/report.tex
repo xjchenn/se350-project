@@ -348,12 +348,16 @@ void some_process() {
 
 \section{Interrupts}\label{sec:interupt}
 
-The operating system responds to interrupts from two places: UART-0 and an on-board timer. When an interrupt is received in the operating system, interrupts are immediately disabled to prevent nested interrupts from occuring. 
+The operating system responds to interrupts from two places: UART-0 and an on-board timer. When an interrupt is received in the operating system, interrupts are immediately disabled to prevent nested interrupts from occurring.
 
 \begin{code}
-CPSID i                        ;disable interrupts
-;handle interrupt
-CPSIE i                         ;enable interrupts
+CPSID i ; disable interrupts
+; save R4-R11, LR onto the stack
+; handle interrupt by branching to the corresponding i-process
+; load g_switch_flag into R4
+CPSIE i ; enable interrupts
+; if R4 == 1, branch to k_release_processor
+; if R4 == 0, pop the top 12 words off the stack and write to R4-R11, PC
 \end{code}
 
 \subsection{Keyboard Interrupts} \label{sec:uart}
@@ -377,7 +381,6 @@ The three hotkeys are as follows. If the "," key is pressed, the processes curre
 The timer interrupt is an interrupt that happens every millisecond. The interrupt handler first increments a global variable named \texttt{g\_timer\_count} which is just a timing variable. The interrupt handler then calls the timer interrupt process \texttt{timer\_i\_process}. 
 
 The \texttt{timer\_i\_process} first gets the pointer to the front of its message queue, where delayed messages get sent, and then continues to check the front of the queue for any messages who have an expiry date that is less than the current timer count. If the expiry value for the message is less than the current timer count, then it is dispatched using \texttt{send\_message}. Once it hits a message at the front of the queue who's expiry date is greater than the current timer count, the process stops iterating the front of the queue and exits. Once the process exits, the interrupt handler enables interrupts, and exits.
-
 
 \section{System and User Processes}\label{sec:proc}
 
@@ -443,7 +446,7 @@ The clock set command, \texttt{\%WS},  requires significant validation for the i
 
 The \texttt{\%WT} command terminates the clock if it is currently running. Otherwise, nothing happens. An error will be thrown if the input is not exactly \texttt{\%WT}.
 
-Additionally, when the clock outputs, the output is sent to the top right corner of the terminal. This was done by using special parsing modifiers in the output string. This can be seen below.
+Additionally, when the clock outputs, the output is sent to the top right corner of the terminal. This was done with by using special parsing modifiers in the output string. This can be seen below.
 \begin{code}
 "\033[s\033[1;69H\%02d:\%02d:\%02d\n\033[u"
 \end{code}
@@ -646,11 +649,11 @@ There was a specific case that required unit testing. To actually write the func
 
 There were a number of mistakes made in the course of developing OS WOW.
 
-In Part 1, the linked list data structures in the operating system requested memory from the heap. This was a major problem because the kernel was using up a significant portion of the heap in the operating system. Additionally, there were strange pre-emption and scheduling issues that occured. As a result, a lot of time was spent rewriting these in the second part of the project.
+In Part 1, the linked list data structures in the operating system requested memory from the heap. This was a major problem because the kernel was using up a significant portion of the heap in the operating system. Additionally, there were strange pre-emption and scheduling issues that occured as a result. As a result, a lot of time was spent rewriting these in the second part of the project.
 
 Another issue that occured was that the scheduler was giving priority to processes that were blocked on memory over other processes. This made the scheduler not use a First-In-First-Out (FIFO) approach when choosing the next process. Additionally, the operating system was not pre-empting processes when their priority was equal to the current process. This caused out of order execution in some test cases.
 
-For the second part of the project, a number of different mistakes were found. First, the wall clock was not working as a 24-hour clock and instead was working on an 100 hour rollover. Second, there were a number of error cases not being checked for when the user sent messages to the wall clock process. Third, the wall clock was not being initialized properly and as a result hard faulted the test cases for this section of the project. Lastly, another strange bug that appeared was in the KCD. The KCD was not releasing memory blocks in some instances and caused blocking on memory to not act as expected.
+For the second part of the project, a number of different mistakes were found. First, the wall clock was not working as a 24-hour clock and instead was working on an 100 hour rollover. Second, there were a number of error cases not being checked for when the user sent messages to the wall clock process. Third, the wall clock was not being initialized properly and as a result hard faulted the test cases for this section of the project. Lastly, another strange bug that appeared was in the KCD. The KCD was not releasing memory blocks in some instances and a result blocking on memory was not acting as expected.
 
 \subsection{Stumbling Blocks}
 

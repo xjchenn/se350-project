@@ -333,6 +333,31 @@ These processes can be found inside of \texttt{user\_proc.c}. These processes re
 
 \subsubsection{Wall Clock}
 
+The wall clock displays the time specified by the user in the HH:MM:SS format (hours, minutes, seconds). The user can set the time themselves, let the clock run from 00:00:00 upwards or terminate the clock.
+
+The wall clock process first registers \texttt{\%W} command with the CRT. It then attempts to receive a message. The wall clock uses a state variable to determine whether the clock is currently running or not.
+
+If the clock is running and the message received was sent by the clock itself, \texttt{delayed\_send} is used to send another message, with a 1 second delay, to itself. The message sent by \texttt{delayed\_send} is of the \texttt{DEFAULT} message type. The process then requests another memory block and sends a message of type \texttt{CRT\_DISPLAY} to the CRT containing the updated time.
+
+If the clock is not running, or the message was not sent by the clock, it is validated against the registered command. If the command is valid, it is parsed for the correct information.
+
+The \texttt{\%WR} command resets the clock. Specifically, it will set the current time to be zero, and begin running the clock. If the clock is just starting, a \texttt{CRT\_DISPLAY} message is sent to the CRT immediately to display the initial time 00:00:00. The process then proceeds to send delayed messages to itself. An error will be thrown is the input provided is not exactly \texttt{\%WR}.
+
+The clock set command, \texttt{\%WS},  requires significant validation for the input. The colon locations, the spaces and all of the values are verified to determine whether the input is correct. An error will not be thrown if the input is not specified in the below format.
+\begin{code}
+\%WS HH:MM:SS
+\end{code}
+
+\texttt{H} represents hours, \texttt{M} represents minutes and \texttt{S} represents seconds. Each of these is required to be specified as two digits (e.g. 01:01:01). If the input matches this format, the clock is updated with the correct time, and a \texttt{CRT\_DISPLAY} message is sent to the CRT to display the new time immediately. The clock is then set to running if it is not currently running, and will begin sending delayed messages to itself.
+
+The \texttt{\%WT} command terminates the clock if it is currently running. Otherwise, nothing happens. An error will be thrown if the input is not exactly \texttt{\%WT}.
+
+Additionally, when the clock outputs, the output is sent to the top right corner of the terminal. This was done with by using special parsing modifiers in the output string. This can be seen below.
+\begin{code}
+"\033[s\033[1;69H\%02d:\%02d:\%02d\n\033[u"
+\end{code}
+
+
 \subsubsection{Change Process Priority}
 
 The change priority process takes a user input command and sets the priority of a specified process to a specified priority when both are valid input. This process functions with the below input into the console by the user.
@@ -345,7 +370,7 @@ The change priority process takes a user input command and sets the priority of 
 
 \texttt{New Priority} is the priority that the process will receive. This excludes priority 4 (denoted LOWEST in the priority enumerable) as that priority is reserved for the Null Process.
 
-The change priority process first registers the \%C command with the KCD. It then will wait until it receives a message from the KCD.
+The change priority process first registers the \texttt{\%C} command with the KCD. It then will wait until it receives a message from the KCD.
 
 The process does several error checks for validation. These include checking for invalid priorities, invalid process ids, process ids that are not numbers and priorities that are not numbers. Checking for valid command format is also done here (i.e. if spaces are used correctly). If the input is invalid, an error message is sent to the CRT for display. Otherwise, the \texttt{set\_process\_priority} method is called with the parsed process id and new priority. This process also outputs all input information to the debug window.
 

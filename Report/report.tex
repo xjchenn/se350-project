@@ -284,9 +284,31 @@ Once a process wants to receive a message, its message queue is queried to see i
 
 \section{Interrupts}\label{sec:interupt}
 
-\subsection{UART}
+\subsection{Keyboard Interrupts}
 
-\subsection{Timers}
+\subsubsection{UART I-Process}
+
+The keyboard interrupt process takes an input that a user enters via the keyboard, processes it, and outputs it. Depending on the type of input, the system will respond differently (in the case of commands and hotkeys).
+
+Keyboard interrupts are handled by the UART i-process. When an interrupt is received interrupts are immediately disabled to prevent nested interrupts from occuring. 
+
+\begin{code}
+CPSID i                        ;disable interrupts
+;handle interrupt
+CPSIE i                         ;enable interrupts
+\end{code}
+
+After disabling interrupts, the UART i-process is immediately invoked. The UART i-process reads input into a buffer and outputs each character as it is typed to the console allow the user to see their input. Once a carriage return (\texttt{\\r}) is received, buffer writing is postponed and the input will be processed. A special set of functions are invoked (post-fixed with \texttt{\_i} to allow this i-process to send messages without blocking or pre-emption. If it cannot obtain a memory block, the buffer is discarded. If it can obtain a memory block, the buffer is copied into a message envelope and sent to the KCD for decoding. 
+
+This i-process will also check to see if it has any pending messages. This receive message call is non-blocking and will continue execution if no message is received. If a message is received, the message is printed using the UART output buffer. The i-process cannot be blocked because it is not scheduled regularly, so any regular system functions have modified versions designed to run specifically for the i-process.
+
+\subsubsection{Debug Hotkeys}
+
+Debugging hotkeys were designed to make debugging easier by outputting useful debug information when a key is pressed. As such, they were designed to work without memory. A last check is performed in the keyboard i-process to determine if a hotkey is used. There are currently three implemented debug hotkeys. Each of these hotkeys produces a separate output in the UART-1 system console. The hotkeys will produce output when the flag \_DEBUG\_HOTKEYS is enabled. 
+
+The three hotkeys are as follows. If the "," key is pressed, the processes currently in the ready state are printed out. If the "/" key is pressed, processes that are messaged blocked are printed out. If the "." key is pressed, processes that are memory blocked are printed out.
+
+\subsection{Timer Interrupts}
 
 \section{System and User Processes}\label{sec:proc}
 

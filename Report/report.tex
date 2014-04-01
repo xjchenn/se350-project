@@ -95,7 +95,7 @@
 \author{Fasih Awan, Joshua Kalpin, Si Chuang Li, John Zanutto}
 
 % Fill in your student ID number.
-\uwid{20414848, 20414492, 20413578, TODO}
+\uwid{20414848, 20414492, 20413578, 20418726}
 
 % Fill in the name of the PNG file with your signature, or leave unchanged.
 \signature{signature}
@@ -161,8 +161,6 @@
 \setcounter{tocdepth}{1}
 
 \tableofcontents
-\listoffigures
-\listoftables
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% REPORT BODY
@@ -222,13 +220,58 @@ void example_process(void) {
 
 \subsection{Process Management}
 
-There are three functions available to processes for managing scheduling and the processor. These functions can be called by including the \texttt{process.h} header file and are specified below.
+\subsubsection{PCB Data Structure}
+
+A Process Control Block (PCB) specifies the various pieces of information that a process needs to be scheduled and executed. A PCB contains the process' id, current state, priority, top of stack pointer and a message queue for receiving messages.
+
+\begin{code}
+//The PCB
+typedef struct {
+    uint32_t pid; //process id
+    PROCESS_STATE state; //current state
+    uint32_t priority; //process priority
+    uint32_t* stack_ptr; //top of stack
+    linkedlist_t msg_queue; //message queue
+} pcb_t;
+\end{code}
+
+Processes can have one of five valid priority levels from 0 (Highest) to 4 (Lowest). The lowest priority level is reserved for the Null Process. All other priority levels can be used by any process.
+
+Processes can also be in a number of states. Before a process is first run, it is in the \texttt{NEW} state. When a process is run it enters the \texttt{RUNNING} state. Once a process has finished running and is not blocked, it enters the \texttt{READY} state. If a process is either blocked on memory or is waiting to receive a message it either enters into the \texttt{MSG\_BLOCKED} or \texttt{MEM\_BLOCKED} state depending on what is it blocked on. When a process terminates it enters the \texttt{EXIT} state. However, no processes ever terminate in the operating system, so no processes will enter this state.
 
 \subsubsection{Releasing the Processor}
 
+\begin{code}
+int32_t release_processor()
+\end{code}
+
+When a process has completed a task or is blocked it should release the processor to another process. This is done by calling \texttt{release\_processor()}, a function that takes no arguments and returns 0 on success. This function executes several steps to choose the next process, save the current process' state and then switch to the next process.
+
+To choose the next process and enqueue the current process several steps are completed. First, the operating system checks if the current process is blocked or not. If it is blocked, it checks all possible priority levels for the next available process to queue. Otherwise, it only checks if there is a process on a ready queue with a higher or equal priority to schedule next. If there is no process that satisfies this condition, then the current process is chosen as the next process. Otherwise, the highest priority process at the front of its respective ready queue is chosen. After the next process is chosen, the current process is either put onto a ready queue or a blocked queue for its priority depending on its current state.
+
+Once the next process is chosen, the context switch occurs. This operation occurs in two slightly different ways depending on if the operating system is switching to a new process or a process that has already ran. Additionally, none of the following will occur the process we are switching to is the current process. 
+
+In both cases, the operating system will save the current stack value to the old process' PCB. Next, it sets the current process to running and sets the stack pointer to the current PCB's stack pointer. Lastly, if the new process has never been run, the operating system switches to from handler mode to user mode. Once the function returns, the new process is immediately invoked.
+
 \subsubsection{Changing a Process' Priority}
 
+\begin{code}
+int32_t set_process_priority(int32_t process_id, int32_t new_priority)
+\end{code}
+
+A process may invoke the \texttt{set\_process\_priority} function if it wishes to change its or another process' priority. This function takes two parameters, \texttt{process\_id}, the id of the process that it wishes to change the priority of, and \texttt{new\_priority}, the priority it wishes the chosen process to be at. This function will return 0 if a valid process and priority are specified; otherwise, it returns -1.
+
+The function works slightly differently depending on whether the process priority being changed is the calling process or another process. If the calling process' priority is changed, it is immediately changed. If there is a process with a priority greater than or equal to the current process after the change, the process is pre-empted. 
+
+Otherwise, if the process whose priority is being changed is not the current process, its priority is changed and then it is moved from its old priority queue (state dependant), to a queue with its new priority. If the new priority is greater than or equal to the current process' priority, the current process is pre-empted.
+
 \subsubsection{Getting a Process' Priority}
+
+\begin{code}
+int32_t get_process_priority(int32_t process_id)
+\end{code}
+
+A process may check its or another process' priority by calling the \texttt{get\_process\_priority} function. This function takes a single parameter, the process id of the process to be queried. If this is a valid process id, that process' priority is returned. Otherwise, -1 is returned.
 
 \subsection{Inter-Process Communcation} \label{sec:ipc}
 
@@ -567,23 +610,30 @@ Normally, these values are automatically set when the user makes a system call f
 \section{Testing}\label{sec:test}
 
 \subsection{Verification}
-
 To verify all the different features that were put into the Operating System, there were various ways that they were tested. Firstly, the test processes that were written for each deliverable focused solely on the different new features being added in. Mainly these test processes just verified that the functionality of anything that was implemented was fully working. These tests didn't include many edge cases, but just barebone functionality testing. 
 
 To actually test edge cases, most of the time it was done through input of different edge cases into the console. This usually meant several bad input strings were fed to the OS to see how it reacts to them. These usually found several edge cases that weren't previously considered. Besides just random input of edge cases, most of the time the test processes that were written would introduce small bugs that weren't ever considered before or were left unnoticed until ran through with the test processes. 
-
-There was a specific case that required unit testing. To actually write the functionality of the string library in the OS, thorough unit testing was done in order to verify that all the string methods worked. Since it was easier to test these string methods outside of the OS itself, these unit tests were done externally, and were not including in the OS itself.
-
-
 \subsection{Debugging}
-
-To actually fix any bugs encountered, the debugging tool that was a part of the Keil IDE was used heavily. This involved tracking several local variables to see how they changed as certain functions were called, and using breakpoints and going step by step through the code to see where it might have been faulting or resulting in a bug. The memory watch was used to see how the bits in the memory of the OS changed to see if any discrepancy occurred. Along with using breakpoints and watch windows, debug flags were set to output debug print statements that were defined, in order to see if the code ever hit that section of the method, and if the variable that was being output was just garbage memory or not.
+ 
+There was a specific case that required unit testing. To actually write the functionality of the string library in the OS, thorough unit testing was done in order to verify that all the string methods worked. Since it was easier to test these string methods outside of the OS itself, these unit tests were done externally, and were not including in the OS itself.
 
 \section{Major Design Challenges}\label{sec:design}
 
 \subsection{Mistakes}
 
+There were a number of mistakes made in the course of developing OS WOW.
+
+In Part 1, the linked list data structures in the operating system requested memory from the heap. This was a major problem because the kernel was using up a significant portion of the heap in the operating system. Additionally, there were strange pre-emption and scheduling issues that occured as a result. As a result, a lot of time was spent rewriting these in the second part of the project.
+
+Another issue that occured was that the scheduler was giving priority to processes that were blocked on memory over other processes. This made the scheduler not use a First-In-First-Out (FIFO) approach when choosing the next process. Additionally, the operating system was not pre-empting processes when their priority was equal to the current process. This caused out of order execution in some test cases.
+
+For the second part of the project, a number of different mistakes were found. First, the wall clock was not working as a 24-hour clock and instead was working on an 100 hour rollover. Second, there were a number of error cases not being checked for when the user sent messages to the wall clock process. Third, the wall clock was not being initialized properly and as a result hard faulted the test cases for this section of the project. Lastly, another strange bug that appeared was in the KCD. The KCD was not releasing memory blocks in some instances and a result blocking on memory was not acting as expected.
+
 \subsection{Stumbling Blocks}
+
+There were a number of stumbling blocks encountered in implementing OS WOW. First, trying to understand how to implement memory and various internal memory related data structures without a heap took a lot of time to figure out. Second, the Keil IDE was the source of much misery. The debugger would consistently crash without any reason when debugging hard faults. Additionally, there would be a vague algorithm error that would block downloading code onto the board. This significantly slowed down develop speed as a lot of time was wasted trying to figure out how to fix this problem. 
+
+Another major stumbling block that was encountered was related to group dynamics. There was a lot of bickering and arguing over many aspects of the project. This lead to a lot of frustration and sometimes malice between the group members. These issues mainly centered around how much of a priority the project was, when to work on it, division of labour and various implementation details. Another potential factor contributing to this is that all of the group mates lived together and potentially spent way too much time together.
 
 \subsection{Things To Change and Design Issues}
 
@@ -592,8 +642,6 @@ There would be a number of things that would be changed if OS WOW was built over
 Another thing that would be changed is to have a better naming convention for global variables. Currently, global variables have an assortment of names that make them hard to identify and keep track of. The operating system should have followed a prefix convention, such as \texttt{g\_} for all global variables.
 
 The last thing that would be changed would be to have some more consistency with return values. Currently a non-zero return value is considered a failure for a function call. However, more information on what the specific error is would have helped with debugging purposes.
-
-\subsection{Group Challenges}
 
 \section{Timing Analysis}\label{sec:time}
 
@@ -622,30 +670,28 @@ Receive Message & 11.09\\
 \caption{Averages of all the methods tested}
 \end{figure}
 
-~\\The following figures show the histograms for each method tested depicting the values obtained per method call recorded in $\mu s$.
+Figures ~\ref{fig:mem}, ~\ref{fig:send} and ~\ref{fig:receive} show the histograms for each method tested depicting the values obtained per method call recorded in $\mu s$.
 
 \begin{figure}[bp!]
 \centering
 \includegraphics[width=120mm]{RequestMemoryHistogram.png}
 \caption{Request Memory Times for Sample Size 30}
-\label{overflow}
+\label{fig:mem}
 \end{figure}
 
 \begin{figure}[bp!]
 \centering
 \includegraphics[width=120mm]{SendMessageHistogram.png}
 \caption{Send Message Times for Sample Size 30}
-\label{overflow}
+\label{fig:send}
 \end{figure}
 
 \begin{figure}[bp!]
 \centering
 \includegraphics[width=120mm]{ReceiveMessageHistogram.png}
 \caption{Receive Message Times for Sample Size 30}
-\label{overflow}
+\label{fig:receive}
 \end{figure}
-
-\pagebreak
 
 After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions.
 

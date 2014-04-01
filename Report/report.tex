@@ -174,13 +174,13 @@
 
 \subsection{About}
 
-This report is a detailed design document describing the OS WOW Real-Time Operation System designed by Fasih Awan, Joshua Kalpin, John Zanutto and Si Chuang Li. This operating system was implemented for the Keil MCB1700 board populated with an NXP LPC1768 microcontroller. 
+This report is a detailed design document describing the OS WOW Real-Time Operation System designed by Fasih Awan, Joshua Kalpin, Si Chuang Li and John Zanutto. This operating system was implemented for the Keil MCB1700 board populated with an NXP LPC1768 microcontroller. 
 
-This operating system was created over the span of three months during the creator's 3A term in Software Engineering. It was developed in four parts adding more features each time. The first part involved creating basic memory management and process handling. The second part added the challenge of interrupts and a console. The third part added more processes. Lastly, the fourth part of the project included timing tests and this report.
+This operating system was created over the span of three months during the creators' 3A term in Software Engineering. It was developed in four parts adding more features each time. The first part involved creating basic memory management and a multiprogramming environment. The second part added the challenge of interrupt driven I/O, timer interrupts and a console. The third part added more processes. Lastly, the fourth part of the project included timing tests and this report.
 
 \subsection{Purpose}
 
-The purpose of this report is to provide the reader with detailed documentation on the OS WOW operating system. This includes the following information. First, the data structures and global variables that the kernel uses. Second, this report will document the APIs that are available to users of the operation system. Third, details on how interrupts are handled within the operating system will be specified. Fourth, the various system, user and test processes will be explained. Fifth, details on how the operating system is initialized, including memory and processes will be provided. Lastly, there will be details on testing, design challenges and timing analysis on the functions of the operating system.
+The purpose of this report is to provide the reader with detailed documentation on the OS WOW operating system. This includes the following information:  First, this report will document the APIs that are available to users of the operation system. Second, details on how interrupts are handled within the operating system will be specified. Third, the various system, user and test processes will be explained. Fourth, details on how the operating system is initialized, including memory and processes will be provided. Fifth, there will be details on testing, design challenges and timing analysis on the functions of the operating system. Lastly, the data structures and global variables that the kernel uses.
 
 \section{Kernel API} \label{sec:kernel}
 
@@ -207,6 +207,8 @@ This method takes in a pointer returned by \texttt{request\_memory\_block()}, de
 
 \subsubsection{Example Usage of Requesting and Releasing Memory}
 \begin{code}
+#include "memory.h"
+
 void example_process(void) {
     int* array;
     
@@ -235,9 +237,9 @@ typedef struct {
 } pcb_t;
 \end{code}
 
-Processes can have one of five valid priority levels from 0 (Highest) to 4 (Lowest). The lowest priority level is reserved for the Null Process. All other priority levels can be used by any process.
+Processes can have one of five valid priority levels from 0 (\texttt{HIGHEST}) to 4 (\texttt{LOWEST}). The lowest priority level is reserved for the Null Process. All other priority levels can be used by any process.
 
-Processes can also be in a number of states. Before a process is first run, it is in the \texttt{NEW} state. When a process is run it enters the \texttt{RUNNING} state. Once a process has finished running and is not blocked, it enters the \texttt{READY} state. If a process is either blocked on memory or is waiting to receive a message it either enters into the \texttt{MSG\_BLOCKED} or \texttt{MEM\_BLOCKED} state depending on what is it blocked on. When a process terminates it enters the \texttt{EXIT} state. However, no processes ever terminate in the operating system, so no processes will enter this state.
+Processes can be in one of five states. Before a process is first run, it is in the \texttt{NEW} state. When a process is run it enters the \texttt{RUNNING} state. Once a process finishes or is pre-empted and is not blocked, it enters the \texttt{READY} state. If a process is either blocked on receiving a message or memory it either enters into the \texttt{MSG\_BLOCKED} or \texttt{MEM\_BLOCKED} state depending on what is it blocked on. When a process terminates it enters the \texttt{EXIT} state. However, no processes ever terminate in the operating system, so no processes will enter this state.
 
 \subsubsection{Releasing the Processor}
 
@@ -249,7 +251,7 @@ When a process has completed a task or is blocked it should release the processo
 
 To choose the next process and enqueue the current process several steps are completed. First, the operating system checks if the current process is blocked or not. If it is blocked, it checks all possible priority levels for the next available process to queue. Otherwise, it only checks if there is a process on a ready queue with a higher or equal priority to schedule next. If there is no process that satisfies this condition, then the current process is chosen as the next process. Otherwise, the highest priority process at the front of its respective ready queue is chosen. After the next process is chosen, the current process is either put onto a ready queue or a blocked queue for its priority depending on its current state.
 
-Once the next process is chosen, the context switch occurs. This operation occurs in two slightly different ways depending on if the operating system is switching to a new process or a process that has already ran. Additionally, none of the following will occur the process we are switching to is the current process. 
+Once the next process is chosen, the context switch occurs. If we are not changing process' (i.e. the next process is the currently running one), the operating system skips this step. This operation occurs in two slightly different ways depending on if the operating system is switching to a new process or a process that has already ran.
 
 In both cases, the operating system will save the current stack value to the old process' PCB. Next, it sets the current process to running and sets the stack pointer to the current PCB's stack pointer. Lastly, if the new process has never been run, the operating system switches to from handler mode to user mode. Once the function returns, the new process is immediately invoked.
 
@@ -299,7 +301,7 @@ int32_t send_message(int32_t process_id, void* message_envelope)
 
 The \texttt{send\_message} takes in two parameters, a process id and a message envelope and will return 0 on success. The process id must be a valid process inside of the operating system otherwise the function will return 1. The message envelope to be sent must be created by the calling process. First, the process must request a memory block and cast it to be of type \texttt{msg\_buf\_t}. Then, the process can specify a type and message data to be sent.
 
-Once a process sends a message, the kernel will then convert the message to be a kernel message. This is done by subtracting a offset equal to the size of the kernel header from the struct to reveal the user hidden properties. After doing this, the message is initialized with the sender process id, receiver process id and its linked list node is instantiated. The message is then added to the receiving process' message queue. If the receiving process was blocked on messages, it will then be added to its appriorite ready queue. Additionally, if the process is of equal or higher priority to the current process, the current process will be pre-empted.
+Once a process sends a message, the kernel will then convert the message to be a kernel message. This is done by subtracting a offset equal to the size of the kernel header from the struct to reveal the user hidden properties. After doing this, the message is initialized with the sender process id, receiver process id and its linked list node is instantiated. The message is then added to the receiving process' message queue. If the receiving process was blocked on messages, it will then be added to its appriorite ready queue. Additionally, if the receiving process is of equal or higher priority to the current process, the current process will be pre-empted.
 
 \subsubsection{Receive Message}
 
@@ -322,6 +324,27 @@ The delayed send method worked with the timer interrupts. To start off, delayed 
 Delayed send started off with some sanity checks such as if the delay was a value of 0, then the message should be sent directly using \texttt{send\_message}. After the sanity check, the message is fully created using \texttt{init\_message} which just gives everything in the message block a default value. After the message has been initialized, the time delay set to the message is the value of the current timer count plus the delay passed. This way it's easier to decide if the expiry date has been met. After that is done, the message queue for delayed send is iterated upon to look for an expiry time for a message to be greater than the current message. If the time is greater, then the current message will be placed right before that. This is basically using insertion sort. Once the message has been placed within the queue, the function exits. 
 
 If however the message queue for delayed send is empty, then the message is pushed onto the linked list and then method exits.
+
+\subsubsection{Example Usage of Inter-Process Communication}
+
+\begin{code}
+#include "message.h"
+#include "memory.h"
+
+void some_process() {
+	int32_t sender_id;
+	msg_buf_t *msg = (msg_buf_t *)request_memory_block();
+	
+	msg.msg_type = DEFAULT;
+	msg.msg_data[0] = 'D';
+	send_message(PID_SOME_PROC, msg);
+	msg = receive_message(&sender_id);
+	
+	if(sender_id == PID_SOME_PROC) {
+		delayed_send(PID_SOME_PROC, msg, 1000);
+	}
+}
+\end{code}
 
 \section{Interrupts}\label{sec:interupt}
 

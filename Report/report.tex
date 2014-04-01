@@ -319,11 +319,9 @@ Once a process wants to receive a message, its message queue is queried to see i
 int32_t delayed_send(int32_t process_id, void* message, int32_t delay)
 \end{code}
 
-The delayed send method worked with the timer interrupts. To start off, delayed send needed its own message queue since it needed to hold on to messages until it was time to send them. First of all, another parameter for the message struct was added that gave each message an expiry time. Then, to actually store these messages so that they're separate from the regular message queue, a new linked list object was created that held these messages.
+The delayed send method works alongside the timer interrupts. To start off, delayed send needs its own message queue since it needs to hold on to messages until its time to send them. First of all, another parameter for the message struct has to be added so that each message has an expiry time. Then, to actually store these messages so that they're separate from the regular message queue, a new linked list object is created that held these messages. The linked list object is created when the timer is initialized since that is where all the messages will be sent out from.
 
-Delayed send started off with some sanity checks such as if the delay was a value of 0, then the message should be sent directly using \texttt{send\_message}. After the sanity check, the message is fully created using \texttt{init\_message} which just gives everything in the message block a default value. After the message has been initialized, the time delay set to the message is the value of the current timer count plus the delay passed. This way it's easier to decide if the expiry date has been met. After that is done, the message queue for delayed send is iterated upon to look for an expiry time for a message to be greater than the current message. If the time is greater, then the current message will be placed right before that. This is basically using insertion sort. Once the message has been placed within the queue, the function exits. 
-
-If however the message queue for delayed send is empty, then the message is pushed onto the linked list and then method exits.
+Delayed send started off with some sanity checks such as if the delay was a value of 0, then the message should be sent directly using \texttt{send\_message}. After the sanity check, the message is initialized with the sender process id, receiver process id and its linked list node is instantiated. After the message has been initialized, the time delay set to the message is the value of the current timer count [~\ref{g_timer_count} ] plus the delay passed. This way it's easier to decide if the expiry date has been met. After that is done, the message queue for delayed send is iterated upon to look for an expiry time for a message to be greater than the current message. If the time is greater, then the current message will be placed right before that. This is basically using insertion sort. Once the message has been placed within the queue, the function exits. 
 
 \subsubsection{Example Usage of Inter-Process Communication}
 
@@ -760,7 +758,7 @@ Overall, the functioned resulted in a relatively consistent set of data points, 
 
 \texttt{mem\_blocked\_pqs}: This variable represents an array of 5 doubly linked lists that represent the memory blocked priority queues for pcbs. This was exposed to allow for the queue of blocked processes.
 
-\texttt{g\_timer\_count}: This variable represents the current elapsed time for the interrupt timer in miliseconds. This is used to check whether to send a delayed message or not. This was exposed so that delayed send could record the time that a message was to be sent at.
+\texttt{g\_timer\_count} \label{g_timer_count}: This variable represents the current elapsed time for the interrupt timer in miliseconds. This is used to check whether to send a delayed message or not. This was exposed so that delayed send could record the time that a message was to be sent at.
 
 \texttt{tc\_count}: This variable was used to perform our timing tests on our operating system. It is incremented every time the second timer ticks.
 

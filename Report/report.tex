@@ -436,7 +436,7 @@ The \texttt{\%WR} command resets the clock. Specifically, it will set the curren
 
 The clock set command, \texttt{\%WS},  requires significant validation for the input. The colon locations, the spaces and all of the values are verified to determine whether the input is correct. An error will not be thrown if the input is not specified in the below format.
 \begin{code}
-\%WS HH:MM:SS
+%WS HH:MM:SS
 \end{code}
 
 \texttt{H} represents hours, \texttt{M} represents minutes and \texttt{S} represents seconds. Each of these is required to be specified as two digits (e.g. 01:01:01). If the input matches this format, the clock is updated with the correct time, and a \texttt{CRT\_DISPLAY} message is sent to the CRT to display the new time immediately. The clock is then set to running if it is not currently running, and will begin sending delayed messages to itself.
@@ -454,10 +454,10 @@ Additionally, when the clock outputs, the output is sent to the top right corner
 The change priority process takes a user input command and sets the priority of a specified process to a specified priority when both are valid input. This process functions with the below input into the console by the user.
 
 \begin{code}
-\%C [Process ID] [New Priority]
+%C [Process ID] [New Priority]
 \end{code}
 
-\texttt{Process ID} is the id of the process that will be changed, and ranges from process id 1 to process id 13. This id range excludes the i-processes and the Null Process and they have fixed priorities.
+\texttt{Process ID} is the id of the process that will be changed, and ranges from process id 1 to process id 13. This id range excludes the i-processes and the Null Process because they have fixed priorities.
 
 \texttt{New Priority} is the priority that the process will receive. This excludes priority 4 (denoted LOWEST in the priority enumerable) as that priority is reserved for the Null Process.
 
@@ -474,14 +474,14 @@ The second loop first calls \texttt{request\_memory\_block} to allocate memory f
 
 \subsubsection{Stress Test B}
 
-This stress test process simply runs in a continuous loop and calls \texttt{receive\_message}. While it calls that function, it will become blocked until the message being sent to this process is received. Once received, this process relays that message by sending it to the third stress test process, process C.
+This stress test process runs in a continuous loop and calls \texttt{receive\_message}. When it receives, this process immediately forwards that message to the third stress test process, process C.
 
 
 \subsubsection{Stress Test C}
 
 This process receives the messages which were created and sent in stress test A and then relayed by stress test B. This process starts out by creating a circular buffer \texttt{message\_queue} which acts as a message queue. The message queue will hold all the messages that this process receives.
 
-Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the from of the queue, and the queues front pointers are updated to the next element.
+Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the from of the queue.
 
 The process now checks the message type that it either received of popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 

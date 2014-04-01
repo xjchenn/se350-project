@@ -310,6 +310,11 @@ The three hotkeys are as follows. If the "," key is pressed, the processes curre
 
 \subsection{Timer Interrupts}
 
+The timer interrupt is an interrupt that happens every millisecond. This interrupt first disables any other interrupts from starting, so the OS does not call another timer interrupt while within a timer interrupt, and then goes to the interrupt handler. The interrupt handler first increments a global variable named \texttt{g\_timer\_count} which is just a timing variable. The interrupt handler then calls the timer interrupt process \texttt{timer\_i\_process}. 
+
+The \texttt{timer\_i\_process} first gets the pointer to the front of its message queue, where delayed messages get sent, and then continues to check the front of the queue for any messages who have an expiry date that is less than the current timer count. If the expiry value for the message is less than the current timer count, then it is dispatched using \texttt{send\_message}. Once it hits a message at the front of the queue who's expiry date is greater than the current timer count, the process stops iterating the front of the queue and exits. Once the process exits, the interrupt handler enables interrupts, and exits.
+
+
 \section{System and User Processes}\label{sec:proc}
 
 \subsection{System Processes}
@@ -398,23 +403,75 @@ The process does several error checks for validation. These include checking for
 
 \subsubsection{Stress Test A}
 
+The first stress test user process starts off by creating a new message and sending it to the KCD. The message itself is the string text \texttt{\%Z}, which is a command accepted by the KCD. After the message has been send, the process goes on a continuous loop where it calls \texttt{receive\_message}, which will block the process until it receives the message being sent to it. After the message has been received, the process exits the continuous loop, and enters another loop.
+
+The second loop first calls \texttt{request\_memory\_block} to allocate memory for the message envelope. After receiving memory, it prepares the message block by assigning the message type to be \texttt{COUNT\_REPORT} which will allow the target process to continue its tasks. The sender of the message is set to the second user stress test process.
+
+
 \subsubsection{Stress Test B}
+
+This stress test process simply runs in a continuous loop and calls \texttt{receive\_message}. While it calls that function, it will become blocked until the message being sent to this process is received. Once received, this process relays that message by sending it to the third stress test process, process C.
+
 
 \subsubsection{Stress Test C}
 
+This process receives the messages which were created and sent in stress test A and then relayed by stress test B. This process starts out by creating a circular buffer \texttt{message\_queue} which acts as a message queue. The message queue will hold all the messages that this process receives.
+
+Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the from of the queue, and the queues front pointers are updated to the next element.
+
+The process now checks the message type that it either received of popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
+
+If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for the message it sent to itself. It will call \texttt{receive\_message} continuously. If the message type is not \texttt{WAKEUP10} then it pushes the message to the end of the message queue. If the message type is \texttt{WAKEUP10}, it restarts the loop.
+
+\subsubsection{Stress Test User Process C Flow}
+\begin{code}
+while (1)
+	if (queue is not empty)
+		envelope = receive_message()
+	else
+		envelope = queue.pop_front
+	if (envelope.type == COUNT_REPORT)
+		if (envelope.data % 20 == 0)
+			send_message(CRT_DISPLAY, envelope)
+			envelope.type = WAKEUP10
+			delayed_send(envelope, 10 seconds)
+			while (1)
+				envelope = receive_message()
+				if (envelope.type == WAKEUP10)
+					break
+				else
+					queue.push_back(envelope)
+\end{code}
+
+
 \section{Test Processes}\label{sec:testproc}
+
+Overall there are 6 test process. The first five test processes test the functionality of the OS, and the sixth test polls all the results. In order to do that, an array of integers is defined which is used to set the result of the test as a $1$ or a $0$. All the test processes start off with a process priority of \texttt{MEDIUM}, and the polling process starts off with a priority of \texttt{LOW}. 
+
 
 \subsection{Process 1}
 
+The first test process tests the delayed send functionality. It creates a message with a specific text and sends it to itself with a delay of 1 \texttt{CLOCK\_INTERVAL} which is defined as $1000$ milliseconds. Then it calls \texttt{receive\_message} and blocks itself until it receives the message. The process then checks if the message text matches what was sent off using \texttt{strcmp}. It then sets its own priority to \texttt{LOW} and enters an infinite loop of calling \texttt{release\_processor}. 
+
+
 \subsection{Process 2}
+
+The second test process tests sending messages. It creates a new message with a specified string, and sends it to the third test process. The process then calls \texttt{receive\_message} and blocks itself until a message gets sent to it. Once the process receives its message, which the third process will be sending it, it compares the string text to make sure it matches the expected string, and then sets its own priority to \texttt{LOW}. It then enters an infinite loop of calling \texttt{release\_processor}. 
+
 
 \subsection{Process 3}
 
-\subsection{Process 4}
+The third test process also tests sending messages. It creates a new message with the string that the second test process is expecting, and then send it off using \texttt{send\_message}. It then calls \texttt{receive\_message} waiting for the message that was sent to it to come in. The process is blocked until then. Once it receives the message, it compares the string to the expected string, sets its own priority to \texttt{LOW} and then enters an infinite loop of calling \texttt{release\_processor}.
 
-\subsection{Process 5}
+
+\subsection{Process 4 & Process 5}
+
+The fourth test process and the fifth test processes are similar processes. These processes test preemption based on process priority. They both have internal counters that are incremented. Both processes increment their counter every time the loop iterates twice. In the fourth test process when the counter hits 5, it sets the process priority of the fifth test process to \texttt{HIGH} and exits the first loop. It then checks if the fifth process finished first or not. In the fifth test process, when the counter hits 10 it sets the process priority of the fourth process to \texttt{HIGH}. The expected result is that the fourth process will finish first, and the fifth one finishes second. To check that, the process checks the numerical array created to see if the fifth test already completed. 
+
 
 \subsection{Process 6}
+
+The last test process just polls the result from the numerical arrays to see if they passed or failed, and then just outputs the results as $x/5\ \text{PASSED}$ and $y/5\ \text{FAILED}$. If any of the processes have not fully run yet, by checking if the test run array has a $0$ for their entry, then the process will run an infinite loop calling \texttt{release\_processor} until all other processes have ran. Once all of them have ran, it prints out the final results, and then goes into an infinite loop of calling \texttt{release\_processor}.
 
 \section{Initialization}\label{sec:init}
 

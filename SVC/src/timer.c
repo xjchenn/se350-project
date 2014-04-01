@@ -14,14 +14,16 @@
 #include "k_process.h"
 
 volatile uint32_t g_timer_count = 0; // increment every 1 ms
+
 linkedlist_t timeout_queue; // queue of messages
 int32_t switch_flag = 0;
-
+volatile uint32_t* tc_count;
 /**
  * @brief: initialize timer. Only timer 0 is supported
  */
 uint32_t timer_init(uint8_t n_timer) {
     LPC_TIM_TypeDef* pTimer;
+
     if (n_timer == 0) {
         /*
         Steps 1 & 2: system control configuration.
@@ -55,45 +57,57 @@ uint32_t timer_init(uint8_t n_timer) {
         */
         pTimer = (LPC_TIM_TypeDef*) LPC_TIM0;
 
-    } else { /* other timer not supported yet */
+        /* Step 4.1: Prescale Register PR setting
+           CCLK = 100 MHZ, PCLK = CCLK/4 = 25 MHZ
+           2*(12499 + 1)*(1/25) * 10^(-6) s = 10^(-3) s = 1 ms
+           TC (Timer Counter) toggles b/w 0 and 1 every 12500 PCLKs
+           see MR setting below
+        */
+        pTimer->PR = 12499;
+
+        /*
+        -----------------------------------------------------
+        Step 4: Interrupts configuration
+        -----------------------------------------------------
+        */
+
+        /* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
+
+        pTimer->MR0 = 1;
+
+        /* Step 4.3: MCR setting, see table 429 on pg496 of LPC17xx_UM.
+           Interrupt on MR0: when MR0 mathches the value in the TC,
+                             generate an interrupt.
+           Reset on MR0: Reset TC if MR0 mathches it.
+        */
+
+        pTimer->MCR = BIT(0) | BIT(1);
+
+        g_timer_count = 0;
+
+        /* Step 4.4: CSMSIS enable timer0 IRQ */
+        NVIC_EnableIRQ(TIMER0_IRQn);
+
+        /* Step 4.5: Enable the TCR. See table 427 on pg494 of LPC17xx_UM. */
+        pTimer->TCR = 1;
+
+        // Initialize the linkedlist
+        linkedlist_init(&timeout_queue);
+
+    } else if (n_timer == 1) { /* Initialize timer 1 */
+
+        pTimer = (LPC_TIM_TypeDef*) LPC_TIM1;
+
+        pTimer->PR = 49;
+
+        pTimer->MCR = BIT(0) | BIT(1);
+        pTimer->TCR = BIT(0);
+        pTimer->TC = 1;
+
+        tc_count = &pTimer->TC;
+    } else {
         return 1;
     }
-
-    /*
-    -----------------------------------------------------
-    Step 4: Interrupts configuration
-    -----------------------------------------------------
-    */
-
-    /* Step 4.1: Prescale Register PR setting
-       CCLK = 100 MHZ, PCLK = CCLK/4 = 25 MHZ
-       2*(12499 + 1)*(1/25) * 10^(-6) s = 10^(-3) s = 1 ms
-       TC (Timer Counter) toggles b/w 0 and 1 every 12500 PCLKs
-       see MR setting below
-    */
-    pTimer->PR = 12499;
-
-    /* Step 4.2: MR setting, see section 21.6.7 on pg496 of LPC17xx_UM. */
-    pTimer->MR0 = 1;
-
-    /* Step 4.3: MCR setting, see table 429 on pg496 of LPC17xx_UM.
-       Interrupt on MR0: when MR0 mathches the value in the TC,
-                         generate an interrupt.
-       Reset on MR0: Reset TC if MR0 mathches it.
-    */
-    pTimer->MCR = BIT(0) | BIT(1);
-
-    g_timer_count = 0;
-
-    /* Step 4.4: CSMSIS enable timer0 IRQ */
-    NVIC_EnableIRQ(TIMER0_IRQn);
-
-    /* Step 4.5: Enable the TCR. See table 427 on pg494 of LPC17xx_UM. */
-    pTimer->TCR = 1;
-
-    // Initialize the linkedlist
-    linkedlist_init(&timeout_queue);
-
     return 0;
 }
 
@@ -107,10 +121,10 @@ uint32_t timer_init(uint8_t n_timer) {
 __asm void TIMER0_IRQHandler(void) {
     CPSID i                         ;// disable interrupts
     PRESERVE8
-    IMPORT c_TIMER0_IRQHandler
+    IMPORT c_TIMER_IRQHandler
     IMPORT k_release_processor
     PUSH {r4 - r11, lr}
-    BL c_TIMER0_IRQHandler
+    BL c_TIMER_IRQHandler
     LDR R4, = __cpp(&switch_flag)
     LDR R4, [R4]
     MOV R5, #0
@@ -123,7 +137,7 @@ RESTORE
     POP {r4 - r11, pc}
 }
 
-void c_TIMER0_IRQHandler(void) {
+void c_TIMER_IRQHandler(void) {
     /* ack inttrupt, see section  21.6.1 on pg 493 of LPC17XX_UM */
     LPC_TIM0->IR = BIT(0);
     g_timer_count++;
@@ -143,7 +157,7 @@ void timer_i_process(void) {
         current_pcb_node = pcb_nodes[current_message->sender_pid];
         k_send_message_i(current_message->receiver_pid, USER_MSG_ADDR(current_message));
         current_pcb_node = previous_pcb_node;
-        
+
         if (pcbs[current_message->receiver_pid]->priority <= ((pcb_t*)previous_pcb_node->value)->priority) {
             switch_flag = 1;
         }

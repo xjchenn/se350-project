@@ -1,10 +1,12 @@
 #include "test_proc.h"
 #include "rtx.h"
+#include "timer.h"
 
 proc_image_t g_test_procs[NUM_TEST_PROCESSES];
 
 int32_t test_results[NUM_TEST_PROCESSES];
 int32_t test_ran[NUM_TEST_PROCESSES];
+
 
 void set_test_procs() {
     uint32_t i;
@@ -269,6 +271,7 @@ void test_proc_p1_6() {
             printf("G005_test: END\r\n");
             ranOnce = 1;
             set_process_priority(PID_P6, LOW);
+            set_process_priority(PID_TIMER_TEST_PROC, MEDIUM);
         }
         release_processor();
     }

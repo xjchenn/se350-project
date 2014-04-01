@@ -24,7 +24,7 @@ typedef void (*func_ptr_t)();
 
 #define NUM_K_PROCESSES         5 // includes i processes
 #define NUM_TEST_PROCESSES      6
-#define NUM_USER_PROCESSES      5
+#define NUM_USER_PROCESSES      6
 #define NUM_PROCESSES           (uint32_t)(NUM_K_PROCESSES + NUM_TEST_PROCESSES + NUM_USER_PROCESSES)
 
 #define CLOCK_INTERVAL          1000
@@ -53,6 +53,7 @@ typedef void (*func_ptr_t)();
 #define PID_CRT                 13
 #define PID_TIMER_IPROC         14
 #define PID_UART_IPROC          15
+#define PID_TIMER_TEST_PROC     16
 #define KEY_READY_QUEUE         ','
 #define KEY_BLOCKED_MEM_QUEUE   '.'
 #define KEY_BLOCKED_MSG_QUEUE   '/'

@@ -44,8 +44,8 @@ uint32_t is_numeric_char(char c) {
 uint32_t atoi(char* s) {
     uint32_t digits = 0;
 
-    while (*(s + digits) != '\r' && 
-           *(s + digits) != '\0') {
+    while (*(s + digits) != '\r' &&
+            *(s + digits) != '\0') {
         digits++;
     }
 

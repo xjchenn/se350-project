@@ -16,6 +16,7 @@ void k_rtx_init(void) {
     k_init_memory_blocks();
     k_init_processor();
     timer_init(0);
+    timer_init(1);
     init_logo_on_lcd();
     __enable_irq();
 

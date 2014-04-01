@@ -262,9 +262,9 @@ void irq_i_process(void) {
 
 #ifdef _DEBUG_HOTKEYS
         if (g_char_in == KEY_READY_QUEUE ||
-            g_char_in == KEY_BLOCKED_MEM_QUEUE ||
-            g_char_in == KEY_BLOCKED_MSG_QUEUE ||
-            g_char_in == KEY_MSG_LOG_BUFFER) {
+                g_char_in == KEY_BLOCKED_MEM_QUEUE ||
+                g_char_in == KEY_BLOCKED_MSG_QUEUE ||
+                g_char_in == KEY_MSG_LOG_BUFFER) {
 
             PRINT_HEADER;
             println("CURRENT PROCESS:");
@@ -289,7 +289,7 @@ void irq_i_process(void) {
 
                 case KEY_MSG_LOG_BUFFER:
                     // TODO fix later...
-                    //k_print_msg_logs(); 
+                    //k_print_msg_logs();
                     break;
 
                 default:

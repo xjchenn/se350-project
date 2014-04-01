@@ -192,6 +192,8 @@ The purpose of this report is to provide the reader with detailed documentation 
 
 \subsection{Timers}
 
+The timer was used to give functionality to timer interrupts. This allowed the OS to call an interrupt every millisecond. The timer was also used to make the delayed send method work. To incorporate the timer with the delayed send, a timer counter had to be made. This counter would increment every time the timer interrupt entered its interrupt handler. The timer counter was used to keep track of the delayed messages being sent off, as it was needed to determine if the amount of time before the message can be sent has elapsed.
+
 \subsection{Inter-Process Communication}
 
 \section{Kernel API} \label{sec:kernel}
@@ -645,5 +647,59 @@ Another major stumbling block that was encountered was related to group dynamics
 \subsection{Design Issues}
 
 \section{Timing Analysis}\label{sec:time}
+
+To begin timing analysis, a different way to measure time was needed. Since the regular timer used for timer interrupts was only ever used to increment the timer count when an interrupt occurred, there was no way to measure timing since all the methods tested disabled interrupts. To remedy this situation, the timer was modified.
+
+The new timer was instantiated just like the original timer, only now the MR0 register was left at 0 to avoid using interrupts. Instead, the internal clock was used, which was achieved by setting the TCR register to 1. Then to actually get the time value of the timer, a pointer reference was made to the TC register in the timer which holds the timer count. This reference was made global and used by the timing analysis process. 
+
+The three methods tested: \texttt{request\_memory\_block}, \texttt{send\_message}, and \texttt{receive\_message}. 
+
+Each method was tested 30 times to obtain a good amount of data. 
+The following averages were calculated:
+\begin{figure}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Method & Average\\
+\hline
+Request Memory Block & 11.83 \\
+\hline
+Send Message & 12.03 \\
+\hline
+Receive Message & 11.09\\
+\hline
+\end{tabular}
+\end{center}
+\caption{Averages of all the methods tested}
+\end{figure}
+
+~\\The following figures show the histograms for each method tested depicting the values obtained per method call recorded in $\mu s$.
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=120mm]{RequestMemoryHistogram.png}
+\caption{Request Memory Times for Sample Size 30}
+\label{overflow}
+\end{figure}
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=120mm]{SendMessageHistogram.png}
+\caption{Send Message Times for Sample Size 30}
+\label{overflow}
+\end{figure}
+
+\begin{figure}[bp!]
+\centering
+\includegraphics[width=120mm]{ReceiveMessageHistogram.png}
+\caption{Receive Message Times for Sample Size 30}
+\label{overflow}
+\end{figure}
+
+\pagebreak
+
+After analysing the OS structure, there were several things that may have affected the timing of the methods tested. Firstly, for \texttt{request\_memory\_block}, after the memory was obtained, it was completely zeroed out, which resulted in approximately $10\mu s$ of time in the recorded time. As for both \texttt{send\_message} and \texttt{receive\_message}, the main bottleneck there was the fact that after a message was received within the methods, it was sent off to a tracking function with stored the message within a buffer. This seemed to cause greatest delay for both of these functions.
+
+Overall, the functioned resulted in a relatively consistent set of data points, showing that there was little to no discrepancy.
 
 \end{document}

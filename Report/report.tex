@@ -487,26 +487,6 @@ Once the message queue has been initialized, the process enters a loop. First it
 The process now checks the message type that it either received or popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 
 If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for that delayed message. While it waits it will queue up any messages that it receives in its own message queue, and when it finally receives that delayed message, it exits the loop and starts from the beginning again. 
-\subsubsection{Stress Test User Process C Flow}
-\begin{code}
-while (1)
-	if (queue is empty)
-		envelope = receive_message()
-	else
-		envelope = queue.pop_front
-	if (envelope.type == COUNT_REPORT)
-		if (envelope.data % 20 == 0)
-			send_message(CRT_DISPLAY, envelope)
-			envelope.type = WAKEUP10
-			delayed_send(envelope, 10 seconds)
-			while (1)
-				envelope = receive_message()
-				if (envelope.type == WAKEUP10)
-					break
-				else
-					queue.push_back(envelope)
-\end{code}
-
 
 \section{Test Processes}\label{sec:testproc}
 

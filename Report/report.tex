@@ -482,7 +482,7 @@ This stress test process runs in a continuous loop and calls \texttt{receive\_me
 
 This process receives the messages which were created and sent in stress test A and then relayed by stress test B. This process starts out by creating a circular buffer \texttt{message\_queue} which acts as a message queue. The message queue will hold all the messages that this process receives.
 
-Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the from of the queue.
+Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the front of the queue.
 
 The process now checks the message type that it either received or popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 

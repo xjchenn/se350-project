@@ -484,7 +484,7 @@ This process receives the messages which were created and sent in stress test A 
 
 Once the message queue has been initialized, the process enters a loop. First it checks if the message queue is empty, and if it is then the process calls \texttt{receive\_message} and remains blocked while waiting for a message to be sent to it. If the message queue was not empty, then a message is popped off from the from of the queue.
 
-The process now checks the message type that it either received of popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
+The process now checks the message type that it either received or popped off from the queue. In stress test A the message type was set to \texttt{COUNT\_REPORT}, which is what this process will now check for. If the message type is not \texttt{COUNT\_REPORT} then the process releases the memory block allocated, and then calls \texttt{release\_processor}. Then it reiterates from the beginning.
 
 If the message type is \texttt{COUNT\_REPORT}, then the process checks if the value contained in the message is divisible by 20. If not, it releases the memory block for the message envelope, releases the process, and then reiterates. If the value is in fact divisible by 20, the process sends the message received to the CRT Display. Once sent, it creates a new message with a message type of \texttt{WAKEUP10} and sends it to itself using a delayed send with a delay of 10 seconds. The process now waits for that delayed message. While it waits it will queue up any messages that it receives in its own message queue, and when it finally receives that delayed message, it exits the loop and starts from the beginning again. 
 \subsubsection{Stress Test User Process C Flow}
@@ -633,12 +633,15 @@ Normally, these values are automatically set when the user makes a system call f
 \section{Testing}\label{sec:test}
 
 \subsection{Verification}
-To verify all the different features that were put into the Operating System, there were various ways that they were tested. Firstly, the test processes that were written for each deliverable focused solely on the different new features being added in. Mainly these test processes just verified that the functionality of anything that was implemented was fully working. These tests didn't include many edge cases, but just barebone functionality testing. 
+To verify all the different features that were put into the Operating System, there were various ways that they were tested. Firstly, the test processes that were written for each deliverable focused solely on the different new features being added in. Mainly these test processes just verified that the functionality of anything that was implemented was fully working. These tests didn't include many edge cases, but just barebone functionality testing. The test processes would sometimes introduce small bugs that went unnoticed until the features written ran through the test processes. 
 
-To actually test edge cases, most of the time it was done through input of different edge cases into the console. This usually meant several bad input strings were fed to the OS to see how it reacts to them. These usually found several edge cases that weren't previously considered. Besides just random input of edge cases, most of the time the test processes that were written would introduce small bugs that weren't ever considered before or were left unnoticed until ran through with the test processes. 
-\subsection{Debugging}
- 
+To actually test edge cases, most of the time it was done through input of different edge cases into the console. This usually meant several bad input strings were fed to the OS to see how it reacts to them. These usually found several edge cases that weren't previously considered. 
+
 There was a specific case that required unit testing. To actually write the functionality of the string library in the OS, thorough unit testing was done in order to verify that all the string methods worked. Since it was easier to test these string methods outside of the OS itself, these unit tests were done externally, and were not including in the OS itself.
+
+\subsection{Debugging}
+
+To actually fix any bugs encountered, the debugging tool that was a part of the Keil IDE was used heavily. This involved tracking several local variables to see how they changed as certain functions were called, and using breakpoints and going step by step through the code to see where it might have been faulting or resulting in a bug. The memory watch was used to see how the bits in the memory of the OS changed to see if any discrepancy occurred. Along with using breakpoints and watch windows, debug flags were set to output debug print statements that were defined, in order to see if the code ever hit that section of the method, and if the variable that was being output was just garbage memory or not.
 
 \section{Major Design Challenges}\label{sec:design}
 
